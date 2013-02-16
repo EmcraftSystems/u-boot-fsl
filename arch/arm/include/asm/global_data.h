@@ -44,6 +44,11 @@ typedef	struct	global_data {
 	unsigned long	env_addr;	/* Address  of Environment struct */
 	unsigned long	env_valid;	/* Checksum of Environment valid? */
 	unsigned long	fb_base;	/* base address of frame buffer */
+#ifdef CONFIG_VYBRID
+	unsigned long	cpu_clk;
+	unsigned long	ipg_clk;
+	unsigned long	bus_clk;
+#endif
 #ifdef CONFIG_FSL_ESDHC
 	unsigned long	sdhc_clk;
 #endif

@@ -83,6 +83,10 @@ void arch_lmb_reserve(struct lmb *lmb)
 static void announce_and_cleanup(void)
 {
 	printf("\nStarting kernel ...\n\n");
+	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_HANDOFF, "start_kernel");
+#ifdef CONFIG_BOOTSTAGE_REPORT
+	bootstage_report();
+#endif
 
 #ifdef CONFIG_USB_DEVICE
 	{
@@ -113,7 +117,7 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 		printf ("Using machid 0x%x from environment\n", machid);
 	}
 
-	show_boot_progress (15);
+	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 
 #ifdef CONFIG_OF_LIBFDT
 	if (images->ft_len)

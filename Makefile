@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2000-2011
+# (C) Copyright 2000-2012
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 #
 # See file CREDITS for list of people who contributed to this
@@ -294,7 +294,7 @@ LIBS += lib/libfdt/libfdt.o
 LIBS += api/libapi.o
 LIBS += post/libpost.o
 
-ifneq ($(CONFIG_AM335X)$(CONFIG_OMAP34XX)$(CONFIG_OMAP44XX)$(CONFIG_OMAP54XX),)
+ifneq ($(CONFIG_AM33XX)$(CONFIG_OMAP34XX)$(CONFIG_OMAP44XX)$(CONFIG_OMAP54XX),)
 LIBS += $(CPUDIR)/omap-common/libomap-common.o
 endif
 
@@ -303,6 +303,9 @@ LIBS += $(CPUDIR)/imx-common/libimx-common.o
 endif
 ifeq ($(SOC),mx6)
 LIBS += $(CPUDIR)/imx-common/libimx-common.o
+endif
+ifeq ($(SOC),vybrid)
+LIBS += $(CPUDIR)/vybrid-common/libvybrid-common.o
 endif
 
 ifeq ($(SOC),s5pc1xx)
@@ -366,7 +369,6 @@ ALL-y += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map
 ALL-$(CONFIG_NAND_U_BOOT) += $(obj)u-boot-nand.bin
 ALL-$(CONFIG_ONENAND_U_BOOT) += $(obj)u-boot-onenand.bin
 ONENAND_BIN ?= $(obj)onenand_ipl/onenand-ipl-2k.bin
-ALL-$(CONFIG_MMC_U_BOOT) += $(obj)mmc_spl/u-boot-mmc-spl.bin
 ALL-$(CONFIG_SPL) += $(obj)spl/u-boot-spl.bin
 ALL-$(CONFIG_OF_SEPARATE) += $(obj)u-boot.dtb $(obj)u-boot-dtb.bin
 
@@ -429,6 +431,18 @@ $(obj)u-boot.ubl:       $(obj)spl/u-boot-spl.bin $(obj)u-boot.bin
 		rm $(obj)u-boot-ubl.bin
 		rm $(obj)spl/u-boot-spl-pad.bin
 
+$(obj)u-boot.ais:       $(obj)spl/u-boot-spl.bin $(obj)u-boot.bin
+		$(obj)tools/mkimage -s -n /dev/null -T aisimage \
+			-e $(CONFIG_SPL_TEXT_BASE) \
+			-d $(obj)spl/u-boot-spl.bin \
+			$(obj)spl/u-boot-spl.ais
+		$(OBJCOPY) ${OBJCFLAGS} -I binary \
+			--pad-to=$(CONFIG_SPL_MAX_SIZE) -O binary \
+			$(obj)spl/u-boot-spl.ais $(obj)spl/u-boot-spl-pad.ais
+		cat $(obj)spl/u-boot-spl-pad.ais $(obj)u-boot.bin > \
+			$(obj)u-boot.ais
+		rm $(obj)spl/u-boot-spl{,-pad}.ais
+
 $(obj)u-boot.sb:       $(obj)u-boot.bin $(obj)spl/u-boot-spl.bin
 		elftosb -zdf imx28 -c $(TOPDIR)/board/$(BOARDDIR)/u-boot.bd \
 			-o $(obj)u-boot.sb
@@ -490,11 +504,6 @@ onenand_ipl:	$(TIMESTAMP_FILE) $(VERSION_FILE) $(obj)include/autoconf.mk
 $(obj)u-boot-onenand.bin:	onenand_ipl $(obj)u-boot.bin
 		cat $(ONENAND_BIN) $(obj)u-boot.bin > $(obj)u-boot-onenand.bin
 
-mmc_spl:	$(TIMESTAMP_FILE) $(VERSION_FILE) depend
-		$(MAKE) -C mmc_spl/board/$(BOARDDIR) all
-
-$(obj)mmc_spl/u-boot-mmc-spl.bin:	mmc_spl
-
 $(obj)spl/u-boot-spl.bin:	$(SUBDIR_TOOLS) depend
 		$(MAKE) -C spl all
 
@@ -516,6 +525,11 @@ TAG_SUBDIRS += include
 
 FIND := find
 FINDFLAGS := -L
+
+checkstack:
+		$(CROSS_COMPILE)objdump -d $(obj)u-boot \
+			`$(FIND) $(obj) -name u-boot-spl -print` | \
+			perl $(src)tools/checkstack.pl $(ARCH)
 
 tags ctags:
 		ctags -w -o $(obj)ctags `$(FIND) $(FINDFLAGS) $(TAG_SUBDIRS) \
@@ -655,14 +669,6 @@ ucname	= $(shell echo $(1) | sed -e 's/\(.*\)_config/\U\1/')
 # ARM
 #========================================================================
 
-spear300_config \
-spear310_config \
-spear320_config :	unconfig
-	@$(MKCONFIG) -n $@ -t $@ spear3xx arm arm926ejs $(@:_config=) spear spear
-
-spear600_config :	unconfig
-	@$(MKCONFIG) -n $@ -t $@ spear6xx arm arm926ejs $(@:_config=) spear spear
-
 SX1_stdout_serial_config \
 SX1_config:		unconfig
 	@mkdir -p $(obj)include
@@ -723,6 +729,7 @@ clean:
 	       $(obj)tools/gdb/{astest,gdbcont,gdbsend}			  \
 	       $(obj)tools/gen_eth_addr    $(obj)tools/img2srec		  \
 	       $(obj)tools/mk{env,}image   $(obj)tools/mpc86x_clk	  \
+	       $(obj)tools/mk{smdk5250,}spl				  \
 	       $(obj)tools/ncb		   $(obj)tools/ubsha1
 	@rm -f $(obj)board/cray/L1/{bootscript.c,bootscript.image}	  \
 	       $(obj)board/matrix_vision/*/bootscript.img		  \
@@ -737,7 +744,6 @@ clean:
 	@rm -f $(obj)$(CPUDIR)/$(SOC)/asm-offsets.s
 	@rm -f $(obj)nand_spl/{u-boot.lds,u-boot-nand_spl.lds,u-boot-spl,u-boot-spl.map,System.map}
 	@rm -f $(obj)onenand_ipl/onenand-{ipl,ipl.bin,ipl.map}
-	@rm -f $(obj)mmc_spl/{u-boot.lds,u-boot-spl,u-boot-spl.map,u-boot-spl.bin,u-boot-mmc-spl.bin}
 	@rm -f $(ONENAND_BIN)
 	@rm -f $(obj)onenand_ipl/u-boot.lds
 	@rm -f $(obj)spl/{u-boot-spl,u-boot-spl.bin,u-boot-spl.lds,u-boot-spl.map}
@@ -762,6 +768,7 @@ clobber:	tidy
 	@rm -f $(obj)u-boot.kwb
 	@rm -f $(obj)u-boot.imx
 	@rm -f $(obj)u-boot.ubl
+	@rm -f $(obj)u-boot.ais
 	@rm -f $(obj)u-boot.dtb
 	@rm -f $(obj)u-boot.sb
 	@rm -f $(obj)tools/inca-swap-bytes
@@ -771,7 +778,6 @@ clobber:	tidy
 	@rm -fr $(obj)include/generated
 	@[ ! -d $(obj)nand_spl ] || find $(obj)nand_spl -name "*" -type l -print | xargs rm -f
 	@[ ! -d $(obj)onenand_ipl ] || find $(obj)onenand_ipl -name "*" -type l -print | xargs rm -f
-	@[ ! -d $(obj)mmc_spl ] || find $(obj)mmc_spl -name "*" -type l -print | xargs rm -f
 	@rm -f $(obj)dts/*.tmp
 
 mrproper \

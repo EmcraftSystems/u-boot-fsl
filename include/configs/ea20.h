@@ -168,6 +168,10 @@
 #define CONFIG_CMD_MEMORY
 #define CONFIG_CMD_I2C
 
+#ifdef CONFIG_CMD_BDI
+#define CONFIG_CLOCKS
+#endif
+
 #ifndef CONFIG_DRIVER_TI_EMAC
 #undef CONFIG_CMD_NET
 #undef CONFIG_CMD_DHCP
@@ -197,7 +201,6 @@
 #define CONFIG_SYS_NAND_4BIT_HW_ECC_OOBFIRST
 #define	CONFIG_SYS_NAND_USE_FLASH_BBT
 #define CONFIG_SYS_MAX_NAND_DEVICE	1 /* Max number of NAND devices */
-#define NAND_MAX_CHIPS			1
 #define CONFIG_SYS_64BIT_VSPRINTF	/* needed for nand_util.c */
 #endif
 

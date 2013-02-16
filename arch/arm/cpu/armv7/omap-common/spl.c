@@ -35,6 +35,7 @@
 #include <i2c.h>
 #include <image.h>
 #include <malloc.h>
+#include <linux/compiler.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -115,8 +116,6 @@ void board_init_r(gd_t *id, ulong dummy)
 	mem_malloc_init(CONFIG_SYS_SPL_MALLOC_START,
 			CONFIG_SYS_SPL_MALLOC_SIZE);
 
-	timer_init();
-
 #ifdef CONFIG_SPL_BOARD_INIT
 	spl_board_init();
 #endif
@@ -156,7 +155,6 @@ void board_init_r(gd_t *id, ulong dummy)
 void preloader_console_init(void)
 {
 	const char *u_boot_rev = U_BOOT_VERSION;
-	char rev_string_buffer[50];
 
 	gd = &gdata;
 	gd->bd = &bdata;
@@ -172,14 +170,10 @@ void preloader_console_init(void)
 
 	printf("\nU-Boot SPL %s (%s - %s)\n", u_boot_rev, U_BOOT_DATE,
 		U_BOOT_TIME);
-	omap_rev_string(rev_string_buffer);
-	printf("Texas Instruments %s\n", rev_string_buffer);
+	omap_rev_string();
 }
 
-void __omap_rev_string(char *str)
+void __weak omap_rev_string()
 {
-	sprintf(str, "Revision detection unimplemented");
+	printf("Texas Instruments Revision detection unimplemented\n");
 }
-
-void omap_rev_string(char *str)
-	__attribute__((weak, alias("__omap_rev_string")));

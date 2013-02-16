@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2000 - 2011
+# (C) Copyright 2000 - 2012
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 #
 # See file CREDITS for list of people who contributed to this
@@ -420,6 +420,12 @@ The following options need to be configured:
 		XWAY SoCs for booting from NOR flash. The U-Boot image needs to
 		be swapped if a flash programmer is used.
 
+- ARM options:
+		CONFIG_SYS_EXCEPTION_VECTORS_HIGH
+
+		Select high exception vectors of the ARM core, e.g., do not
+		clear the V bit of the c1 register of CP15.
+
 - Linux Kernel Interface:
 		CONFIG_CLOCKS_IN_MHZ
 
@@ -655,6 +661,15 @@ The following options need to be configured:
 		to get the character out. Baud rates will need to default
 		to something sensible.
 
+- Safe printf() functions
+		Define CONFIG_SYS_VSNPRINTF to compile in safe versions of
+		the printf() functions. These are defined in
+		include/vsprintf.h and include snprintf(), vsnprintf() and
+		so on. Code size increase is approximately 300-500 bytes.
+		If this option is not given then these functions will
+		silently discard their buffer size argument - this means
+		you are not getting any overflow checking in this case.
+
 - Boot Delay:	CONFIG_BOOTDELAY - in seconds
 		Delay before automatically booting the default image;
 		set to -1 to disable autoboot.
@@ -800,6 +815,7 @@ The following options need to be configured:
 					  (requires CONFIG_CMD_I2C)
 		CONFIG_CMD_SETGETDCR	  Support for DCR Register access
 					  (4xx only)
+		CONFIG_CMD_SF		* Read/write/erase SPI NOR flash
 		CONFIG_CMD_SHA1SUM	  print sha1 memory digest
 					  (requires CONFIG_CMD_MEMORY)
 		CONFIG_CMD_SOURCE	  "source" command Support
@@ -1019,6 +1035,9 @@ The following options need to be configured:
 			CONFIG_DRIVER_AT91EMAC_QUIET
 			If this defined, the driver is quiet.
 			The driver doen't show link status messages.
+
+		CONFIG_CALXEDA_XGMAC
+		Support for the Calxeda XGMAC device
 
 		CONFIG_DRIVER_LAN91C96
 		Support for SMSC's LAN91C96 chips.
@@ -2179,6 +2198,25 @@ The following options need to be configured:
 		allows to read/write in Dataflash via the standard
 		commands cp, md...
 
+- Serial Flash support
+		CONFIG_CMD_SF
+
+		Defining this option enables SPI flash commands
+		'sf probe/read/write/erase/update'.
+
+		Usage requires an initial 'probe' to define the serial
+		flash parameters, followed by read/write/erase/update
+		commands.
+
+		The following defaults may be provided by the platform
+		to handle the common case when only a single serial
+		flash is present on the system.
+
+		CONFIG_SF_DEFAULT_BUS		Bus identifier
+		CONFIG_SF_DEFAULT_CS		Chip-select
+		CONFIG_SF_DEFAULT_MODE 		(see include/spi.h)
+		CONFIG_SF_DEFAULT_SPEED		in Hz
+
 - SystemACE Support:
 		CONFIG_SYSTEMACE
 
@@ -2222,6 +2260,31 @@ The following options need to be configured:
 		the system's boot progress on some display (for
 		example, some LED's) on your board. At the moment,
 		the following checkpoints are implemented:
+
+- Detailed boot stage timing
+		CONFIG_BOOTSTAGE
+		Define this option to get detailed timing of each stage
+		of the boot process.
+
+		CONFIG_BOOTSTAGE_USER_COUNT
+		This is the number of available user bootstage records.
+		Each time you call bootstage_mark(BOOTSTAGE_ID_ALLOC, ...)
+		a new ID will be allocated from this stash. If you exceed
+		the limit, recording will stop.
+
+		CONFIG_BOOTSTAGE_REPORT
+		Define this to print a report before boot, similar to this:
+
+		Timer summary in microseconds:
+		       Mark    Elapsed  Stage
+			  0          0  reset
+		  3,575,678  3,575,678  board_init_f start
+		  3,575,695         17  arch_cpu_init A9
+		  3,575,777         82  arch_cpu_init done
+		  3,659,598     83,821  board_init_r start
+		  3,910,375    250,777  main_loop
+		 29,916,167 26,005,792  bootm_start
+		 30,361,327    445,160  start_kernel
 
 Legacy uImage format:
 
@@ -3627,6 +3690,14 @@ List of environment variables (most likely not complete):
 
   fdt_high	- if set this restricts the maximum address that the
 		  flattened device tree will be copied into upon boot.
+		  For example, if you have a system with 1 GB memory
+		  at physical address 0x10000000, while Linux kernel
+		  only recognizes the first 704 MB as low memory, you
+		  may need to set fdt_high as 0x3C000000 to have the
+		  device tree blob be copied to the maximum address
+		  of the 704 MB low memory, so that Linux kernel can
+		  access it during the boot procedure.
+
 		  If this is set to the special value 0xFFFFFFFF then
 		  the fdt will not be copied at all on boot.  For this
 		  to work it must reside in writable memory, have

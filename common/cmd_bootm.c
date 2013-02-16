@@ -199,6 +199,8 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 
 	bootm_start_lmb();
 
+	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_START, "bootm_start");
+
 	/* get kernel image header, start address and length */
 	os_hdr = boot_get_kernel(cmdtp, flag, argc, argv,
 			&images, &images.os.image_start, &images.os.image_len);
@@ -222,21 +224,21 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 		if (fit_image_get_type(images.fit_hdr_os,
 					images.fit_noffset_os, &images.os.type)) {
 			puts("Can't get image type!\n");
-			show_boot_progress(-109);
+			bootstage_error(BOOTSTAGE_ID_FIT_TYPE);
 			return 1;
 		}
 
 		if (fit_image_get_comp(images.fit_hdr_os,
 					images.fit_noffset_os, &images.os.comp)) {
 			puts("Can't get image compression!\n");
-			show_boot_progress(-110);
+			bootstage_error(BOOTSTAGE_ID_FIT_COMPRESSION);
 			return 1;
 		}
 
 		if (fit_image_get_os(images.fit_hdr_os,
 					images.fit_noffset_os, &images.os.os)) {
 			puts("Can't get image OS!\n");
-			show_boot_progress(-111);
+			bootstage_error(BOOTSTAGE_ID_FIT_OS);
 			return 1;
 		}
 
@@ -245,7 +247,7 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 		if (fit_image_get_load(images.fit_hdr_os, images.fit_noffset_os,
 					&images.os.load)) {
 			puts("Can't get image load address!\n");
-			show_boot_progress(-112);
+			bootstage_error(BOOTSTAGE_ID_FIT_LOADADDR);
 			return 1;
 		}
 		break;
@@ -348,7 +350,7 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 			puts("GUNZIP: uncompress, out-of-mem or overwrite "
 				"error - must RESET board to recover\n");
 			if (boot_progress)
-				show_boot_progress(-6);
+				bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 			return BOOTM_ERR_RESET;
 		}
 
@@ -370,7 +372,7 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 			printf("BUNZIP2: uncompress or overwrite error %d "
 				"- must RESET board to recover\n", i);
 			if (boot_progress)
-				show_boot_progress(-6);
+				bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 			return BOOTM_ERR_RESET;
 		}
 
@@ -389,7 +391,7 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 		if (ret != SZ_OK) {
 			printf("LZMA: uncompress or overwrite error %d "
 				"- must RESET board to recover\n", ret);
-			show_boot_progress(-6);
+			bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 			return BOOTM_ERR_RESET;
 		}
 		*load_end = load + unc_len;
@@ -407,7 +409,7 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 			printf("LZO: uncompress or overwrite error %d "
 			      "- must RESET board to recover\n", ret);
 			if (boot_progress)
-				show_boot_progress(-6);
+				bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 			return BOOTM_ERR_RESET;
 		}
 
@@ -423,8 +425,7 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 
 	puts("OK\n");
 	debug("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
-	if (boot_progress)
-		show_boot_progress(7);
+	bootstage_mark(BOOTSTAGE_ID_KERNEL_LOADED);
 
 	if (!no_overlap && (load < blob_end) && (*load_end > blob_start)) {
 		debug("images.os.start = 0x%lX, images.os.end = 0x%lx\n",
@@ -493,12 +494,12 @@ int do_bootm_subcommand(cmd_tbl_t *cmdtp, int flag, int argc,
 		}
 	} else {
 		/* Unrecognized command */
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 	}
 
 	if (images.state >= state) {
 		printf("Trying to execute a command out of order\n");
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 	}
 
 	images.state |= state;
@@ -649,14 +650,14 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			} else {
 				puts("ERROR: new format image overwritten - "
 					"must RESET the board to recover\n");
-				show_boot_progress(-113);
+				bootstage_error(BOOTSTAGE_ID_OVERWRITTEN);
 				do_reset(cmdtp, flag, argc, argv);
 			}
 		}
 		if (ret == BOOTM_ERR_UNIMPLEMENTED) {
 			if (iflag)
 				enable_interrupts();
-			show_boot_progress(-7);
+			bootstage_error(BOOTSTAGE_ID_DECOMP_UNIMPL);
 			return 1;
 		}
 	}
@@ -671,7 +672,7 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return 0;
 	}
 
-	show_boot_progress(8);
+	bootstage_mark(BOOTSTAGE_ID_CHECK_BOOT_OS);
 
 #ifdef CONFIG_SILENT_CONSOLE
 	if (images.os.os == IH_OS_LINUX)
@@ -685,7 +686,7 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			enable_interrupts();
 		printf("ERROR: booting os '%s' (%d) is not supported\n",
 			genimg_get_os_name(images.os.os), images.os.os);
-		show_boot_progress(-8);
+		bootstage_error(BOOTSTAGE_ID_CHECK_BOOT_OS);
 		return 1;
 	}
 
@@ -693,7 +694,7 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	boot_fn(0, argc, argv, &images);
 
-	show_boot_progress(-9);
+	bootstage_error(BOOTSTAGE_ID_BOOT_OS_RETURNED);
 #ifdef DEBUG
 	puts("\n## Control returned to monitor - resetting...\n");
 #endif
@@ -735,34 +736,34 @@ static image_header_t *image_get_kernel(ulong img_addr, int verify)
 
 	if (!image_check_magic(hdr)) {
 		puts("Bad Magic Number\n");
-		show_boot_progress(-1);
+		bootstage_error(BOOTSTAGE_ID_CHECK_MAGIC);
 		return NULL;
 	}
-	show_boot_progress(2);
+	bootstage_mark(BOOTSTAGE_ID_CHECK_HEADER);
 
 	if (!image_check_hcrc(hdr)) {
 		puts("Bad Header Checksum\n");
-		show_boot_progress(-2);
+		bootstage_error(BOOTSTAGE_ID_CHECK_HEADER);
 		return NULL;
 	}
 
-	show_boot_progress(3);
+	bootstage_mark(BOOTSTAGE_ID_CHECK_CHECKSUM);
 	image_print_contents(hdr);
 
 	if (verify) {
 		puts("   Verifying Checksum ... ");
 		if (!image_check_dcrc(hdr)) {
 			printf("Bad Data CRC\n");
-			show_boot_progress(-3);
+			bootstage_error(BOOTSTAGE_ID_CHECK_CHECKSUM);
 			return NULL;
 		}
 		puts("OK\n");
 	}
-	show_boot_progress(4);
+	bootstage_mark(BOOTSTAGE_ID_CHECK_ARCH);
 
 	if (!image_check_target_arch(hdr)) {
 		printf("Unsupported Architecture 0x%x\n", image_get_arch(hdr));
-		show_boot_progress(-4);
+		bootstage_error(BOOTSTAGE_ID_CHECK_ARCH);
 		return NULL;
 	}
 	return hdr;
@@ -790,28 +791,28 @@ static int fit_check_kernel(const void *fit, int os_noffset, int verify)
 		puts("   Verifying Hash Integrity ... ");
 		if (!fit_image_check_hashes(fit, os_noffset)) {
 			puts("Bad Data Hash\n");
-			show_boot_progress(-104);
+			bootstage_error(BOOTSTAGE_ID_FIT_CHECK_HASH);
 			return 0;
 		}
 		puts("OK\n");
 	}
-	show_boot_progress(105);
+	bootstage_mark(BOOTSTAGE_ID_FIT_CHECK_ARCH);
 
 	if (!fit_image_check_target_arch(fit, os_noffset)) {
 		puts("Unsupported Architecture\n");
-		show_boot_progress(-105);
+		bootstage_error(BOOTSTAGE_ID_FIT_CHECK_ARCH);
 		return 0;
 	}
 
-	show_boot_progress(106);
+	bootstage_mark(BOOTSTAGE_ID_FIT_CHECK_KERNEL);
 	if (!fit_image_check_type(fit, os_noffset, IH_TYPE_KERNEL) &&
 	    !fit_image_check_type(fit, os_noffset, IH_TYPE_KERNEL_NOLOAD)) {
 		puts("Not a kernel image\n");
-		show_boot_progress(-106);
+		bootstage_error(BOOTSTAGE_ID_FIT_CHECK_KERNEL);
 		return 0;
 	}
 
-	show_boot_progress(107);
+	bootstage_mark(BOOTSTAGE_ID_FIT_CHECKED);
 	return 1;
 }
 #endif /* CONFIG_FIT */
@@ -864,7 +865,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 		debug("*  kernel: cmdline image address = 0x%08lx\n", img_addr);
 	}
 
-	show_boot_progress(1);
+	bootstage_mark(BOOTSTAGE_ID_CHECK_MAGIC);
 
 	/* copy from dataflash if needed */
 	img_addr = genimg_get_image(img_addr);
@@ -878,7 +879,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 		hdr = image_get_kernel(img_addr, images->verify);
 		if (!hdr)
 			return NULL;
-		show_boot_progress(5);
+		bootstage_mark(BOOTSTAGE_ID_CHECK_IMAGETYPE);
 
 		/* get os_data and os_len */
 		switch (image_get_type(hdr)) {
@@ -897,7 +898,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 		default:
 			printf("Wrong Image Type for %s command\n",
 				cmdtp->name);
-			show_boot_progress(-5);
+			bootstage_error(BOOTSTAGE_ID_CHECK_IMAGETYPE);
 			return NULL;
 		}
 
@@ -912,7 +913,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 		images->legacy_hdr_os = hdr;
 
 		images->legacy_hdr_valid = 1;
-		show_boot_progress(6);
+		bootstage_mark(BOOTSTAGE_ID_DECOMP_IMAGE);
 		break;
 #if defined(CONFIG_FIT)
 	case IMAGE_FORMAT_FIT:
@@ -922,10 +923,10 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 
 		if (!fit_check_format(fit_hdr)) {
 			puts("Bad FIT kernel image format!\n");
-			show_boot_progress(-100);
+			bootstage_error(BOOTSTAGE_ID_FIT_FORMAT);
 			return NULL;
 		}
-		show_boot_progress(100);
+		bootstage_mark(BOOTSTAGE_ID_FIT_FORMAT);
 
 		if (!fit_uname_kernel) {
 			/*
@@ -934,11 +935,11 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 			 * fit_conf_get_node() will try to find default config
 			 * node
 			 */
-			show_boot_progress(101);
+			bootstage_mark(BOOTSTAGE_ID_FIT_NO_UNIT_NAME);
 			cfg_noffset = fit_conf_get_node(fit_hdr,
 							fit_uname_config);
 			if (cfg_noffset < 0) {
-				show_boot_progress(-101);
+				bootstage_error(BOOTSTAGE_ID_FIT_NO_UNIT_NAME);
 				return NULL;
 			}
 			/* save configuration uname provided in the first
@@ -949,7 +950,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 								NULL);
 			printf("   Using '%s' configuration\n",
 				images->fit_uname_cfg);
-			show_boot_progress(103);
+			bootstage_mark(BOOTSTAGE_ID_FIT_CONFIG);
 
 			os_noffset = fit_conf_get_kernel_node(fit_hdr,
 								cfg_noffset);
@@ -957,28 +958,28 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 							NULL);
 		} else {
 			/* get kernel component image node offset */
-			show_boot_progress(102);
+			bootstage_mark(BOOTSTAGE_ID_FIT_UNIT_NAME);
 			os_noffset = fit_image_get_node(fit_hdr,
 							fit_uname_kernel);
 		}
 		if (os_noffset < 0) {
-			show_boot_progress(-103);
+			bootstage_error(BOOTSTAGE_ID_FIT_CONFIG);
 			return NULL;
 		}
 
 		printf("   Trying '%s' kernel subimage\n", fit_uname_kernel);
 
-		show_boot_progress(104);
+		bootstage_mark(BOOTSTAGE_ID_FIT_CHECK_SUBIMAGE);
 		if (!fit_check_kernel(fit_hdr, os_noffset, images->verify))
 			return NULL;
 
 		/* get kernel image data address and length */
 		if (fit_image_get_data(fit_hdr, os_noffset, &data, &len)) {
 			puts("Could not find kernel subimage data!\n");
-			show_boot_progress(-107);
+			bootstage_error(BOOTSTAGE_ID_FIT_KERNEL_INFO_ERR);
 			return NULL;
 		}
-		show_boot_progress(108);
+		bootstage_mark(BOOTSTAGE_ID_FIT_KERNEL_INFO);
 
 		*os_len = len;
 		*os_data = (ulong)data;
@@ -989,7 +990,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 #endif
 	default:
 		printf("Wrong Image Format for %s command\n", cmdtp->name);
-		show_boot_progress(-108);
+		bootstage_error(BOOTSTAGE_ID_FIT_KERNEL_INFO);
 		return NULL;
 	}
 
@@ -1045,14 +1046,8 @@ int do_bootd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int rcode = 0;
 
-#ifndef CONFIG_SYS_HUSH_PARSER
 	if (run_command(getenv("bootcmd"), flag) < 0)
 		rcode = 1;
-#else
-	if (parse_string_outer(getenv("bootcmd"),
-			FLAG_PARSE_SEMICOLON | FLAG_EXIT_FROM_LOOP) != 0)
-		rcode = 1;
-#endif
 	return rcode;
 }
 
@@ -1340,7 +1335,7 @@ static int do_bootm_netbsd(int flag, int argc, char * const argv[],
 		"(at address %08lx) ...\n",
 		(ulong)loader);
 
-	show_boot_progress(15);
+	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 
 	/*
 	 * NetBSD Stage-2 Loader Parameters:
@@ -1398,7 +1393,7 @@ static int do_bootm_rtems(int flag, int argc, char * const argv[],
 	printf("## Transferring control to RTEMS (at address %08lx) ...\n",
 		(ulong)entry_point);
 
-	show_boot_progress(15);
+	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 
 	/*
 	 * RTEMS Parameters:
@@ -1431,7 +1426,7 @@ static int do_bootm_ose(int flag, int argc, char * const argv[],
 	printf("## Transferring control to OSE (at address %08lx) ...\n",
 		(ulong)entry_point);
 
-	show_boot_progress(15);
+	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 
 	/*
 	 * OSE Parameters:
@@ -1512,7 +1507,7 @@ static int do_bootm_integrity(int flag, int argc, char * const argv[],
 	printf("## Transferring control to INTEGRITY (at address %08lx) ...\n",
 		(ulong)entry_point);
 
-	show_boot_progress(15);
+	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 
 	/*
 	 * INTEGRITY Parameters:

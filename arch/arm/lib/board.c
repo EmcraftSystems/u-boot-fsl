@@ -234,10 +234,8 @@ init_fnc_t *init_sequence[] = {
 #ifdef CONFIG_OF_CONTROL
 	fdtdec_check_fdt,
 #endif
-	timer_init,		/* initialize timer */
-#ifdef CONFIG_FSL_ESDHC
 	get_clocks,
-#endif
+	timer_init,		/* initialize timer */
 	env_init,		/* initialize environment */
 	init_baudrate,		/* initialze baudrate settings */
 	serial_init,		/* serial communications setup */
@@ -265,6 +263,8 @@ void board_init_f(ulong bootflag)
 #ifdef CONFIG_PRAM
 	ulong reg;
 #endif
+
+	bootstage_mark_name(BOOTSTAGE_ID_START_UBOOT_F, "board_init_f");
 
 	/* Pointer is writable since we allocated a register for it */
 	gd = (gd_t *) ((CONFIG_SYS_INIT_SP_ADDR) & ~0x07);
@@ -422,6 +422,11 @@ void board_init_f(ulong bootflag)
 	gd->relocaddr = addr;
 	gd->start_addr_sp = addr_sp;
 	gd->reloc_off = addr - _TEXT_BASE;
+
+#ifdef CONFIG_SYS_UBOOT_IN_GPURAM
+	gd->reloc_off += _TEXT_BASE;
+#endif
+
 	debug("relocation Offset is: %08lx\n", gd->reloc_off);
 	memcpy(id, (void *)gd, sizeof(gd_t));
 
@@ -455,6 +460,7 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	gd = id;
 
 	gd->flags |= GD_FLG_RELOC;	/* tell others: relocation done */
+	bootstage_mark_name(BOOTSTAGE_ID_START_UBOOT_R, "board_init_r");
 
 	monitor_flash_len = _end_ofs;
 
@@ -463,7 +469,15 @@ void board_init_r(gd_t *id, ulong dest_addr)
 
 	debug("monitor flash len: %08lX\n", monitor_flash_len);
 	board_init();	/* Setup chipselects */
-
+	/*
+	 * TODO: printing of the clock inforamtion of the board is now
+	 * implemented as part of bdinfo command. Currently only support for
+	 * davinci SOC's is added. Remove this check once all the board
+	 * implement this.
+	 */
+#ifdef CONFIG_CLOCKS
+	set_cpu_clk_info(); /* Setup clock information */
+#endif
 #ifdef CONFIG_SERIAL_MULTI
 	serial_initialize();
 #endif

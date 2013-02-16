@@ -31,7 +31,9 @@
 #else
 #include <asm/fec.h>
 #endif
+#ifdef CONFIG_COLDFIRE
 #include <asm/immap.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -83,6 +85,7 @@ phy_info_t phyinfo[] = {
 	{0x20005CE1, "N83640"},		/* National 83640 */
 	{0x20005C90, "N83848"},		/* National 83848 */
 	{0x20005CA2, "N83849"},		/* National 83849 */
+	{0x0007C0F1, "SMSC8720A"},	/* SMSC 8720a */
 	{0x01814400, "QS6612"},		/* QS6612 */
 #if defined(CONFIG_SYS_UNSPEC_PHYID) && defined(CONFIG_SYS_UNSPEC_STRID)
 	{CONFIG_SYS_UNSPEC_PHYID, CONFIG_SYS_UNSPEC_STRID},
@@ -122,7 +125,6 @@ uint mii_send(uint mii_cmd)
 	info = dev->priv;
 
 	ep = (FEC_T *) info->miibase;
-
 	ep->mmfr = mii_cmd;	/* command to phy */
 
 	/* wait for mii complete */

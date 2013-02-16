@@ -27,6 +27,7 @@ LIB	= $(obj)libgeneric.o
 
 ifndef CONFIG_SPL_BUILD
 COBJS-$(CONFIG_ADDR_MAP) += addr_map.o
+COBJS-$(CONFIG_BCH) += bch.o
 COBJS-$(CONFIG_BZIP2) += bzlib.o
 COBJS-$(CONFIG_BZIP2) += bzlib_crctable.o
 COBJS-$(CONFIG_BZIP2) += bzlib_decompress.o
@@ -50,6 +51,8 @@ COBJS-$(CONFIG_SHA1) += sha1.o
 COBJS-$(CONFIG_SHA256) += sha256.o
 COBJS-y	+= strmhz.o
 COBJS-$(CONFIG_RBTREE)	+= rbtree.o
+else
+COBJS-$(CONFIG_SPL_SPI_FLASH_SUPPORT) += display_options.o
 endif
 
 COBJS-y += ctype.o

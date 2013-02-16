@@ -41,6 +41,7 @@ COBJS-y += nand_util.o
 endif
 COBJS-y += nand_ecc.o
 COBJS-y += nand_base.o
+COBJS-$(CONFIG_NAND_ECC_BCH) += nand_bch.o
 
 COBJS-$(CONFIG_NAND_ATMEL) += atmel_nand.o
 COBJS-$(CONFIG_DRIVER_NAND_BFIN) += bfin_nand.o
@@ -53,6 +54,7 @@ COBJS-$(CONFIG_NAND_KB9202) += kb9202_nand.o
 COBJS-$(CONFIG_NAND_KIRKWOOD) += kirkwood_nand.o
 COBJS-$(CONFIG_NAND_KMETER1) += kmeter1_nand.o
 COBJS-$(CONFIG_NAND_MPC5121_NFC) += mpc5121_nfc.o
+COBJS-$(CONFIG_NAND_FSL_NFC) += fsl_nfc.o
 COBJS-$(CONFIG_NAND_MXC) += mxc_nand.o
 COBJS-$(CONFIG_NAND_MXS) += mxs_nand.o
 COBJS-$(CONFIG_NAND_NDFC) += ndfc.o

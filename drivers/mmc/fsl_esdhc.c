@@ -1,5 +1,5 @@
 /*
- * Copyright 2007, 2010-2011 Freescale Semiconductor, Inc
+ * Copyright 2007, 2010-2012 Freescale Semiconductor, Inc
  * Andy Fleming
  *
  * Based vaguely on the pxa mmc code:
@@ -58,7 +58,8 @@ struct fsl_esdhc {
 	uint	autoc12err;
 	uint	hostcapblt;
 	uint	wml;
-	char	reserved1[8];
+	uint    mixctrl;
+	char    reserved1[4];
 	uint	fevt;
 	char	reserved2[168];
 	uint	hostver;
@@ -113,7 +114,8 @@ uint esdhc_xfertyp(struct mmc_cmd *cmd, struct mmc_data *data)
 static void
 esdhc_pio_read_write(struct mmc *mmc, struct mmc_data *data)
 {
-	struct fsl_esdhc *regs = mmc->priv;
+	struct fsl_esdhc_cfg *cfg = mmc->priv;
+	struct fsl_esdhc *regs = (struct fsl_esdhc *)cfg->esdhc_base;
 	uint blocks;
 	char *buffer;
 	uint databuf;
@@ -298,8 +300,13 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
 	/* Send the command */
 	esdhc_write32(&regs->cmdarg, cmd->cmdarg);
+#if defined(CONFIG_FSL_USDHC)
+	esdhc_write32(&regs->mixctrl,
+	(esdhc_read32(&regs->mixctrl) & 0xFFFFFF80) | (xfertyp & 0x7F));
+	esdhc_write32(&regs->xfertyp, xfertyp & 0xFFFF0000);
+#else
 	esdhc_write32(&regs->xfertyp, xfertyp);
-
+#endif
 	/* Wait for the command to complete */
 	while (!(esdhc_read32(&regs->irqstat) & IRQSTAT_CC))
 		;
@@ -412,8 +419,6 @@ static int esdhc_init(struct mmc *mmc)
 	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
 	struct fsl_esdhc *regs = (struct fsl_esdhc *)cfg->esdhc_base;
 	int timeout = 1000;
-	int ret = 0;
-	u8 card_absent;
 
 	/* Reset the entire host controller */
 	esdhc_write32(&regs->sysctl, SYSCTL_RSTA);
@@ -423,8 +428,11 @@ static int esdhc_init(struct mmc *mmc)
 		udelay(1000);
 
 	/* Enable cache snooping */
-	if (cfg && !cfg->no_snoop)
+
+	if (cfg && !cfg->no_snoop) {
+		asm volatile("" ::: "memory");
 		esdhc_write32(&regs->scr, 0x00000040);
+	}
 
 	esdhc_write32(&regs->sysctl, SYSCTL_HCKEN | SYSCTL_IPGEN);
 
@@ -440,21 +448,19 @@ static int esdhc_init(struct mmc *mmc)
 	/* Set timout to the maximum value */
 	esdhc_clrsetbits32(&regs->sysctl, SYSCTL_TIMEOUT_MASK, 14 << 16);
 
-	/* Check if there is a callback for detecting the card */
-	if (board_mmc_getcd(&card_absent, mmc)) {
-		timeout = 1000;
-		while (!(esdhc_read32(&regs->prsstat) & PRSSTAT_CINS) &&
-				--timeout)
-			udelay(1000);
+	return 0;
+}
 
-		if (timeout <= 0)
-			ret = NO_CARD_ERR;
-	} else {
-		if (card_absent)
-			ret = NO_CARD_ERR;
-	}
+static int esdhc_getcd(struct mmc *mmc)
+{
+	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
+	struct fsl_esdhc *regs = (struct fsl_esdhc *)cfg->esdhc_base;
+	int timeout = 1000;
 
-	return ret;
+	while (!(esdhc_read32(&regs->prsstat) & PRSSTAT_CINS) && --timeout)
+		udelay(1000);
+
+	return timeout > 0;
 }
 
 static void esdhc_reset(struct fsl_esdhc *regs)
@@ -482,7 +488,7 @@ int fsl_esdhc_initialize(bd_t *bis, struct fsl_esdhc_cfg *cfg)
 
 	mmc = malloc(sizeof(struct mmc));
 
-	sprintf(mmc->name, "FSL_ESDHC");
+	sprintf(mmc->name, "FSL_SDHC");
 	regs = (struct fsl_esdhc *)cfg->esdhc_base;
 
 	/* First reset the eSDHC controller */
@@ -492,6 +498,7 @@ int fsl_esdhc_initialize(bd_t *bis, struct fsl_esdhc_cfg *cfg)
 	mmc->send_cmd = esdhc_send_cmd;
 	mmc->set_ios = esdhc_set_ios;
 	mmc->init = esdhc_init;
+	mmc->getcd = esdhc_getcd;
 
 	voltage_caps = 0;
 	caps = regs->hostcapblt;
@@ -538,6 +545,9 @@ int fsl_esdhc_mmc_init(bd_t *bis)
 	cfg = malloc(sizeof(struct fsl_esdhc_cfg));
 	memset(cfg, 0, sizeof(struct fsl_esdhc_cfg));
 	cfg->esdhc_base = CONFIG_SYS_FSL_ESDHC_ADDR;
+#ifdef CONFIG_ESDHC_NO_SNOOP
+	cfg->no_snoop = 1;
+#endif
 	return fsl_esdhc_initialize(bis, cfg);
 }
 
