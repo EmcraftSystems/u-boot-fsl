@@ -94,6 +94,12 @@ void setup_iomux_ddr(void)
 	__raw_writel(DDR_IOMUX, IOMUXC_DDR_WE);
 	__raw_writel(DDR_IOMUX, IOMUXC_DDR_ODT1);
 	__raw_writel(DDR_IOMUX, IOMUXC_DDR_ODT0);
+
+
+       /* enable 1V5 for DDR */
+	__raw_writel(0x000021a2, IOMUXC_PAD_098);
+	__raw_writel(0x00000004, 0x400ff0c4);
+	__raw_writel(0x00000004, 0x400ff0c0);
 }
 
 void ddr_phy_init(void)
@@ -341,7 +347,7 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 #define ENET_ODE	(0 << 10)
 #define ENET_DRV	(2 << 6)
 #define ENETMUX		(ENET_SRE | ENET_ODE | ENET_DRV)
-	__raw_writel(0x00103001 | ENETMUX, IOMUXC_PAD_000);
+	__raw_writel(0x00200001 | ENETMUX, IOMUXC_PAD_000);
 
 	if (setclear) {
 		if (info->iobase == MACNET0_BASE_ADDR) {
@@ -432,10 +438,6 @@ int board_mmc_init(bd_t *bis)
 
 int board_early_init_f(void)
 {
-#if defined(CONFIG_CMD_NET)
-	/* Bring the Ethernet PHY out of reset */
-	__raw_writel(0x00000004, 0x400ff040);
-#endif
 	setup_iomux_uart();
 
 	return 0;
