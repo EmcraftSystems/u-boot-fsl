@@ -254,6 +254,11 @@ void __mii_init(void)
 
 	info->phy_addr = mii_discover_phy(dev);
 
+	/* dk: TBD: move to vybrid_som specific code */
+	miiphy_read(dev->name, info->phy_addr, 0x1f, &status);
+	status |= 0x80;
+	miiphy_write(dev->name, info->phy_addr, 0x1f, status);
+
 	while (i < MCFFEC_TOUT_LOOP) {
 		status = 0;
 		i++;
