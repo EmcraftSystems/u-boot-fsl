@@ -168,7 +168,7 @@
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
 
 #define CONFIG_SYS_MEMTEST_START	0x80000000
-#define CONFIG_SYS_MEMTEST_END		0x84C00000
+#define CONFIG_SYS_MEMTEST_END		0x87C00000
 
 #define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
 
@@ -216,7 +216,7 @@
 #define CONFIG_SYS_CLKCTL_CCGR11	0xFFFFFFFF
 
 #define CONFIG_SYS_CLKCTRL_CCR		0x00010005
-#define CONFIG_SYS_CLKCTRL_CCSR		0x0003FF24
+#define CONFIG_SYS_CLKCTRL_CCSR		0x0013FF62
 #define CONFIG_SYS_CLKCTRL_CACRR	0x00000810
 #define CONFIG_SYS_CLKCTRL_CSCMR1	0x000a0000
 #define CONFIG_SYS_CLKCTRL_CSCDR1	0x01000000
@@ -257,5 +257,9 @@
 #undef CONFIG_ENV_IS_IN_MMC
 #define CONFIG_ENV_IS_NOWHERE
 #define CONFIG_SYS_MMC_ENV_DEV		0
+
+#define CONFIG_EXTRA_ENV_SETTINGS                                       \
+        "autoload=yes\0"                                                \
+        "bootcmd=md.l 80000000\0"                                           \
 
 #endif
