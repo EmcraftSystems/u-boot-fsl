@@ -36,7 +36,7 @@
 #define CONFIG_SYS_ICACHE_OFF
 #define CONFIG_SYS_CACHELINE_SIZE	64
 
-#define CONFIG_SYS_UBOOT_IN_GPURAM
+//#define CONFIG_SYS_UBOOT_IN_GPURAM
 
 #include <asm/arch/vybrid-regs.h>
 /*
@@ -44,7 +44,7 @@
  * increase in the final file size: 144260 vs. 109536 Bytes.
  */
 
-#undef CONFIG_CMDLINE_TAG			/* enable passing of ATAGs */
+#define CONFIG_CMDLINE_TAG			/* enable passing of ATAGs */
 #undef CONFIG_SETUP_MEMORY_TAGS
 #undef CONFIG_INITRD_TAG
 
@@ -72,8 +72,8 @@
 
 #define CONFIG_CMD_BDI		/* bdinfo */
 #undef CONFIG_CMD_BOOTD
-#undef CONFIG_CMD_BOOTM
 #define CONFIG_CMD_CONSOLE	/* coninfo */
+#define CONFIG_CMD_ELF
 #define CONFIG_CMD_MEMORY	/* md mm nm mw cp cmp crc base loop mtest */
 #define CONFIG_CMD_MISC
 #define CONFIG_CMD_MII
@@ -86,7 +86,7 @@
 #undef CONFIG_CMD_LOADB		/* loadb */
 #undef CONFIG_CMD_LOADS		/* loads */
 
-#undef CONFIG_MMC
+#define CONFIG_MMC
 #ifdef CONFIG_MMC
 #define CONFIG_FSL_ESDHC
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
@@ -150,7 +150,7 @@
 
 #define CONFIG_BOOTDELAY		3
 #define CONFIG_ETHPRIME			"FEC0"
-#define CONFIG_LOADADDR			0x3f400000	/* loadaddr env var */
+#define CONFIG_LOADADDR			0x80010000	/* loadaddr env var */
 #define CONFIG_ARP_TIMEOUT		200UL
 
 /* Miscellaneous configurable options */
@@ -184,9 +184,9 @@
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		1
-#define PHYS_SDRAM_1_SIZE		(64 * 1024 * 1024)
+#define PHYS_SDRAM_1_SIZE		(128 * 1024 * 1024)
 
-#define CONFIG_SYS_SDRAM_BASE		(0x3f400000)
+#define CONFIG_SYS_SDRAM_BASE		(0x80000000)
 #define CONFIG_SYS_INIT_RAM_ADDR	(IRAM_BASE_ADDR)
 #define CONFIG_SYS_INIT_RAM_SIZE	(IRAM_SIZE)
 
@@ -216,7 +216,8 @@
 #define CONFIG_SYS_CLKCTL_CCGR11	0xFFFFFFFF
 
 #define CONFIG_SYS_CLKCTRL_CCR		0x00010005
-#define CONFIG_SYS_CLKCTRL_CCSR		0x0013FF62
+#define CONFIG_SYS_CLKCTRL_CCSR		0x0013FF62 //PLL2 as a System clock;
+//#define CONFIG_SYS_CLKCTRL_CCSR		0x0013FF64 // PLL1 as a system clock;
 #define CONFIG_SYS_CLKCTRL_CACRR	0x00000810
 #define CONFIG_SYS_CLKCTRL_CSCMR1	0x000a0000
 #define CONFIG_SYS_CLKCTRL_CSCDR1	0x01000000
@@ -254,8 +255,8 @@
 
 #define CONFIG_ENV_OFFSET		(6 * 64 * 1024)
 #define CONFIG_ENV_SIZE			(8 * 1024)
-#undef CONFIG_ENV_IS_IN_MMC
-#define CONFIG_ENV_IS_NOWHERE
+#define CONFIG_ENV_IS_IN_MMC
+//#define CONFIG_ENV_IS_NOWHERE
 #define CONFIG_SYS_MMC_ENV_DEV		0
 
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
