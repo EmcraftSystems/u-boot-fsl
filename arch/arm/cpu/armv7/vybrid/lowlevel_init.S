@@ -127,7 +127,16 @@
 	str r1, [r2, #0xE0]
 	ldr r1, =CONFIG_SYS_ANADIG_SYS_CTRL
 	str r1, [r2, #0x270]
-	/* check for lock */
+
+	/*check for PLL2 lock*/
+wait_PLL2:	ldr r1, [r2, #0x30]
+		and r1, r1, #(1<<31)
+		beq wait_PLL2
+
+	/*check for PLL1 lock*/
+wait_PLL1:	ldr r1, [r2, #0x270]
+		and r1, r1, #(1<<31)
+		beq wait_PLL1
 
 	ldr r1, =CONFIG_SYS_CLKCTRL_CCR
 	str r1, [r0, #CLKCTL_CCR]
