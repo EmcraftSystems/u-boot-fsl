@@ -39,6 +39,7 @@ static table_entry_t imximage_cmds[] = {
 	{CMD_BOOT_FROM,         "BOOT_FROM",            "boot command",	  },
 	{CMD_DATA,              "DATA",                 "Reg Write Data", },
 	{CMD_IMAGE_VERSION,     "IMAGE_VERSION",        "image version",  },
+	{CMD_IMAGE_AUXVERSION,  "IMAGE_AUXVERSION",     "image aux_version",  },
 	{-1,                    "",                     "",	          },
 };
 
@@ -67,6 +68,7 @@ static table_entry_t imximage_versions[] = {
 
 static struct imx_header imximage_header;
 static uint32_t imximage_version;
+static uint32_t imximage_auxversion = 0;
 
 static set_dcd_val_t set_dcd_val;
 static set_dcd_rst_t set_dcd_rst;
@@ -259,7 +261,10 @@ static void set_imx_hdr_v2(struct imx_header *imxhdr, uint32_t dcd_len,
 	/* Set magic number */
 	fhdr_v2->header.tag = IVT_HEADER_TAG; /* 0xD1 */
 	fhdr_v2->header.length = cpu_to_be16(sizeof(flash_header_v2_t));
-	fhdr_v2->header.version = IVT_VERSION; /* 0x40 */
+	if (imximage_auxversion != 1)
+		fhdr_v2->header.version = IVT_VERSION; /* 0x40 */
+	else
+		fhdr_v2->header.version = IVT_VERSION_VYBRID; /* 0x41 */
 
 	fhdr_v2->entry = params->ep;
 	fhdr_v2->reserved1 = fhdr_v2->reserved2 = 0;
@@ -371,6 +376,9 @@ static void parse_cfg_cmd(struct imx_header *imxhdr, int32_t cmd, char *token,
 		}
 		cmd_ver_first = 1;
 		set_hdr_func(imxhdr);
+		break;
+	case CMD_IMAGE_AUXVERSION:
+		imximage_auxversion = get_cfg_value(token, name, lineno);
 		break;
 	case CMD_BOOT_FROM:
 		imxhdr->flash_offset = get_table_entry_id(imximage_bootops,
