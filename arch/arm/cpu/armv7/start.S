@@ -81,7 +81,7 @@ _end_vect:
 
 .globl _TEXT_BASE
 _TEXT_BASE:
-	.word	CONFIG_SYS_TEXT_BASE + 0x40
+	.word	CONFIG_SYS_TEXT_BASE
 
 /*
  * These are defined in the board-specific linker script.
@@ -540,24 +540,3 @@ fiq:
 
 #endif /* CONFIG_USE_IRQ */
 #endif /* CONFIG_SPL_BUILD */
-
-/* From uboot-imx/board/freescale/mx6q_arm2/flash_header.S , with minor changes */
-#if 1
-.section ".text.flasheader", "x"
-//        b       _start
-//        .org    0x400   /* CONFIG_FLASH_HEADER_OFFSET */
-ivt_header:       .word 0x412000D1 /* Tag=0xD1, Len=0x0020, Ver=0x41 */
-app_code_jump_v:  .word _start
-reserv1:          .word 0x0
-dcd_ptr:          .word 0x0
-boot_data_ptr:    .word boot_data
-self_ptr:         .word ivt_header
-app_code_csf:     .word 0
-reserv2:          .word 0x0
-
-boot_data:        .word 0x3f000000
-/* image_len:        .word _end_of_copy  - TEXT_BASE + CONFIG_FLASH_HEADER_OFFSET */
-image_len:        .word 0x20000         /* 128 KBytes for now, TBD: auto-calculation */
-plugin:           .word 0x0
-#endif
-

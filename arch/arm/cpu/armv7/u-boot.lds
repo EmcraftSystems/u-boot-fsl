@@ -34,7 +34,6 @@ SECTIONS
 	. = ALIGN(4);
 	.text	:
 	{
-		arch/arm/cpu/armv7/start.o	(.text.flasheader)
 		arch/arm/cpu/armv7/start.o	(.text)
 		*(.text)
 	}
