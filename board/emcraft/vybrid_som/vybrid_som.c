@@ -30,6 +30,8 @@
 #include <asm/errno.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/arch/crm_regs.h>
+#include <asm/armv7.h>
+#include <asm/pl310.h>
 #include <i2c.h>
 #include <mmc.h>
 #include <fsl_esdhc.h>
@@ -570,6 +572,20 @@ int checkboard(void)
 void enable_caches(void)
 {
         /* Enable D-cache. I-cache is already enabled in start.S */
-//        dcache_enable();
+        dcache_enable();
 }
+
+#if CONFIG_SYS_L2_PL310
+void v7_outer_cache_enable(void)
+{
+	writel(0x132, &pl310->pl310_tag_latency_ctrl);
+	writel(0x132, &pl310->pl310_data_latency_ctrl);
+	writel(readl(&pl310->pl310_prefetch_ctrl) | 0x40800000,
+			&pl310->pl310_prefetch_ctrl);
+	writel(readl(&pl310->pl310_pwr_ctrl) | (1 << 1) | (1 << 0),
+			&pl310->pl310_pwr_ctrl);
+	v7_outer_cache_inval_all();
+	writel(1, &pl310->pl310_ctrl);
+}
+#endif
 #endif

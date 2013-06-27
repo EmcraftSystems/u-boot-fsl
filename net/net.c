@@ -208,7 +208,11 @@ void NcStart(void);
 int nc_input_packet(uchar *pkt, unsigned dest, unsigned src, unsigned len);
 #endif
 
-volatile uchar	PktBuf[(PKTBUFSRX+1) * PKTSIZE_ALIGN + PKTALIGN];
+#ifndef CONFIG_SYS_FEC_BUF_USE_SRAM
+volatile uchar	*PktBuf[(PKTBUFSRX+1) * PKTSIZE_ALIGN + PKTALIGN];
+#else
+volatile uchar	*PktBuf = CONFIG_SYS_FEC_PKT_BUFFER;
+#endif
 
 /* Receive packet */
 volatile uchar *NetRxPackets[PKTBUFSRX];
@@ -240,7 +244,11 @@ uchar	       *NetArpWaitPacketMAC;
 /* THE transmit packet */
 uchar	       *NetArpWaitTxPacket;
 int		NetArpWaitTxPacketSize;
-uchar		NetArpWaitPacketBuf[PKTSIZE_ALIGN + PKTALIGN];
+#ifndef CONFIG_SYS_FEC_BUF_USE_SRAM
+uchar		*NetArpWaitPacketBuf[PKTSIZE_ALIGN + PKTALIGN];
+#else
+uchar		*NetArpWaitPacketBuf = (uchar *)CONFIG_SYS_FEC_ARP_BUFFER;
+#endif
 ulong		NetArpWaitTimerStart;
 int		NetArpWaitTry;
 

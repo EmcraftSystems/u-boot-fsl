@@ -80,6 +80,16 @@ static inline void mmu_setup(void)
 		dram_bank_mmu_setup(i);
 	}
 
+#ifdef CONFIG_VYBRID
+	/* Make QSPI address space cacheable */
+	for (i = 0x20000000 >> 20; i < 0x30000000 >> 20; i++) {
+		page_table[i] = i << 20 | (3 << 10) | 0x1e;
+	}
+	for (i = 0x50000000 >> 20; i < 0x60000000 >> 20; i++) {
+		page_table[i] = i << 20 | (3 << 10) | 0x1e;
+	}
+#endif
+
 	/* Copy the page table address to cp15 */
 	asm volatile("mcr p15, 0, %0, c2, c0, 0"
 		     : : "r" (page_table) : "memory");

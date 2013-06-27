@@ -63,11 +63,17 @@ struct pl310_regs {
 	u32 pad9[1];
 	u32 pl310_clean_inv_line_idx;
 	u32 pl310_clean_inv_way;
+	u32 pad10[472];
+	u32 pl310_prefetch_ctrl;
+	u32 pad11[7];
+	u32 pl310_pwr_ctrl;
 };
 
 void pl310_inval_all(void);
 void pl310_clean_inval_all(void);
 void pl310_inval_range(u32 start, u32 end);
 void pl310_clean_inval_range(u32 start, u32 end);
+
+extern struct pl310_regs *const pl310;
 
 #endif

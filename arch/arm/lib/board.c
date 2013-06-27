@@ -310,7 +310,11 @@ void board_init_f(ulong bootflag)
 	gd->ram_size -= CONFIG_SYS_MEM_TOP_HIDE;
 #endif
 
+#ifndef CONFIG_SYS_UBOOT_IN_GPURAM
 	addr = CONFIG_SYS_SDRAM_BASE + gd->ram_size;
+#else
+	addr = GRAM_BASE_ADDR + GRAM_SIZE;
+#endif
 
 #ifdef CONFIG_LOGBUFFER
 #ifndef CONFIG_ALT_LB_ADDR

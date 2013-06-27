@@ -31,6 +31,9 @@
 
 #define IRAM_SIZE		0x00040000	/* 256 KB */
 
+#define GRAM_BASE_ADDR		0x3F400000	/* graphics ram */
+#define GRAM_SIZE		0x00080000	/* 512 KB */
+
 /* AIPS 0 */
 #define MSCM_BASE_ADDR		(AIPS0_BASE_ADDR + 0x00001000)
 #define CA5SCU_BASE_ADDR	(AIPS0_BASE_ADDR + 0x00002000)

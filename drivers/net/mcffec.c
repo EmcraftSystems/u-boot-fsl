@@ -69,7 +69,6 @@ struct fec_info_s fec_info[] = {
 	 0,			/* TX BD */
 	 0,			/* rx Index */
 	 0,			/* tx Index */
-	 0,			/* tx buffer */
 	 0,			/* initialized flag */
 	 (struct fec_info_s *)-1,
 	 },
@@ -92,7 +91,6 @@ struct fec_info_s fec_info[] = {
 	 0,			/* TX BD */
 	 0,			/* rx Index */
 	 0,			/* tx Index */
-	 0,			/* tx buffer */
 	 0,			/* initialized flag */
 	 (struct fec_info_s *)-1,
 	 }
@@ -510,7 +508,6 @@ int fec_init(struct eth_device *dev, bd_t * bd)
 	for (i = 0; i < TX_BUF_CNT; i++) {
 		info->txbd[i].cbd_sc = BD_ENET_TX_LAST | BD_ENET_TX_TC;
 		info->txbd[i].cbd_datlen = 0;	/* Reset */
-		info->txbd[i].cbd_bufaddr = (uint) (&info->txbuf[0]);
 	}
 	info->txbd[TX_BUF_CNT - 1].cbd_sc |= BD_ENET_TX_WRAP;
 
@@ -558,16 +555,12 @@ void fec_halt(struct eth_device *dev)
 	info->rxIdx = info->txIdx = 0;
 	memset(info->rxbd, 0, PKTBUFSRX * sizeof(cbd_t));
 	memset(info->txbd, 0, TX_BUF_CNT * sizeof(cbd_t));
-	memset(info->txbuf, 0, DBUF_LENGTH);
 }
 
 int mcffec_initialize(bd_t * bis)
 {
 	struct eth_device *dev;
 	int i;
-#ifdef CONFIG_SYS_FEC_BUF_USE_SRAM
-	u32 tmp = CONFIG_SYS_INIT_RAM_ADDR + 0x1000;
-#endif
 
 	for (i = 0; i < sizeof(fec_info) / sizeof(fec_info[0]); i++) {
 
@@ -589,16 +582,9 @@ int mcffec_initialize(bd_t * bis)
 
 		/* setup Receive and Transmit buffer descriptor */
 #ifdef CONFIG_SYS_FEC_BUF_USE_SRAM
-		fec_info[i].rxbd = (cbd_t *)((u32)fec_info[i].rxbd + tmp);
-		tmp = (u32)fec_info[i].rxbd;
-		fec_info[i].txbd =
-		    (cbd_t *)((u32)fec_info[i].txbd + tmp +
-		    (PKTBUFSRX * sizeof(cbd_t)));
-		tmp = (u32)fec_info[i].txbd;
-		fec_info[i].txbuf =
-		    (char *)((u32)fec_info[i].txbuf + tmp +
-		    (CONFIG_SYS_TX_ETH_BUFFER * sizeof(cbd_t)));
-		tmp = (u32)fec_info[i].txbuf;
+		fec_info[i].rxbd = (void *)CONFIG_SYS_FEC_DESC_BUFFER;
+		fec_info[i].txbd = (void *)fec_info[i].rxbd +
+			PKTBUFSRX * sizeof(cbd_t);
 #else
 		fec_info[i].rxbd =
 		    (cbd_t *) memalign(CONFIG_SYS_CACHELINE_SIZE,
@@ -606,8 +592,6 @@ int mcffec_initialize(bd_t * bis)
 		fec_info[i].txbd =
 		    (cbd_t *) memalign(CONFIG_SYS_CACHELINE_SIZE,
 				       (TX_BUF_CNT * sizeof(cbd_t)));
-		fec_info[i].txbuf =
-		    (char *)memalign(CONFIG_SYS_CACHELINE_SIZE, DBUF_LENGTH);
 #endif
 
 #ifdef ET_DEBUG
@@ -630,7 +614,6 @@ int mcffec_initialize(bd_t * bis)
 
 	/* default speed */
 	bis->bi_ethspeed = 10;
-	/*Ugly workaround for FEC to work in kernel, TODO Jason*/
-	mii_init();
+
 	return 0;
 }

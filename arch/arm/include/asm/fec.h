@@ -104,7 +104,6 @@ struct fec_info_s {
 	cbd_t *txbd;		/* Tx BD */
 	uint rxIdx;
 	uint txIdx;
-	char *txbuf;
 	int initialized;
 	struct fec_info_s *next;
 };

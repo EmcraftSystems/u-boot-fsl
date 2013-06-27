@@ -33,10 +33,17 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
 
-#define CONFIG_SYS_ICACHE_OFF
-#define CONFIG_SYS_CACHELINE_SIZE	64
+/* #define CONFIG_SYS_ICACHE_OFF */
+/* #define CONFIG_SYS_DCACHE_OFF */
+/* #define CONFIG_SYS_ARM_CACHE_WRITETHROUGH */
+/* #define CONFIG_SYS_L2CACHE_OFF */
+#ifndef CONFIG_SYS_L2CACHE_OFF
+#define CONFIG_SYS_L2_PL310		1
+#define CONFIG_SYS_PL310_BASE		0x40006000
+#endif
+#define CONFIG_SYS_CACHELINE_SIZE	32
 
-//#define CONFIG_SYS_UBOOT_IN_GPURAM
+/* #define CONFIG_SYS_UBOOT_IN_GPURAM */
 
 #include <asm/arch/vybrid-regs.h>
 /*
@@ -80,6 +87,7 @@
 #define CONFIG_CMD_NET
 #undef CONFIG_CMD_NFS		/* NFS support			*/
 #define CONFIG_CMD_PING
+#define CONFIG_CMD_QSF
 
 #undef CONFIG_CMD_IMI		/* iminfo */
 #undef CONFIG_CMD_IMLS
@@ -144,13 +152,20 @@
 #			define CONFIG_SYS_FAULT_ECHO_LINK_DOWN
 #		endif
 #	endif			/* CONFIG_SYS_DISCOVER_PHY */
+#	define CONFIG_SYS_FEC_BUF_USE_SRAM
+#	define CONFIG_SYS_FEC_DESC_BUFFER \
+		(CONFIG_SYS_INIT_RAM_ADDR + 0x1000)
+#	define CONFIG_SYS_FEC_ARP_BUFFER \
+		(CONFIG_SYS_INIT_RAM_ADDR + 0x2000)
+#	define CONFIG_SYS_FEC_PKT_BUFFER \
+		(CONFIG_SYS_INIT_RAM_ADDR + 0x3000)
 #endif
 
 #undef CONFIG_CMD_DATE
 
 #define CONFIG_BOOTDELAY		3
 #define CONFIG_ETHPRIME			"FEC0"
-#define CONFIG_LOADADDR			0x80010000	/* loadaddr env var */
+#define CONFIG_LOADADDR			0x80007fc0	/* loadaddr env var */
 #define CONFIG_ARP_TIMEOUT		200UL
 
 /* Miscellaneous configurable options */
@@ -255,9 +270,12 @@
 
 #define CONFIG_ENV_OFFSET		(6 * 64 * 1024)
 #define CONFIG_ENV_SIZE			(8 * 1024)
-#define CONFIG_ENV_IS_IN_MMC
-//#define CONFIG_ENV_IS_NOWHERE
+/* #define CONFIG_ENV_IS_IN_MMC */
+#ifdef CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_DEV		0
+#else
+#define CONFIG_ENV_IS_NOWHERE
+#endif
 
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
         "autoload=yes\0"                                                \
