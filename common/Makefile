@@ -140,6 +140,7 @@ COBJS-$(CONFIG_CMD_REGINFO) += cmd_reginfo.o
 COBJS-$(CONFIG_CMD_REISER) += cmd_reiser.o
 COBJS-$(CONFIG_CMD_SATA) += cmd_sata.o
 COBJS-$(CONFIG_CMD_SF) += cmd_sf.o
+COBJS-$(CONFIG_CMD_QSF) += cmd_qsf.o
 COBJS-$(CONFIG_CMD_SCSI) += cmd_scsi.o
 COBJS-$(CONFIG_CMD_SHA1SUM) += cmd_sha1sum.o
 COBJS-$(CONFIG_CMD_SETEXPR) += cmd_setexpr.o
