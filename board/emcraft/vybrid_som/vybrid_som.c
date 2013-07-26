@@ -36,6 +36,7 @@
 #include <mmc.h>
 #include <fsl_esdhc.h>
 #include <usb/ehci-fsl.h>
+#include "ocotp_ctrl_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -542,6 +543,74 @@ int board_early_init_f(void)
 
 	return 0;
 }
+
+#ifdef CONFIG_CMD_SET_QSPI_BOOT
+int do_set_qspi_boot(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	typedef struct fuse_struct {
+		char bankno;
+		char word;
+		char bytepos;
+		char value;
+	} fusedata_t, *pfuse_t;
+#if 1
+	// quadspi
+		fusedata_t fuse[1] = {
+			{ 0, 6, 0, 0x10 },
+			};
+#else
+	// sdhc
+		fusedata_t fuse[3] = {
+			0, 5, 1, 0x28,	/* 4-bit, esdhc 1 */
+			0, 5, 0, 0x62,	/* sd card, normal mode */
+			0, 6, 0, 0x10,
+//			0, 5, 2, 0x40
+			};
+#endif
+
+		int sz, temp;
+	char bank_num=0, word_num=0, byte_pos=0, fuse_val=0;
+	int i;
+
+		sz = (sizeof(fuse) / sizeof(fusedata_t));
+		// manual provide value
+		for (i = 0; i < sz; i++) {
+/*			printf("bank %d word %d bytepos %d value 0x%x\n",
+			       fuse[i].bankno, fuse[i].word,
+			       fuse[i].bytepos, fuse[i].value);*/
+
+			bank_num = fuse[i].bankno;
+			word_num = fuse[i].word;
+			byte_pos = fuse[i].bytepos;
+			fuse_val = fuse[i].value;
+
+#if 1
+			program_fuse_word((bank_num*8+word_num),(unsigned int)fuse_val<<(byte_pos*8));
+			wait4Busy();
+			read_fuse_word(bank_num*8+word_num);
+			wait4Busy();
+		
+			if(((*(unsigned int *)HW_OCOTP_READ_FUSE_DATA_ADDR)&(unsigned int)fuse_val<<(byte_pos*8)) ^ ((unsigned int)fuse_val<<(byte_pos*8)) == 0x0)
+				;  //no use. Just to remove if
+			else
+				printf("Successful programming of fuse bank number 0x%x, word_num 0x%x, at byte position 0x%x with fuse data 0x%x\n",bank_num,word_num,byte_pos,fuse_val);
+		
+			//Reload cache 
+			HW_OCOTP_CTRL_WR(HW_OCOTP_CTRL_RD() | BM_OCOTP_CTRL_RELOAD_SHADOWS);
+			//wait for busy
+			wait4Busy();
+#endif
+		}
+		
+
+}
+
+U_BOOT_CMD(
+	set_qspi_boot,	5,		0,	do_set_qspi_boot,
+	"sets eFuses of Vybrid to boot from QSPI",
+	""
+);
+#endif
 
 int board_init(void)
 {
