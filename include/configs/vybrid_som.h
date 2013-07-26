@@ -268,17 +268,26 @@
 /* FLASH and environment organization */
 #define CONFIG_SYS_NO_FLASH
 
-#define CONFIG_ENV_OFFSET		(6 * 64 * 1024)
-#define CONFIG_ENV_SIZE			(8 * 1024)
-/* #define CONFIG_ENV_IS_IN_MMC */
-#ifdef CONFIG_ENV_IS_IN_MMC
-#define CONFIG_SYS_MMC_ENV_DEV		0
-#else
-#define CONFIG_ENV_IS_NOWHERE
-#endif
+#define CONFIG_ENV_IS_IN_QSPI_FLASH
+#define CONFIG_ENV_OFFSET		(0x30000)
+#define CONFIG_ENV_SIZE			(0x10000)
 
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
         "autoload=yes\0"                                                \
-        "bootcmd=md.l 80000000\0"                                           \
+        "addip=setenv bootargs ${bootargs} "                    \
+                "ip=${ipaddr}:${serverip}:${gatewayip}:"        \
+                        "${netmask}:${hostname}:eth0:off\0"     \
+        "ethaddr=C0:B1:3C:77:88:AB\0"                           \
+        "ipaddr=172.17.44.46\0"                                  \
+        "serverip=172.17.0.1\0"                                 \
+        "image=dk/uImage\0"                                    \
+	"netboot=tftp ${image};run addip;bootm\0"		\
+	"bootcmd=qspi probe 1;cp.b 20040000 ${loadaddr} 600000;run addip;bootm\0"               \
+	"bootargs=mem=128M console=ttymxc0,115200\0"		\
+	"verify=no\0" \
+	"bootdelay=3\0" \
+	"update=tftp ${image};qspi probe 1;qspi erase 40000 +${filesize};qspi write ${loadaddr} 40000 ${filesize}\0" \
+	"uboot_image=u-boot.qspi\0" \
+	"uboot_update=tftp ${uboot_image};qspi probe 1;qspi erase 0 +${filesize};qspi write ${loadaddr} 0 ${filesize}\0"
 
 #endif
