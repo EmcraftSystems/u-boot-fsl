@@ -11,7 +11,15 @@
 #include <asm/io.h>
 #include <asm/arch/iomux.h>
 
-static struct spi_flash *flash;
+#define RX_BUFFER_SIZE (32 << 2)
+#define QSPI_IPCR_SEQID_SHIFT	(24)
+#define QSPI_MCR_CLR_TXF_SHIFT	(11)
+#define QSPI_MCR_CLR_TXF_MASK	((1) << (QSPI_MCR_CLR_TXF_SHIFT))
+
+#define QSPI_MCR_CLR_RXF_SHIFT	(10)
+#define QSPI_MCR_CLR_RXF_MASK	((1) << (QSPI_MCR_CLR_RXF_SHIFT))
+
+static struct spi_flash *flash = NULL;
 static int swap_data = 0;
 
 struct QSPI_tag { 
@@ -449,17 +457,17 @@ void setup_iomux_quadspi(void)
 {
 	__raw_writel(0x001031C2, IOMUXC_PAD_079);	/* SCK */
 	__raw_writel(0x001031FE, IOMUXC_PAD_080);	/* CS0 */
-	__raw_writel(0x001031C3, IOMUXC_PAD_081);	/* D3 */
-	__raw_writel(0x001031C3, IOMUXC_PAD_082);	/* D2 */
-	__raw_writel(0x001031C3, IOMUXC_PAD_083);	/* D1 */
-	__raw_writel(0x001031C3, IOMUXC_PAD_084);	/* D0 */
+	__raw_writel(0x001030C3, IOMUXC_PAD_081);	/* D3 */
+	__raw_writel(0x001030C3, IOMUXC_PAD_082);	/* D2 */
+	__raw_writel(0x001030C3, IOMUXC_PAD_083);	/* D1 */
+	__raw_writel(0x001030C3, IOMUXC_PAD_084);	/* D0 */
 
 	__raw_writel(0x001031C2, IOMUXC_PAD_086);	/* SCK */
 	__raw_writel(0x001031FE, IOMUXC_PAD_087);	/* CS0 */
-	__raw_writel(0x001031C3, IOMUXC_PAD_088);	/* D3 */
-	__raw_writel(0x001031C3, IOMUXC_PAD_089);	/* D2 */
-	__raw_writel(0x001031C3, IOMUXC_PAD_090);	/* D1 */
-	__raw_writel(0x001031C3, IOMUXC_PAD_091);	/* D0 */
+	__raw_writel(0x001030C3, IOMUXC_PAD_088);	/* D3 */
+	__raw_writel(0x001030C3, IOMUXC_PAD_089);	/* D2 */
+	__raw_writel(0x001030C3, IOMUXC_PAD_090);	/* D1 */
+	__raw_writel(0x001030C3, IOMUXC_PAD_091);	/* D0 */
 }
 
 void quadspi_setup_clocks(void)
@@ -469,7 +477,7 @@ void quadspi_setup_clocks(void)
 	temp = __raw_readl(0x4006b010) | 0x03C00000;
 	__raw_writel(temp, 0x4006b010);
 
-	temp = __raw_readl(0x4006b01C) | 0x1F1F;	// cdsr3
+	temp = __raw_readl(0x4006b01C) | 0x1F1D;	// cdsr3
 	__raw_writel(temp, 0x4006b01C);
 }
 
@@ -482,8 +490,8 @@ void quadspi_config_spi0(void)
 	QSPI0.BUF1IND.R = 0x100;
 	QSPI0.BUF2IND.R = 0x0;
 
-	QSPI0.BUF0CR.R = 5;
-	QSPI0.BUF1CR.R = 0x02;
+	QSPI0.BUF0CR.R = 0x005;
+	QSPI0.BUF1CR.R = 0x002;
 	QSPI0.BUF3CR.R = 0x80000000;
 
 	QSPI0.SFA1AD.R = 0x21000000;	// top address of FA1 
@@ -622,26 +630,10 @@ void quadspi_setuplookuptable(void)
 
 	// Quad DDR read
 	lkuptbl = 44;
-	QSPI0.LUT[lkuptbl].B.INSTR0 = CMD;
-	QSPI0.LUT[lkuptbl].B.PAD0 = 0;
-	QSPI0.LUT[lkuptbl].B.OPRND0 = 0xED;
-	QSPI0.LUT[lkuptbl].B.INSTR1 = ADDR_DDR;
-	QSPI0.LUT[lkuptbl].B.PAD1 = 2;
-	QSPI0.LUT[lkuptbl++].B.OPRND1 = 24;
-
-	QSPI0.LUT[lkuptbl].B.INSTR0 = MODE_DDR;
-	QSPI0.LUT[lkuptbl].B.PAD0 = 2;
-	QSPI0.LUT[lkuptbl].B.OPRND0 = 0xA5;
-	QSPI0.LUT[lkuptbl].B.INSTR1 = DUMMY;
-	QSPI0.LUT[lkuptbl].B.PAD1 = 0;
-	QSPI0.LUT[lkuptbl++].B.OPRND1 = 6;
-
-	QSPI0.LUT[lkuptbl].B.INSTR0 = READ_DDR;
-	QSPI0.LUT[lkuptbl].B.PAD0 = 2;
-	QSPI0.LUT[lkuptbl].B.OPRND0 = 0x80;
-	QSPI0.LUT[lkuptbl].B.INSTR1 = JMP_ON_CS;
-	QSPI0.LUT[lkuptbl].B.PAD1 = 0;
-	QSPI0.LUT[lkuptbl].B.OPRND1 = 1;
+	QSPI0.LUT[lkuptbl++].R = 0x2a1804ed;
+	QSPI0.LUT[lkuptbl++].R = 0x0c062eff;
+	QSPI0.LUT[lkuptbl++].R = 0x3a80;
+	QSPI0.LUT[lkuptbl].R = 0;
 
 	// readID
 	lkuptbl = 48;
@@ -727,9 +719,8 @@ int quadspi_init(void)
 
 	// set mdis bit 
 	QSPI0.MCR.B.MDIS = 1;
-	// for 33MHz clock 
+	QSPI0.MCR.B.DDR_EN = 1;
 	QSPI0.SMPR.R = SMBR;
-
 	// clear mdis bit 
 	QSPI0.MCR.B.MDIS = 0;
 
@@ -745,11 +736,22 @@ int quadspi_init(void)
 
 	QSPI0.SFAR.R = FLASH_BASE_ADR;
 
+	QSPI0.SFA1AD.R = (1 << 24) | 0x20000000;
+	QSPI0.SFA2AD.R = (1 << 24) | 0x20000000;
+	QSPI0.SFB1AD.R = (1 << 25) | 0x20000000;
+	QSPI0.SFB2AD.R = (1 << 25) | 0x20000000;
+
 	return 0;
 }
 
 void erase_sector(u32 flashbase)
 {
+	unsigned long mcr_reg;
+
+	mcr_reg = QSPI0.MCR.R;
+	QSPI0.MCR.R = QSPI_MCR_CLR_RXF_MASK | QSPI_MCR_CLR_TXF_MASK | 0xf0080;
+	QSPI0.RBCT.R = 0x100;
+
 	QSPI0.SFAR.R = flashbase;;
 
 	//write enable 
@@ -761,10 +763,18 @@ void erase_sector(u32 flashbase)
 	while (QSPI0.SR.B.BUSY) ;
 
 	wait_while_flash_busy();
+
+	QSPI0.MCR.R = mcr_reg;
 }
 
 void erase_flash(u32 flashbase)
 {
+	unsigned long mcr_reg;
+
+	mcr_reg = QSPI0.MCR.R;
+	QSPI0.MCR.R = QSPI_MCR_CLR_RXF_MASK | QSPI_MCR_CLR_TXF_MASK | 0xf0080;
+	QSPI0.RBCT.R = 0x100;
+
 	QSPI0.SFAR.R = flashbase;;
 
 	//write enable 
@@ -776,29 +786,27 @@ void erase_flash(u32 flashbase)
 	while (QSPI0.SR.B.BUSY) ;
 
 	wait_while_flash_busy();
+
+	QSPI0.MCR.R = mcr_reg;
 }
 
-static int qspi_flash_write(struct spi_flash *flash, u32 offset, size_t len, void *buf)
+int qspi_flash_write(u32 offset, size_t len, void *buf)
 {
-	unsigned int *start_address = (unsigned int *)buf;
-	unsigned int *end_address = (unsigned int *)(buf + len);
+	unsigned int *start_address = (unsigned int *)buf, tmp;
+	unsigned int *end_address = (unsigned int *)(buf + roundup(len, 256));
 	unsigned int *page_address = start_address;
 	unsigned int *flash_address = (unsigned int *)(0x20000000 + offset);
 	int page_size = flash->page_size;
 	unsigned int *current_address = start_address;
+	unsigned long mcr_reg;
 	int i;
 
-	if (swap_data) {
-		for (i = 0; i < (len >> 2); i++) {
-			*start_address = ___swab32(*start_address);
-			start_address++;
-		}
-		start_address = (unsigned int *)buf;
-	}
+	mcr_reg = QSPI0.MCR.R;
+	QSPI0.MCR.R = QSPI_MCR_CLR_RXF_MASK | QSPI_MCR_CLR_TXF_MASK | 0xf0080;
+	QSPI0.RBCT.R = 0x100;
 
 	// 1024 offset for spansion
 	QSPI0.SFAR.R = (unsigned int)flash_address;
-	QSPI0.MCR.B.CLR_TXF = 1;
 
 	page_address = start_address + (page_size >> 2);
 
@@ -811,12 +819,22 @@ static int qspi_flash_write(struct spi_flash *flash, u32 offset, size_t len, voi
 		while (current_address < page_address) {
 			// fill tx fifo (64 bytes)
 			for (i = 0; i < 16; i++)
-				QSPI0.TBDR.R = *current_address++;
+				if (swap_data) {
+					tmp = *current_address++;
+					QSPI0.TBDR.R = ___swab32(tmp);
+				}
+				else
+					QSPI0.TBDR.R = *current_address++;
 
 			QSPI0.IPCR.R = (CMD_PAGEPROG << 24) | page_size;	//page program 256bytes 
 			for (i = 0; i < 48; i++) {
 				while (QSPI0.SR.B.TXFULL) ;
-				QSPI0.TBDR.R = *current_address++;
+				if (swap_data) {
+					tmp = *current_address++;
+					QSPI0.TBDR.R = ___swab32(tmp);
+				}
+				else
+					QSPI0.TBDR.R = *current_address++;
 			}
 			while (QSPI0.SR.B.BUSY) ;
 			wait_while_flash_busy();
@@ -826,6 +844,49 @@ static int qspi_flash_write(struct spi_flash *flash, u32 offset, size_t len, voi
 		flash_address += (page_size >> 2);
 		QSPI0.SFAR.R = (unsigned int)flash_address;
 	}
+
+	QSPI0.MCR.R = mcr_reg;
+
+	invalidate_dcache_range(0x20000000 + offset, 0x20000000 + offset + roundup(len, 256));
+
+	return 0;
+}
+
+int qspi_flash_read(u32 offset, size_t len, void *buf)
+{
+	int size = 0, tmp, i;
+	unsigned long *rxbuf = buf, mcr_reg;
+	
+	mcr_reg = QSPI0.MCR.R;
+	QSPI0.MCR.R = QSPI_MCR_CLR_RXF_MASK | QSPI_MCR_CLR_TXF_MASK | 0xf0080;
+	QSPI0.RBCT.R = 0x100;
+
+	offset += 0x20000000;
+
+	while (len > 0) {
+		QSPI0.SFAR.R = offset;
+		size = (len > RX_BUFFER_SIZE) ?
+			RX_BUFFER_SIZE : len;
+		QSPI0.IPCR.R = (0xb << QSPI_IPCR_SEQID_SHIFT) | size;
+		while (QSPI0.SR.B.BUSY);
+
+		offset += size;
+		len -= size;
+
+		i = 0;
+		while ((RX_BUFFER_SIZE >= size) && (size > 0)) {
+			tmp = QSPI0.RBDR[i].R;
+			*rxbuf = ___swab32(tmp);
+			rxbuf++;
+			size -= 4;
+			i++;
+		}
+		QSPI0.MCR.B.CLR_RXF = 1;
+	}
+
+	QSPI0.MCR.R = mcr_reg;
+
+	return 0;
 }
 
 static const char *qspi_flash_update_block(struct spi_flash *flash, u32 offset,
@@ -925,20 +986,32 @@ static int sf_parse_len_arg(char *arg, ulong *len)
 	return 1;
 }
 
-static int do_qspi_flash_probe(int argc, char * const argv[])
+int qspi_flash_probe(int swap)
 {
-	char *endp;
+	static int probed = 0;
 
-	swap_data = simple_strtoul(argv[1], &endp, 16);
+	swap_data = swap;
+
+	if (probed)
+		return 0;
 
 	quadspi_init();
 
+	flash = malloc(100);
 	flash->name = "Spansion";
 	flash->size = 0x1000000;
 	flash->page_size = 0x100;
 	flash->sector_size = 0x10000;
 
+	probed = 1;
+
 	return 0;
+}
+
+int do_qspi_flash_probe(int argc, char * const argv[])
+{
+	char *endp;
+	return qspi_flash_probe(simple_strtoul(argv[1], &endp, 16));
 }
 
 static int do_qspi_flash_read_write(int argc, char * const argv[])
@@ -970,9 +1043,11 @@ static int do_qspi_flash_read_write(int argc, char * const argv[])
 	}
 
 	if (strcmp(argv[0], "write") == 0)
-		ret = qspi_flash_write(flash, offset, len, buf);
+		ret = qspi_flash_write(offset, len, buf);
 	else if (strcmp(argv[0], "update") == 0)
 		ret = qspi_flash_update(flash, offset, len, buf);
+	else
+		ret = qspi_flash_read(offset, len, buf);
 
 	unmap_physmem(buf, len);
 
@@ -980,6 +1055,27 @@ static int do_qspi_flash_read_write(int argc, char * const argv[])
 		printf("SPI flash %s failed\n", argv[0]);
 		return 1;
 	}
+
+	return 0;
+}
+
+int qspi_flash_erase(unsigned long offset, unsigned int len)
+{
+	if ((offset == 0) && (len == flash->size)) {
+		erase_flash(0x20000000);
+	}
+	else {
+		u32 base = 0x20000000 + offset;
+		u32 i = len;
+
+		while (i > 0) {
+			erase_sector(base);
+			base += flash->sector_size;
+			i -= flash->sector_size;
+		}
+	}
+
+	invalidate_dcache_range(0x20000000 + offset, 0x20000000 + offset + len);
 
 	return 0;
 }
@@ -1002,22 +1098,7 @@ static int do_qspi_flash_erase(int argc, char * const argv[])
 	if (ret != 1)
 		return -1;
 
-	if ((offset == 0) && (len == flash->size)) {
-		erase_flash(0x20000000);
-	}
-	else {
-		u32 base = 0x20000000;
-		u32 i = len;
-
-		while (i > 0) {
-			base += offset;
-			erase_sector(base);
-			base += flash->sector_size;
-			i -= flash->sector_size;
-		}
-	}
-
-	return 0;
+	return qspi_flash_erase(offset, len);
 }
 
 static int do_qspi_flash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
@@ -1032,10 +1113,6 @@ static int do_qspi_flash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 	cmd = argv[1];
 	--argc;
 	++argv;
-
-	if (!flash) {
-		flash = malloc(100);
-	}
 
 	if (strcmp(cmd, "probe") == 0) {
 		ret = do_qspi_flash_probe(argc, argv);
