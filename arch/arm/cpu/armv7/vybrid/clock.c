@@ -109,11 +109,16 @@ static uint32_t decode_pll(struct mxc_pll_reg *pll, uint32_t infreq)
 /* Get mcu main rate */
 u32 get_mcu_main_clk(void)
 {
+#if 0
 	u32 reg, freq;
 
 	reg = __raw_readl(&ccm->cacrr) & 7;
 	freq = decode_pll(vybridc_plls[PLL1_CLOCK], CONFIG_SYS_VYBRID_HCLK);
 	return freq / (reg + 1);
+#else
+	/* FIXME: calculate the CA5 frequency rather than hard-coding */
+	return 396000000;
+#endif
 }
 
 /* Get the rate of peripheral's root clock. */
