@@ -283,7 +283,7 @@
         "image=dk/uImage\0"                                    \
 	"netboot=tftp ${image};run addip;bootm\0"		\
 	"bootcmd=qspi probe 1;cp.b 20040000 ${loadaddr} 600000;run addip;bootm\0"               \
-	"bootargs=mem=128M console=ttymxc0,115200\0"		\
+	"bootargs=mem=256M console=ttymxc0,115200\0"		\
 	"verify=no\0" \
 	"bootdelay=3\0" \
 	"update=tftp ${image};qspi probe 1;qspi erase 40000 +${filesize};qspi write ${loadaddr} 40000 ${filesize}\0" \

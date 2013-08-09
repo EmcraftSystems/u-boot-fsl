@@ -302,7 +302,7 @@ unsigned long ddr_ctrl_init(void)
 	//
 //	__raw_writel(0x0a020301, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
 
-	__raw_writel(0x0a010300, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
+	__raw_writel(0x0a010200, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
 
 	__raw_writel(0x0101ffff, DDR_CR074);	// bank_split, addr_cmp_en, cmd/age cnt
 	__raw_writel(0x01010101, DDR_CR075);	// rw same pg, rw same en, pri en, plen
