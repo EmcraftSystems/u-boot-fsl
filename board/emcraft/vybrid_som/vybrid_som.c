@@ -196,7 +196,13 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x03000200, DDR_CR023);	// bstlen, tmrr - lpddr2, tdll
 	__raw_writel(0x00000006, DDR_CR024);	// addr_mirror, reg_dimm, trp_ab
 	__raw_writel(0x00010000, DDR_CR025);	// tref_enable, auto_refresh, arefresh
+#if PHYS_SDRAM_1_SIZE == (128 * 1024 * 1024)
 	__raw_writel(0x0c28002c, DDR_CR026);	// tref, trfc
+#elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
+	__raw_writel(0x0c280040, DDR_CR026);	// tref, trfc
+#else
+#error "Unsupported memory size specified"
+#endif
 	__raw_writel(0x00000005, DDR_CR028);	// tref_interval fixed at 5
 	__raw_writel(0x00000003, DDR_CR029);	// tpdex_f0
 
@@ -302,7 +308,13 @@ unsigned long ddr_ctrl_init(void)
 	//
 //	__raw_writel(0x0a020301, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
 
+#if PHYS_SDRAM_1_SIZE == (128 * 1024 * 1024)
+	__raw_writel(0x0a010300, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
+#elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
 	__raw_writel(0x0a010200, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
+#else
+#error "Unsupported memory size specified"
+#endif
 
 	__raw_writel(0x0101ffff, DDR_CR074);	// bank_split, addr_cmp_en, cmd/age cnt
 	__raw_writel(0x01010101, DDR_CR075);	// rw same pg, rw same en, pri en, plen
