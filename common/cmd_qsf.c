@@ -455,15 +455,15 @@ void split(unsigned long src, unsigned long dest1, unsigned long dest2,
 
 void setup_iomux_quadspi(void)
 {
-	__raw_writel(0x001031C2, IOMUXC_PAD_079);	/* SCK */
-	__raw_writel(0x001031FE, IOMUXC_PAD_080);	/* CS0 */
+	__raw_writel(0x001030C2, IOMUXC_PAD_079);	/* SCK */
+	__raw_writel(0x001030FE, IOMUXC_PAD_080);	/* CS0 */
 	__raw_writel(0x001030C3, IOMUXC_PAD_081);	/* D3 */
 	__raw_writel(0x001030C3, IOMUXC_PAD_082);	/* D2 */
 	__raw_writel(0x001030C3, IOMUXC_PAD_083);	/* D1 */
 	__raw_writel(0x001030C3, IOMUXC_PAD_084);	/* D0 */
 
-	__raw_writel(0x001031C2, IOMUXC_PAD_086);	/* SCK */
-	__raw_writel(0x001031FE, IOMUXC_PAD_087);	/* CS0 */
+	__raw_writel(0x001030C2, IOMUXC_PAD_086);	/* SCK */
+	__raw_writel(0x001030FE, IOMUXC_PAD_087);	/* CS0 */
 	__raw_writel(0x001030C3, IOMUXC_PAD_088);	/* D3 */
 	__raw_writel(0x001030C3, IOMUXC_PAD_089);	/* D2 */
 	__raw_writel(0x001030C3, IOMUXC_PAD_090);	/* D1 */
