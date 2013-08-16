@@ -292,7 +292,6 @@
 	"verify=no\0" \
 	"bootdelay=3\0" \
 	"update=tftp ${image};qspi probe 1;qspi erase 40000 +${filesize};qspi write ${loadaddr} 40000 ${filesize}\0" \
-	"uboot_image=u-boot.qspi\0" \
-	"uboot_update=tftp ${uboot_image};qspi probe 1;qspi erase 0 +${filesize};qspi write ${loadaddr} 0 ${filesize}\0"
+	"uboot_image=u-boot.qspi\0"
 
 #endif
