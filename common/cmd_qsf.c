@@ -999,11 +999,13 @@ int qspi_flash_probe(int swap)
 
 	flash = malloc(100);
 	flash->name = "Spansion";
-	flash->size = 0x1000000;
+	flash->size = 0x2000000;
 	flash->page_size = 0x100;
 	flash->sector_size = 0x10000;
 
 	probed = 1;
+
+	invalidate_dcache_range(0x20000000, 0x20000000 + flash->size);
 
 	return 0;
 }
@@ -1063,10 +1065,11 @@ int qspi_flash_erase(unsigned long offset, unsigned int len)
 {
 	if ((offset == 0) && (len == flash->size)) {
 		erase_flash(0x20000000);
+		erase_flash(0x21000000);
 	}
 	else {
 		u32 base = 0x20000000 + offset;
-		u32 i = len;
+		s32 i = len;
 
 		while (i > 0) {
 			erase_sector(base);

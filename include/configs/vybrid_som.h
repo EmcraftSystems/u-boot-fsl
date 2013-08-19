@@ -206,8 +206,10 @@
 #define CONFIG_SYS_MEMTEST_START	0x80000000
 #if PHYS_SDRAM_1_SIZE == (128 * 1024 * 1024)
 #define CONFIG_SYS_MEMTEST_END		0x87C00000
+#define KERNEL_MEM_INFO			"128M"
 #elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
 #define CONFIG_SYS_MEMTEST_END		0x8FC00000
+#define KERNEL_MEM_INFO			"256M"
 #else
 #error "Unsupported memory size specified"
 #endif
@@ -288,11 +290,11 @@
         "serverip=172.17.0.1\0"                                 \
         "image=uImage\0"                                    \
 	"netboot=tftp ${image};run addip;bootm\0"		\
-	"bootcmd=qspi probe 1;cp.b 20040000 ${loadaddr} 600000;run addip;bootm\0"               \
-	"bootargs=mem=256M console=ttymxc0,115200\0"		\
+	"bootcmd=qspi probe 1;cp.b 20040000 ${loadaddr} ${flashsize};run addip;bootm\0"               \
+	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200\0"		\
 	"verify=no\0" \
 	"bootdelay=3\0" \
-	"update=tftp ${image};qspi probe 1;qspi erase 40000 +${filesize};qspi write ${loadaddr} 40000 ${filesize}\0" \
+	"update=tftp ${image};qspi probe 1;qspi erase 40000 +${filesize};qspi write ${loadaddr} 40000 ${filesize};setenv flashsize ${filesize};saveenv\0" \
 	"uboot_image=u-boot.qspi\0"
 
 #endif
