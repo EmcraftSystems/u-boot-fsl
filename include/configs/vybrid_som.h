@@ -286,7 +286,7 @@
         "ethaddr=C0:B1:3C:77:88:AB\0"                           \
         "ipaddr=172.17.44.46\0"                                  \
         "serverip=172.17.0.1\0"                                 \
-        "image=dk/uImage\0"                                    \
+        "image=uImage\0"                                    \
 	"netboot=tftp ${image};run addip;bootm\0"		\
 	"bootcmd=qspi probe 1;cp.b 20040000 ${loadaddr} 600000;run addip;bootm\0"               \
 	"bootargs=mem=256M console=ttymxc0,115200\0"		\
