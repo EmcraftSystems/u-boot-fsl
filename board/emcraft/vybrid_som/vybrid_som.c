@@ -387,7 +387,12 @@ unsigned long ddr_ctrl_init(void)
 //	__raw_writel(0x000012e3, DDR_CR136);	// tdfi_ctrlupd_interval_f1
 	__raw_writel(0, DDR_CR136);	// tdfi_ctrlupd_interval_f1
 
+#if CONFIG_SYS_BOARD_REV >= 0x2A
+	/* Silicon difference between 1.0 and 1.1 */
+	__raw_writel(0x682C0000, DDR_CR154);	// pad_zq: _early_cmp_en_timer, _mode, _hw_for, _cmp_out_smp
+#else
 	__raw_writel(0x68200000, DDR_CR154);	// pad_zq: _early_cmp_en_timer, _mode, _hw_for, _cmp_out_smp
+#endif
 //	__raw_writel(0x00000202, DDR_CR155);	// pad: _ibe1, ibe0, pad_ibe: _sel1, _sel0,
 	__raw_writel(0x00000212, DDR_CR155);	// pad: _ibe1, ibe0, pad_ibe: _sel1, _sel0,
 						// axi_awcache, axi_cobuf, pad_odt: bate0, byte1

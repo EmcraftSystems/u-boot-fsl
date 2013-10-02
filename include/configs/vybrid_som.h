@@ -24,6 +24,8 @@
 
 /*#define DEBUG*/
 
+#define CONFIG_SYS_BOARD_REV            0x2A
+
  /* High Level Configuration Options */
 
 #define CONFIG_VYBRID
