@@ -199,7 +199,7 @@
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		1
-#define PHYS_SDRAM_1_SIZE		(256 * 1024 * 1024)
+#define PHYS_SDRAM_1_SIZE		(512 * 1024 * 1024)
 
 #define CONFIG_SYS_SDRAM_BASE		(0x80000000)
 #define CONFIG_SYS_INIT_RAM_ADDR	(IRAM_BASE_ADDR)
@@ -212,6 +212,9 @@
 #elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
 #define CONFIG_SYS_MEMTEST_END		0x8FC00000
 #define KERNEL_MEM_INFO			"256M"
+#elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
+#define CONFIG_SYS_MEMTEST_END		0x9FC00000
+#define KERNEL_MEM_INFO			"512M"
 #else
 #error "Unsupported memory size specified"
 #endif

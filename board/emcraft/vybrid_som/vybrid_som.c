@@ -200,6 +200,8 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x0c28002c, DDR_CR026);	// tref, trfc
 #elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
 	__raw_writel(0x0c280040, DDR_CR026);	// tref, trfc
+#elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
+	__raw_writel(0x0c280066, DDR_CR026);	// tref, trfc
 #else
 #error "Unsupported memory size specified"
 #endif
@@ -312,6 +314,8 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x0a010300, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
 #elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
 	__raw_writel(0x0a010200, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
+#elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
+	__raw_writel(0x0a010100, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
 #else
 #error "Unsupported memory size specified"
 #endif
