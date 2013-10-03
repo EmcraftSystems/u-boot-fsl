@@ -558,9 +558,33 @@ int board_mmc_init(bd_t *bis)
 }
 #endif
 
+#ifdef CONFIG_NAND_FSL_NFC
+void setup_iomux_nfc(void)
+{
+	__raw_writel(0x002038df, IOMUXC_PAD_071);
+	__raw_writel(0x002038df, IOMUXC_PAD_072);
+	__raw_writel(0x002038df, IOMUXC_PAD_073);
+	__raw_writel(0x002038df, IOMUXC_PAD_074);
+	__raw_writel(0x002038df, IOMUXC_PAD_075);
+	__raw_writel(0x002038df, IOMUXC_PAD_076);
+	__raw_writel(0x002038df, IOMUXC_PAD_077);
+	__raw_writel(0x002038df, IOMUXC_PAD_078);
+
+	__raw_writel(0x005038d2, IOMUXC_PAD_094);
+	__raw_writel(0x005038d2, IOMUXC_PAD_095);
+	__raw_writel(0x006038d2, IOMUXC_PAD_097);
+	__raw_writel(0x005038dd, IOMUXC_PAD_099);
+	__raw_writel(0x006038d2, IOMUXC_PAD_100);
+	__raw_writel(0x006038d2, IOMUXC_PAD_101);
+}
+#endif
+
 int board_early_init_f(void)
 {
 	setup_iomux_uart();
+#ifdef CONFIG_NAND_FSL_NFC
+	setup_iomux_nfc();
+#endif
 
 	return 0;
 }

@@ -90,6 +90,7 @@
 #undef CONFIG_CMD_NFS		/* NFS support			*/
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_QSF
+/* #define CONFIG_CMD_NAND */
 
 #undef CONFIG_CMD_IMI		/* iminfo */
 #undef CONFIG_CMD_IMLS
@@ -113,6 +114,20 @@
 #define CONFIG_GENERIC_MMC
 #define CONFIG_CMD_FAT
 #define CONFIG_DOS_PARTITION
+#endif
+
+/*
+ * NAND FLASH
+ */
+#ifdef CONFIG_CMD_NAND
+#define CONFIG_MTD_NAND_FSL_NFC_SWECC	1
+#define CONFIG_JFFS2_NAND
+#define CONFIG_NAND_FSL_NFC
+#define CONFIG_SYS_NAND_BASE		0x400E0000
+#define CONFIG_SYS_MAX_NAND_DEVICE	1
+#define NAND_MAX_CHIPS			CONFIG_SYS_MAX_NAND_DEVICE
+#define CONFIG_SYS_NAND_SELECT_DEVICE
+#define	CONFIG_SYS_64BIT_VSPRINTF	/* needed for nand_util.c */
 #endif
 
 /* Network configuration */
