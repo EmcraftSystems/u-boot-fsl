@@ -214,7 +214,7 @@
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		1
-#define PHYS_SDRAM_1_SIZE		(512 * 1024 * 1024)
+#define PHYS_SDRAM_1_SIZE		(128 * 1024 * 1024)
 
 #define CONFIG_SYS_SDRAM_BASE		(0x80000000)
 #define CONFIG_SYS_INIT_RAM_ADDR	(IRAM_BASE_ADDR)
@@ -296,8 +296,10 @@
 /* FLASH and environment organization */
 #define CONFIG_SYS_NO_FLASH
 
+#define CONFIG_VYBRID_QSPI_512MBIT_DEVICE
+
 #define CONFIG_ENV_IS_IN_QSPI_FLASH
-#define CONFIG_ENV_OFFSET		(0x30000)
+#define CONFIG_ENV_OFFSET		(0x40000)
 #define CONFIG_ENV_SIZE			(0x10000)
 
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
@@ -310,11 +312,11 @@
         "serverip=172.17.0.1\0"                                 \
         "image=uImage\0"                                    \
 	"netboot=tftp ${image};run addip;bootm\0"		\
-	"bootcmd=qspi probe 1;cp.b 20040000 ${loadaddr} ${flashsize};run addip;bootm\0"               \
+	"bootcmd=qspi probe 1;cp.b 20080000 ${loadaddr} ${flashsize};run addip;bootm\0"               \
 	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200\0"		\
 	"verify=no\0" \
 	"bootdelay=3\0" \
-	"update=tftp ${image};qspi probe 1;qspi erase 40000 +${filesize};qspi write ${loadaddr} 40000 ${filesize};setenv flashsize ${filesize};saveenv\0" \
+	"update=tftp ${image};qspi probe 1;qspi erase 80000 +${filesize};qspi write ${loadaddr} 80000 ${filesize};setenv flashsize ${filesize};saveenv\0" \
 	"uboot_image=u-boot.qspi\0"
 
 #endif
