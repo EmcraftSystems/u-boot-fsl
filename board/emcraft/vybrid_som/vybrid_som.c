@@ -32,6 +32,7 @@
 #include <asm/arch/crm_regs.h>
 #include <asm/armv7.h>
 #include <asm/pl310.h>
+#include <asm/arch/scsc_regs.h>
 #include <i2c.h>
 #include <mmc.h>
 #include <fsl_esdhc.h>
@@ -659,8 +660,22 @@ U_BOOT_CMD(
 
 int board_init(void)
 {
+	u32 temp;
+	struct vybrid_scsc_reg *scsc = (struct vybrid_scsc_reg *)SCSCM_BASE_ADDR;
+
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
+
+	/*
+	 * Enable external 32K Oscillator
+	 *
+	 * The internal clock experiences significant drift
+         * so we must use the external oscillator in order
+	 * to maintain correct time in the hwclock
+	 */
+	temp = __raw_readl(&scsc->sosc_ctr);
+	temp |= VYBRID_SCSC_SICR_CTR_SOSC_EN;
+	__raw_writel(temp, &scsc->sosc_ctr);
 
 	return 0;
 }
