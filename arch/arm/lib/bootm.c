@@ -29,6 +29,9 @@
 #include <fdt.h>
 #include <libfdt.h>
 #include <fdt_support.h>
+#ifdef CONFIG_SETUP_VIDEOLFB_TAG
+#include <lcd.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -36,13 +39,23 @@ DECLARE_GLOBAL_DATA_PTR;
     defined (CONFIG_CMDLINE_TAG) || \
     defined (CONFIG_INITRD_TAG) || \
     defined (CONFIG_SERIAL_TAG) || \
-    defined (CONFIG_REVISION_TAG)
+    defined (CONFIG_REVISION_TAG) || \
+    defined (CONFIG_SETUP_VIDEOLFB_TAG) || \
+    defined (CONFIG_SETUP_MTDSPLASHPART_TAG)
 static void setup_start_tag (bd_t *bd);
 
 # ifdef CONFIG_SETUP_MEMORY_TAGS
 static void setup_memory_tags (bd_t *bd);
 # endif
 static void setup_commandline_tag (bd_t *bd, char *commandline);
+
+# if defined (CONFIG_SETUP_VIDEOLFB_TAG) && defined(CONFIG_LCD)
+static void setup_videolfb_tag (bd_t *bd);
+# endif
+
+# ifdef CONFIG_SETUP_MTDSPLASHPART_TAG
+static void setup_mtd_splashpart_tag(bd_t *bd);
+# endif
 
 # ifdef CONFIG_INITRD_TAG
 static void setup_initrd_tag (bd_t *bd, ulong initrd_start,
@@ -51,7 +64,8 @@ static void setup_initrd_tag (bd_t *bd, ulong initrd_start,
 static void setup_end_tag (bd_t *bd);
 
 static struct tag *params;
-#endif /* CONFIG_SETUP_MEMORY_TAGS || CONFIG_CMDLINE_TAG || CONFIG_INITRD_TAG */
+#endif /* CONFIG_SETUP_MEMORY_TAGS || CONFIG_CMDLINE_TAG || CONFIG_INITRD_TAG
+	  || CONFIG_SETUP_VIDEOLFB_TAG */
 
 static ulong get_sp(void);
 #if defined(CONFIG_OF_LIBFDT)
@@ -143,6 +157,12 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 #endif
 #ifdef CONFIG_SETUP_MEMORY_TAGS
 	setup_memory_tags (bd);
+#endif
+#if defined (CONFIG_SETUP_VIDEOLFB_TAG) && defined(CONFIG_LCD)
+	setup_videolfb_tag (bd);
+#endif
+#ifdef CONFIG_SETUP_MTDSPLASHPART_TAG
+	setup_mtd_splashpart_tag (bd);
 #endif
 #ifdef CONFIG_CMDLINE_TAG
 	setup_commandline_tag (bd, commandline);
@@ -242,6 +262,48 @@ static void setup_start_tag (bd_t *bd)
 	params = tag_next (params);
 }
 
+#if defined (CONFIG_SETUP_VIDEOLFB_TAG) && defined(CONFIG_LCD)
+static void setup_videolfb_tag (bd_t *bd)
+{
+	params->hdr.tag = ATAG_VIDEOLFB;
+	params->hdr.size = tag_size (tag_videolfb);
+
+	params->u.videolfb.lfb_width = panel_info.vl_col;
+	params->u.videolfb.lfb_height = panel_info.vl_row;
+	params->u.videolfb.lfb_depth = NBITS(panel_info.vl_bpix);
+	params->u.videolfb.lfb_linelength = panel_info.vl_col * (panel_info.vl_bpix >> 3);
+	params->u.videolfb.lfb_base = lcd_base;
+	params->u.videolfb.lfb_size = calc_fbsize();
+
+#if (LCD_BPP == LCD_COLOR24) || (LCD_BPP == LCD_COLOR32)
+	params->u.videolfb.red_size = 8;
+	params->u.videolfb.red_pos = 16;
+
+	params->u.videolfb.green_size = 8;
+	params->u.videolfb.green_pos = 8;
+
+	params->u.videolfb.blue_size = 8;
+	params->u.videolfb.blue_pos = 0;
+#else
+# error "Only LCD_COLOR24 and LCD_COLOR32 are supported by ATAG_VIDEOLFB"
+#endif
+
+	params = tag_next (params);
+}
+#endif /* CONFIG_SETUP_VIDEOLFB_TAG && CONFIG_LCD */
+
+#ifdef CONFIG_SETUP_MTDSPLASHPART_TAG
+static void setup_mtd_splashpart_tag(bd_t *bd)
+{
+	params->hdr.tag = ATAG_MTDSPLASHPART;
+	params->hdr.size = tag_size (tag_mtdsplashpart);
+
+	params->u.mtdsplashpart.start = CONFIG_MTD_SPLASH_PART_START;
+	params->u.mtdsplashpart.size = CONFIG_MTD_SPLASH_PART_LEN;
+
+	params = tag_next (params);
+}
+#endif /* CONFIG_SETUP_MTDSPLASHPART_TAG */
 
 #ifdef CONFIG_SETUP_MEMORY_TAGS
 static void setup_memory_tags (bd_t *bd)

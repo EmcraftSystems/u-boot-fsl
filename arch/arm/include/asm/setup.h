@@ -205,6 +205,12 @@ struct tag_memclk {
 	u32 fmemclk;
 };
 
+#define ATAG_MTDSPLASHPART	0x41003001
+
+struct tag_mtdsplashpart {
+	u32 start, size;
+};
+
 struct tag {
 	struct tag_header hdr;
 	union {
@@ -227,6 +233,11 @@ struct tag {
 		 * DC21285 specific
 		 */
 		struct tag_memclk	memclk;
+
+		/*
+		 * Vybrid SOM specific
+		 */
+		struct tag_mtdsplashpart	mtdsplashpart;
 	} u;
 };
 

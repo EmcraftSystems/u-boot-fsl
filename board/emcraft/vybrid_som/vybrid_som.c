@@ -461,6 +461,33 @@ void setup_iomux_uart(void)
 	__raw_writel(0x001021a1, IOMUXC_PAD_033);
 }
 
+#ifdef CONFIG_VIDEO_MVF_DCU
+void setup_iomux_dcu(void)
+{
+	/* Setup DCU0's IOMUX'es */
+#define PAD_CTL_DSE_150ohm      (1 << 6)
+#define MVF600_HIGH_DRV         PAD_CTL_DSE_150ohm
+#define PAD_CTL_OBE_ENABLE      (1 << 1)
+#define MVF600_DCU_PAD_CTRL     (MVF600_HIGH_DRV | PAD_CTL_OBE_ENABLE)
+	int i;
+
+	/* Backlight control pin */
+	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_030);
+
+#define IOMUXC_PAD_NUMBER 29
+#define IOMUXC_DCU_PAD_FIRST (IOMUXC_BASE_ADDR + 0x01A4)
+#define MVF600_MUX_MODE_TCON (1 << 20)
+#define MVF600_DCU_PAD_CTRL_FLEXTIMER \
+		(MVF600_DCU_PAD_CTRL | MVF600_MUX_MODE_TCON)
+
+	/* Signal pins */
+	for (i = 0; i < IOMUXC_PAD_NUMBER; i++) {
+		__raw_writel(MVF600_DCU_PAD_CTRL_FLEXTIMER,
+				IOMUXC_DCU_PAD_FIRST + 4 * i);
+	}
+}
+#endif /* CONFIG_VIDEO_MVF_DCU */
+
 #if defined(CONFIG_CMD_NET)
 int fecpin_setclear(struct eth_device *dev, int setclear)
 {
@@ -586,6 +613,9 @@ int board_early_init_f(void)
 #ifdef CONFIG_NAND_FSL_NFC
 	setup_iomux_nfc();
 #endif
+#ifdef CONFIG_VIDEO_MVF_DCU
+	setup_iomux_dcu();
+#endif /* CONFIG_VIDEO_MVF_DCU */
 
 	return 0;
 }
@@ -717,4 +747,40 @@ void v7_outer_cache_enable(void)
 	writel(1, &pl310->pl310_ctrl);
 }
 #endif
+#endif
+
+#if defined(CONFIG_LCD) && defined(CONFIG_CMD_NAND)
+static int splash_load_from_nand(u32 bmp_load_addr)
+{
+        struct bmp_header *bmp_hdr;
+        int res, splash_screen_nand_offset = 0x100000;
+        size_t bmp_size, bmp_header_size = sizeof(struct bmp_header);
+
+        if (bmp_load_addr + bmp_header_size >= gd->start_addr_sp)
+                goto splash_address_too_high;
+
+        res = nand_read_skip_bad(&nand_info[nand_curr_device],
+                        splash_screen_nand_offset, &bmp_header_size,
+                        NULL, nand_info[nand_curr_device].size,
+                        (u_char *)bmp_load_addr);
+        if (res < 0)
+                return res;
+
+        bmp_hdr = (struct bmp_header *)bmp_load_addr;
+        bmp_size = le32_to_cpu(bmp_hdr->file_size);
+
+        if (bmp_load_addr + bmp_size >= gd->start_addr_sp)
+                goto splash_address_too_high;
+
+        return nand_read_skip_bad(&nand_info[nand_curr_device],
+                        splash_screen_nand_offset, &bmp_size,
+                        NULL, nand_info[nand_curr_device].size,
+                        (u_char *)bmp_load_addr);
+
+splash_address_too_high:
+        printf("Error: splashimage address too high. Data overwrites U-Boot "
+                "and/or placed beyond DRAM boundaries.\n");
+
+        return -1;
+}
 #endif

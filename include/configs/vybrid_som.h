@@ -54,7 +54,7 @@
  */
 
 #define CONFIG_CMDLINE_TAG			/* enable passing of ATAGs */
-#undef CONFIG_SETUP_MEMORY_TAGS
+#define CONFIG_SETUP_MEMORY_TAGS
 #undef CONFIG_INITRD_TAG
 
 #undef CONFIG_OF_LIBFDT
@@ -302,21 +302,89 @@
 #define CONFIG_ENV_OFFSET		(0x40000)
 #define CONFIG_ENV_SIZE			(0x10000)
 
-#define CONFIG_EXTRA_ENV_SETTINGS                                       \
-        "autoload=yes\0"                                                \
-        "addip=setenv bootargs ${bootargs} "                    \
-                "ip=${ipaddr}:${serverip}:${gatewayip}:"        \
-                        "${netmask}:${hostname}:eth0:off\0"     \
-        "ethaddr=C0:B1:3C:77:88:AB\0"                           \
-        "ipaddr=172.17.44.46\0"                                  \
-        "serverip=172.17.0.1\0"                                 \
-        "image=uImage\0"                                    \
-	"netboot=tftp ${image};run addip;bootm\0"		\
-	"bootcmd=qspi probe 1;cp.b 20080000 ${loadaddr} ${flashsize};run addip;bootm\0"               \
-	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200\0"		\
-	"verify=no\0" \
-	"bootdelay=3\0" \
-	"update=tftp ${image};qspi probe 1;qspi erase 80000 +${filesize};qspi write ${loadaddr} 80000 ${filesize};setenv flashsize ${filesize};saveenv\0" \
-	"uboot_image=u-boot.qspi\0"
+#undef CONFIG_LCD
+#undef CONFIG_VIDEO_MVF_DCU
+#undef LCD_TWR_RGB
+#undef CONFIG_SYS_CONSOLE_IS_IN_ENV
+#undef CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
+#undef CONFIG_SPLASH_SCREEN
+#undef CONFIG_SPLASH_SCREEN_ALIGN
+#undef CONFIG_SETUP_VIDEOLFB_TAG
+#undef CONFIG_SETUP_MTDSPLASHPART_TAG
 
+#define CONFIG_MTD_SPLASH_PART_START	0x40000
+#define CONFIG_MTD_SPLASH_PART_LEN	0x80000
+
+#define CONFIG_BMP
+#undef CONFIG_CMD_BMP
+#define CONFIG_BMP_24BPP
+#define LCD_BPP	LCD_COLOR32
+
+#ifdef LCD_TWR_RGB
+
+#	define LCD_XRES			480
+#	define LCD_YRES			272
+#	define LCD_BIT_PER_PIXEL	LCD_BPP
+
+#	define LCD_DCU_LEFT_MARGIN	2
+#	define LCD_DCU_HSYNC_LEN	41
+#	define LCD_DCU_RIGHT_MARGIN	2
+
+#	define LCD_DCU_UPPER_MARGIN	1
+#	define LCD_DCU_VSYNC_LEN	2
+#	define LCD_DCU_LOWER_MARGIN	1
+
+#	define LCD_DCU_DIV_RATIO	9
+
+#	define LCD_DCU_SYN_POL_INV_PXCK		0
+#	define LCD_DCU_SYN_POL_NEG		0
+#	define LCD_DCU_SYN_POL_INV_VS		1
+#	define LCD_DCU_SYN_POL_INV_HS		1
+
+#	define LCD_DCU_THRESHOLD_LS_BF_VS	0x3
+#	define LCD_DCU_THRESHOLD_OUT_BUF_HIGH	0x78
+#	define LCD_DCU_THRESHOLD_OUT_BUF_LOW	0
+
+#elif defined(CONFIG_VIDEO_MVF_DCU)
+#	error "MVF DCU is enabled but no LCD configured"
 #endif
+
+#ifdef CONFIG_SETUP_MTDSPLASHPART_TAG
+
+# if CONFIG_MTD_SPLASH_PART_LEN != 0x80000
+#  error "Current partition config is for splash len = 0x80000"
+# endif
+
+# if CONFIG_MTD_SPLASH_PART_START != 0x40000
+#  error "Current partition config is for splash start = 0x40000"
+# endif
+
+# define KERNEL_FLASH_BASE	"c0000"
+# define KERNEL_MEM_BASE	"200c0000"
+
+#else /* CONFIG_SPLASH_SCREEN */
+# define KERNEL_FLASH_BASE	"40000"
+# define KERNEL_MEM_BASE	"20040000"
+# define CONFIG_UPDATE_SPLASH_ENV ""
+#endif /* CONFIG_SPLASH_SCREEN */
+
+#define CONFIG_EXTRA_ENV_SETTINGS					\
+        "autoload=yes\0"						\
+        "addip=setenv bootargs ${bootargs} "				\
+                "ip=${ipaddr}:${serverip}:${gatewayip}:"		\
+                        "${netmask}:${hostname}:eth0:off\0"		\
+        "ethaddr=C0:B1:3C:77:88:AB\0"					\
+        "ipaddr=172.17.44.46\0"						\
+        "serverip=172.17.0.1\0"						\
+        "image=uImage\0"						\
+	"netboot=tftp ${image};run addip;bootm\0"			\
+	"bootcmd=qspi probe 1;cp.b " KERNEL_MEM_BASE " ${loadaddr} "	\
+	"${flashsize};run addip;bootm\0"				\
+	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200\0"	\
+	"verify=no\0"							\
+	"bootdelay=3\0"							\
+	"update=tftp ${image} && qspi probe 1 && qspi erase "		\
+	KERNEL_FLASH_BASE " +${filesize} && qspi write ${loadaddr} "	\
+	KERNEL_FLASH_BASE " ${filesize} && setenv flashsize ${filesize}"\
+	" && saveenv\0"
+#endif /* __CONFIG_H */
