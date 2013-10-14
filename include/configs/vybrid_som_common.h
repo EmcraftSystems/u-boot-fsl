@@ -1,7 +1,9 @@
 /*
- * Copyright 2012 Freescale Semiconductor, Inc.
+ * Copyright 2013 Emcraft Systems
  *
- * Configuration settings for the vybrid Board
+ * Common configuration settings for VF-6-SOM based boards.
+ *
+ * Pavel Boldin <paboldin@emcraft.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,14 +21,10 @@
  * MA 02111-1307 USA
  */
 
-#ifndef __CONFIG_H
-#define __CONFIG_H
+#ifndef __VF6_SOM_COMMON_H
+#define __VF6_SOM_COMMON_H
 
-/*#define DEBUG*/
-
-#define CONFIG_SYS_BOARD_REV            0x2A
-
- /* High Level Configuration Options */
+/* High Level Configuration Options */
 
 #define CONFIG_VYBRID
 
@@ -35,10 +33,6 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
 
-/* #define CONFIG_SYS_ICACHE_OFF */
-/* #define CONFIG_SYS_DCACHE_OFF */
-/* #define CONFIG_SYS_ARM_CACHE_WRITETHROUGH */
-/* #define CONFIG_SYS_L2CACHE_OFF */
 #ifndef CONFIG_SYS_L2CACHE_OFF
 #define CONFIG_SYS_L2_PL310		1
 #define CONFIG_SYS_PL310_BASE		0x40006000
@@ -80,6 +74,7 @@
 #include <config_cmd_default.h>
 
 #define CONFIG_CMD_BDI		/* bdinfo */
+#define CONFIG_CMD_CACHE	/* cache */
 #undef CONFIG_CMD_BOOTD
 #define CONFIG_CMD_CONSOLE	/* coninfo */
 #define CONFIG_CMD_ELF
@@ -90,6 +85,8 @@
 #undef CONFIG_CMD_NFS		/* NFS support			*/
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_QSF
+#undef CONFIG_CMD_DATE
+
 /* #define CONFIG_CMD_NAND */
 
 #undef CONFIG_CMD_IMI		/* iminfo */
@@ -97,7 +94,6 @@
 #undef CONFIG_CMD_LOADB		/* loadb */
 #undef CONFIG_CMD_LOADS		/* loads */
 
-#define CONFIG_MMC
 #ifdef CONFIG_MMC
 #define CONFIG_FSL_ESDHC
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
@@ -131,7 +127,6 @@
 #endif
 
 /* Network configuration */
-#define CONFIG_MCFFEC
 #ifdef CONFIG_MCFFEC
 #	define CONFIG_MII		1
 #	define CONFIG_MII_INIT		1
@@ -178,8 +173,6 @@
 		(CONFIG_SYS_INIT_RAM_ADDR + 0x3000)
 #endif
 
-#undef CONFIG_CMD_DATE
-
 #define CONFIG_BOOTDELAY		3
 #define CONFIG_ZERO_BOOTDELAY_CHECK
 #define CONFIG_ETHPRIME			"FEC0"
@@ -213,26 +206,27 @@
 #define CONFIG_STACKSIZE		(128 * 1024)	/* regular stack */
 
 /* Physical Memory Map */
-#define CONFIG_NR_DRAM_BANKS		1
-#define PHYS_SDRAM_1_SIZE		(512 * 1024 * 1024)
+#if CONFIG_NR_DRAM_BANKS
 
-#define CONFIG_SYS_SDRAM_BASE		(0x80000000)
-#define CONFIG_SYS_INIT_RAM_ADDR	(IRAM_BASE_ADDR)
-#define CONFIG_SYS_INIT_RAM_SIZE	(IRAM_SIZE)
+# define CONFIG_SYS_SDRAM_BASE		(0x80000000)
+# define CONFIG_SYS_INIT_RAM_ADDR	(IRAM_BASE_ADDR)
+# define CONFIG_SYS_INIT_RAM_SIZE	(IRAM_SIZE)
 
-#define CONFIG_SYS_MEMTEST_START	0x80000000
-#if PHYS_SDRAM_1_SIZE == (128 * 1024 * 1024)
-#define CONFIG_SYS_MEMTEST_END		0x87C00000
-#define KERNEL_MEM_INFO			"128M"
-#elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
-#define CONFIG_SYS_MEMTEST_END		0x8FC00000
-#define KERNEL_MEM_INFO			"256M"
-#elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
-#define CONFIG_SYS_MEMTEST_END		0x9FC00000
-#define KERNEL_MEM_INFO			"512M"
-#else
-#error "Unsupported memory size specified"
-#endif
+# define CONFIG_SYS_MEMTEST_START	0x80000000
+# if PHYS_SDRAM_1_SIZE == (128 * 1024 * 1024)
+# define CONFIG_SYS_MEMTEST_END		0x87C00000
+# define KERNEL_MEM_INFO			"128M"
+# elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
+# define CONFIG_SYS_MEMTEST_END		0x8FC00000
+# define KERNEL_MEM_INFO			"256M"
+# elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
+# define CONFIG_SYS_MEMTEST_END		0x9FC00000
+# define KERNEL_MEM_INFO			"512M"
+# else
+# error "Unsupported memory size specified"
+# endif
+
+#endif /* CONFIG_NR_DRAM_BANKS */
 
 #define CONFIG_BOARD_EARLY_INIT_F
 
@@ -296,95 +290,4 @@
 /* FLASH and environment organization */
 #define CONFIG_SYS_NO_FLASH
 
-#define CONFIG_VYBRID_QSPI_512MBIT_DEVICE
-
-#define CONFIG_ENV_IS_IN_QSPI_FLASH
-#define CONFIG_ENV_OFFSET		(0x40000)
-#define CONFIG_ENV_SIZE			(0x10000)
-
-#undef CONFIG_LCD
-#undef CONFIG_VIDEO_MVF_DCU
-#undef LCD_TWR_RGB
-#undef CONFIG_SYS_CONSOLE_IS_IN_ENV
-#undef CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
-#undef CONFIG_SPLASH_SCREEN
-#undef CONFIG_SPLASH_SCREEN_ALIGN
-#undef CONFIG_SETUP_VIDEOLFB_TAG
-#undef CONFIG_SETUP_MTDSPLASHPART_TAG
-
-#define CONFIG_MTD_SPLASH_PART_START	0x40000
-#define CONFIG_MTD_SPLASH_PART_LEN	0x80000
-
-#define CONFIG_BMP
-#undef CONFIG_CMD_BMP
-#define CONFIG_BMP_24BPP
-#define LCD_BPP	LCD_COLOR32
-
-#ifdef LCD_TWR_RGB
-
-#	define LCD_XRES			480
-#	define LCD_YRES			272
-#	define LCD_BIT_PER_PIXEL	LCD_BPP
-
-#	define LCD_DCU_LEFT_MARGIN	2
-#	define LCD_DCU_HSYNC_LEN	41
-#	define LCD_DCU_RIGHT_MARGIN	2
-
-#	define LCD_DCU_UPPER_MARGIN	1
-#	define LCD_DCU_VSYNC_LEN	2
-#	define LCD_DCU_LOWER_MARGIN	1
-
-#	define LCD_DCU_DIV_RATIO	9
-
-#	define LCD_DCU_SYN_POL_INV_PXCK		0
-#	define LCD_DCU_SYN_POL_NEG		0
-#	define LCD_DCU_SYN_POL_INV_VS		1
-#	define LCD_DCU_SYN_POL_INV_HS		1
-
-#	define LCD_DCU_THRESHOLD_LS_BF_VS	0x3
-#	define LCD_DCU_THRESHOLD_OUT_BUF_HIGH	0x78
-#	define LCD_DCU_THRESHOLD_OUT_BUF_LOW	0
-
-#elif defined(CONFIG_VIDEO_MVF_DCU)
-#	error "MVF DCU is enabled but no LCD configured"
-#endif
-
-#ifdef CONFIG_SETUP_MTDSPLASHPART_TAG
-
-# if CONFIG_MTD_SPLASH_PART_LEN != 0x80000
-#  error "Current partition config is for splash len = 0x80000"
-# endif
-
-# if CONFIG_MTD_SPLASH_PART_START != 0x40000
-#  error "Current partition config is for splash start = 0x40000"
-# endif
-
-# define KERNEL_FLASH_BASE	"c0000"
-# define KERNEL_MEM_BASE	"200c0000"
-
-#else /* CONFIG_SPLASH_SCREEN */
-# define KERNEL_FLASH_BASE	"40000"
-# define KERNEL_MEM_BASE	"20040000"
-# define CONFIG_UPDATE_SPLASH_ENV ""
-#endif /* CONFIG_SPLASH_SCREEN */
-
-#define CONFIG_EXTRA_ENV_SETTINGS					\
-        "autoload=yes\0"						\
-        "addip=setenv bootargs ${bootargs} "				\
-                "ip=${ipaddr}:${serverip}:${gatewayip}:"		\
-                        "${netmask}:${hostname}:eth0:off\0"		\
-        "ethaddr=C0:B1:3C:77:88:AB\0"					\
-        "ipaddr=172.17.44.46\0"						\
-        "serverip=172.17.0.1\0"						\
-        "image=uImage\0"						\
-	"netboot=tftp ${image};run addip;bootm\0"			\
-	"bootcmd=qspi probe 1;cp.b " KERNEL_MEM_BASE " ${loadaddr} "	\
-	"${flashsize};run addip;bootm\0"				\
-	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200\0"	\
-	"verify=no\0"							\
-	"bootdelay=3\0"							\
-	"update=tftp ${image} && qspi probe 1 && qspi erase "		\
-	KERNEL_FLASH_BASE " +${filesize} && qspi write ${loadaddr} "	\
-	KERNEL_FLASH_BASE " ${filesize} && setenv flashsize ${filesize}"\
-	" && saveenv\0"
-#endif /* __CONFIG_H */
+#endif /* __VF6_SOM_COMMON_H */

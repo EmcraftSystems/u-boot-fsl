@@ -722,7 +722,8 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	puts("Board: Vybrid\n");
+	printf("Board: Vybrid Rev %x.%x\n", CONFIG_SYS_BOARD_REV >> 4,
+					    CONFIG_SYS_BOARD_REV & 0xF);
 
 	return 0;
 }
