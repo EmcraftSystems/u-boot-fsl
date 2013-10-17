@@ -611,6 +611,11 @@ void bitmap_plot (int x, int y)
 #define BMP_ALIGN_CENTER	0x7FFF
 #endif
 
+/*
+ * Declare calc_fbsize
+ */
+ulong calc_fbsize(void);
+
 int lcd_display_bitmap(ulong bmp_image, int x, int y)
 {
 #if !defined(CONFIG_MCC200)
@@ -829,6 +834,19 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 }
 #endif
 
+
+#ifdef CONFIG_SPLASH_SCREEN
+/* Stub for loading splash from external memory */
+int __splash_screen_prepare(void)
+{
+	return 0;
+}
+
+int splash_screen_prepare(void)
+	__attribute__((weak, alias("__splash_screen_prepare")));
+
+#endif /* CONFIG_SPLASH_SCREEN */
+
 static void *lcd_logo (void)
 {
 #ifdef CONFIG_SPLASH_SCREEN
@@ -893,18 +911,6 @@ static void *lcd_logo (void)
 	return ((void *)lcd_base);
 #endif /* CONFIG_LCD_LOGO && !CONFIG_LCD_INFO_BELOW_LOGO */
 }
-
-#ifdef CONFIG_SPLASH_SCREEN
-/* Stub for loading splash from external memory */
-int __splash_screen_prepare(void)
-{
-	return 0;
-}
-
-int splash_screen_prepare(void)
-	__attribute__((weak, alias("__splash_screen_prepare")));
-
-#endif /* CONFIG_SPLASH_SCREEN */
 
 /************************************************************************/
 /************************************************************************/

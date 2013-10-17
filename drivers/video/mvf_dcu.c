@@ -45,12 +45,13 @@ short console_row;
 #define DCU_BACKLIGHT_GPIO_ADDR_CLEAR   (GPIO_BASE_ADDR + 8)
 #define DCU_BACKLIGHT_GPIO_NUM 30
 
-static inline unsigned int dcu_writel(unsigned int val, unsigned int offset)
+
+static inline u32 dcu_writel(u32 val, u32 offset)
 {
 	return writel(val, DCU_BASE_ADDR + offset);
 }
 
-static inline unsigned int dcu_readl(unsigned int offset)
+static inline u32 dcu_readl(u32 offset)
 {
 	return readl(DCU_BASE_ADDR + offset);
 }
@@ -94,26 +95,23 @@ int overwrite_console(void)
 
 static void dcu_enable(void)
 {
-	unsigned int dcu_mode;
+	u32 dcu_mode;
 
 	dcu_mode = dcu_readl(DCU_DCU_MODE);
-	dcu_writel(dcu_mode | DCU_MODE_DCU_MODE(1), DCU_DCU_MODE);
-}
-
-static void dcu_enable_colorbar(void)
-{
-	unsigned int dcu_mode;
-
-	dcu_mode = dcu_readl(DCU_DCU_MODE);
+#ifdef CONFIG_VIDEO_MVF_DCU_COLBAR
 	/* Temporary colbar mode */
 	dcu_writel(dcu_mode | DCU_MODE_DCU_MODE(3), DCU_DCU_MODE);
+#else
+	dcu_writel(dcu_mode | DCU_MODE_DCU_MODE(1), DCU_DCU_MODE);
+#endif
 }
+
 
 void lcd_ctrl_init(void *lcdbase)
 {
-	unsigned int flags;
+	u32 flags;
+	u32 dcu_bpix = 0;
 	int i;
-	int dcu_bpix;
 
 	if (!lcdbase)
 		return;
@@ -178,10 +176,6 @@ void lcd_ctrl_init(void *lcdbase)
 	dcu_writel(0x00FF00, DCU_COLBAR_1);
 	dcu_writel(0x0000FF, DCU_COLBAR_2);
 	dcu_writel(0xFF00FF, DCU_COLBAR_3);
-
-	dcu_enable_colorbar();
-
-	dcu_update();
 #else
 	/* Enable single layer, use it for displaying image */
 	i = 0;
@@ -192,7 +186,7 @@ void lcd_ctrl_init(void *lcdbase)
 	dcu_writel(DCU_CTRLDESCLN_1_POSY(0) | DCU_CTRLDESCLN_1_POSX(0),
 			DCU_CTRLDESCLN_1(i));
 
-	dcu_writel(lcdbase, DCU_CTRLDESCLN_2(i));
+	dcu_writel((u32)lcdbase, DCU_CTRLDESCLN_2(i));
 
 	switch (NBITS(panel_info.vl_bpix)) {
 		case 24:
@@ -215,12 +209,11 @@ void lcd_ctrl_init(void *lcdbase)
 			DCU_CTRLDESCLN_4_CKMAX_G(255) |
 			DCU_CTRLDESCLN_4_CKMAX_B(255),
 			DCU_CTRLDESCLN_4(i));
-
+#endif /* CONFIG_VIDEO_MVF_DCU_COLBAR */
 
 	dcu_enable();
 
 	dcu_update();
-#endif /* CONFIG_VIDEO_MVF_DCU_COLBAR */
 }
 
 void lcd_setcolreg (ushort regno, ushort red, ushort green, ushort blue)
