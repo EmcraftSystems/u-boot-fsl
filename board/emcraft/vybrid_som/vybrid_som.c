@@ -202,7 +202,7 @@ unsigned long ddr_ctrl_init(void)
 #elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
 	__raw_writel(0x0c280040, DDR_CR026);	// tref, trfc
 #elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
-	__raw_writel(0x0c280066, DDR_CR026);	// tref, trfc
+	__raw_writel(0x0c280068, DDR_CR026);	// tref, trfc
 #else
 #error "Unsupported memory size specified"
 #endif
@@ -210,7 +210,7 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x00000003, DDR_CR029);	// tpdex_f0
 
 	__raw_writel(0x0000000a, DDR_CR030);	// txpdll
-	__raw_writel(0x00440200, DDR_CR031);	// txsnr, txsr
+	__raw_writel(0x006c0200, DDR_CR031);	// txsnr, txsr
 	__raw_writel(0x00010000, DDR_CR033);	// cke_dly, en_quick_srefresh,
 						// srefresh_exit_no_refresh,
 						// pwr, srefresh_exit
