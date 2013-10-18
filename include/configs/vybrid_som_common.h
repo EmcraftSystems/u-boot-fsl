@@ -24,6 +24,10 @@
 #ifndef __VF6_SOM_COMMON_H
 #define __VF6_SOM_COMMON_H
 
+#ifndef CONFIG_SYS_BOARD_NAME
+#define CONFIG_SYS_BOARD_NAME		"VF6-SOM"
+#endif
+
 /* High Level Configuration Options */
 
 #define CONFIG_VYBRID

@@ -722,8 +722,9 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	printf("Board: Vybrid Rev %x.%x\n", CONFIG_SYS_BOARD_REV >> 4,
-					    CONFIG_SYS_BOARD_REV & 0xF);
+	printf("Board: " CONFIG_SYS_BOARD_NAME " Rev %x.%x, www.emcraft.com\n",
+		CONFIG_SYS_BOARD_REV >> 4,
+		CONFIG_SYS_BOARD_REV & 0xF);
 
 	return 0;
 }
