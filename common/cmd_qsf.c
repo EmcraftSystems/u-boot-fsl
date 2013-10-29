@@ -418,6 +418,7 @@ struct QSPI_tag {
 #define CMD_QUADDDRRD	11
 #define CMD_READID	12
 #define CMD_READCFI	13
+#define CMD_WRITEVDLP	14
 
 void setup_iomux_quadspi(void)
 {
@@ -606,8 +607,8 @@ void quadspi_setuplookuptable(void)
 	// Quad DDR read
 	lkuptbl = 44;
 	QSPI0.LUT[lkuptbl++].R = 0x2a2004ee;
-	QSPI0.LUT[lkuptbl++].R = 0x0c062eff;
-	QSPI0.LUT[lkuptbl++].R = 0x3a80;
+	QSPI0.LUT[lkuptbl++].R = 0x0c022eff;
+	QSPI0.LUT[lkuptbl++].R = 0x3a804234;
 	QSPI0.LUT[lkuptbl].R = 0;
 
 	// readID
@@ -638,6 +639,10 @@ void quadspi_setuplookuptable(void)
 	QSPI0.LUT[lkuptbl].B.INSTR0 = READ;
 	QSPI0.LUT[lkuptbl].B.PAD0 = 0;
 	QSPI0.LUT[lkuptbl].B.OPRND0 = 0x80;
+
+	// Write to the volatile Data Learning Pattern 
+	lkuptbl = 56;
+	QSPI0.LUT[lkuptbl].R = 0x2001044A;	//1-byte write 
 
 	quadspi_locklookuptable();
 }
@@ -679,7 +684,42 @@ void enable_quad_bit(u32 status)
 	QSPI0.FR.R = 0x10000;	/* read complete */
 }
 
-#define SMBR	0x10000
+/*
+ // To enable DLP usage, leave the calls to write_VDLP(0x34000000) in 
+ // quadspi_init() enabled AND have the LUT entry #11 look as follows: 
+ //	lkuptbl = 44;
+ // QSPI0.LUT[lkuptbl++].R = 0x2a1804ed;
+ // QSPI0.LUT[lkuptbl++].R = 0x0c022eff;
+ // QSPI0.LUT[lkuptbl++].R = 0x3a804234;
+ // QSPI0.LUT[lkuptbl].R = 0;
+
+ // To disable DLP usage, Comment out the call to write_VDLP(0x34000000) in 
+ // quadspi_init() AND have the LUT entry #11 look as follows: 
+ //	lkuptbl = 44;
+ // QSPI0.LUT[lkuptbl++].R = 0x2a1804ed;
+ // QSPI0.LUT[lkuptbl++].R = 0x0c062eff;
+ // QSPI0.LUT[lkuptbl++].R = 0x3a80;
+ // QSPI0.LUT[lkuptbl].R = 0;
+*/
+
+void write_VDLP(u32 vdlp)
+{
+	//write enable 
+	QSPI0.IPCR.R = CMD_WREN << 24;
+
+	while (QSPI0.SR.B.BUSY) ;
+
+	// write data to Tx Buffer
+	QSPI0.TBDR.R = vdlp;
+
+	// send write VDLP command 
+	QSPI0.IPCR.R = (CMD_WRITEVDLP << 24);
+
+	while (QSPI0.SR.B.BUSY) ;
+	wait_while_flash_busy();  // Normally this is not needed - Does not harm. 
+}
+
+#define SMBR	0x30000
 #define USETBL	0xb000
 #define FLASH_BASE_ADR	0x20000000
 #if defined(CONFIG_VYBRID_QSPI_128MBIT_DEVICE)
@@ -712,8 +752,10 @@ int quadspi_init(void)
 
 	QSPI0.SFAR.R = FLASH_BASE_ADR;
 	enable_quad_bit(0x00020000);
+	write_VDLP(0x34000000);
 	QSPI0.SFAR.R = FLASH_BASE1_ADR;
 	enable_quad_bit(0x00020000);
+	write_VDLP(0x34000000);
 
 	QSPI0.SFAR.R = FLASH_BASE_ADR;
 
@@ -1006,6 +1048,8 @@ int qspi_flash_probe(int swap)
 	probed = 1;
 
 	invalidate_dcache_range(0x20000000, 0x20000000 + flash->size);
+
+	printf("QSPI:  %iMb\n", flash->size / 1024 / 1024);
 
 	return 0;
 }
