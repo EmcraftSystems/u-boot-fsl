@@ -84,7 +84,7 @@
 # define KERNEL_FLASH_BASE	"40000"
 # define KERNEL_MEM_BASE	"20040000"
 #endif /* CONFIG_SPLASH_SCREEN */
-
+#define CONFIG_HOSTNAME		vf6-som
 #define CONFIG_EXTRA_ENV_SETTINGS					\
         "autoload=yes\0"						\
         "addip=setenv bootargs ${bootargs} "				\
