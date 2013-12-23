@@ -89,7 +89,8 @@
         "autoload=yes\0"						\
         "addip=setenv bootargs ${bootargs} "				\
                 "ip=${ipaddr}:${serverip}:${gatewayip}:"		\
-                        "${netmask}:${hostname}:eth0:off\0"		\
+                        "${netmask}:${hostname}:eth0:off "		\
+                "fec_mac=${ethaddr}\0"					\
         "ethaddr=C0:B1:3C:77:88:AB\0"					\
         "ipaddr=172.17.44.46\0"						\
         "serverip=172.17.0.1\0"						\
