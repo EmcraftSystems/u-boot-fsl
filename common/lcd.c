@@ -729,12 +729,12 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 
 #ifdef CONFIG_SPLASH_SCREEN_ALIGN
 	if (x == BMP_ALIGN_CENTER)
-		x = max(0, (pwidth - width) / 2);
+		x = max(0, ((s32)pwidth - (s32)width) / 2);
 	else if (x < 0)
 		x = max(0, pwidth - width + x + 1);
 
 	if (y == BMP_ALIGN_CENTER)
-		y = max(0, (panel_info.vl_row - height) / 2);
+		y = max(0, ((s32)panel_info.vl_row - (s32)height) / 2);
 	else if (y < 0)
 		y = max(0, panel_info.vl_row - height + y + 1);
 #endif /* CONFIG_SPLASH_SCREEN_ALIGN */
@@ -817,7 +817,7 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 					*(fb++) = *(bmap++);
 					*(fb++) = 0xFF;
 				}
-				bmap += (padded_line - width) * 4;
+				bmap += (padded_line - width) * 3;
 				fb   -= (width * 4 + lcd_line_length);
 			}
 		}
@@ -825,6 +825,7 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 #endif /* CONFIG_BMP_24BPP */
 
 	default:
+		printf("Cannot handle BMP bpp %d\n", bmp_bpix);
 		break;
 	};
 
