@@ -30,6 +30,8 @@ vidinfo_t panel_info = {
 	vl_bpix:	LCD_BIT_PER_PIXEL
 };
 
+//#define CONFIG_VIDEO_MVF_DCU_COLBAR
+
 void *lcd_base;			/* Start of framebuffer memory */
 void *lcd_console_address;	/* Start of console buffer     */
 
@@ -171,7 +173,6 @@ void lcd_ctrl_init(void *lcdbase)
 		DCU_THRESHOLD_OUT_BUF_LOW(LCD_DCU_THRESHOLD_OUT_BUF_LOW),
 		DCU_THRESHOLD);
 
-#undef CONFIG_VIDEO_MVF_DCU_COLBAR
 #ifdef CONFIG_VIDEO_MVF_DCU_COLBAR
 	dcu_writel(0x00FF00, DCU_COLBAR_1);
 	dcu_writel(0x0000FF, DCU_COLBAR_2);

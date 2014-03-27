@@ -25,7 +25,7 @@
 #ifndef __VYRBID_LCD_CONFIG_H
 #define __VYBRID_LCD_CONFIG_H
 
-#if defined(LCD_TWR_RGB) || defined(LCD_ADDON)
+#if defined(LCD_TWR_RGB)
 
 #	define LCD_XRES			480
 #	define LCD_YRES			272
@@ -46,11 +46,30 @@
 #	define LCD_SYN_POL_INV_VS		1
 #	define LCD_SYN_POL_INV_HS		1
 
-#ifdef LCD_TWR_RGB
 #	define LCD_BOOTARG_NAME		"twr-lcd-rgb"
-#else
+
+#elif defined(LCD_ADDON)
+
+#	define LCD_XRES			480
+#	define LCD_YRES			272
+#	define LCD_BIT_PER_PIXEL	LCD_BPP
+
+#	define LCD_LEFT_MARGIN	5
+#	define LCD_HSYNC_LEN	2
+#	define LCD_RIGHT_MARGIN	40
+
+#	define LCD_UPPER_MARGIN	8
+#	define LCD_VSYNC_LEN	2
+#	define LCD_LOWER_MARGIN	8
+
+#	define LCD_DCU_DIV_RATIO	9
+
+#	define LCD_SYN_POL_INV_PXCK	1
+#	define LCD_SYN_POL_NEG		0
+#	define LCD_SYN_POL_INV_VS		1
+#	define LCD_SYN_POL_INV_HS		1
+
 #	define LCD_BOOTARG_NAME		"lcd-addon"
-#endif
 
 #elif defined(LCD_FUSION7)
 
