@@ -278,7 +278,6 @@ static void set_imx_hdr_v2(struct imx_header *imxhdr, uint32_t dcd_len,
 
 	hdr_v2->boot_data.start = fhdr_v2->self - imxhdr->flash_offset;
 	hdr_v2->boot_data.size = sbuf->st_size +
-			imxhdr->flash_offset +
 			sizeof(struct imx_header);
 
 	/* Security feature are not supported */
