@@ -817,6 +817,10 @@ int splash_screen_prepare(void)
                 return res;
 
         bmp_hdr = (struct bmp_header *)bmp_load_addr;
+	if (bmp_hdr->signature[0] != 'B' || bmp_hdr->signature[1] != 'M') {
+		printf("No valid splash image found\n");
+		goto xit;
+	}
         bmp_size = le32_to_cpu(bmp_hdr->file_size);
 
         if (bmp_load_addr + bmp_size >= gd->start_addr_sp)
@@ -830,6 +834,7 @@ splash_address_too_high:
         printf("Error: splashimage address too high. Data overwrites U-Boot "
                 "and/or placed beyond DRAM boundaries.\n");
 
+xit:
         return -1;
 }
 #endif
