@@ -105,6 +105,17 @@ static struct nand_ecclayout fsl_nfc_ecc45 = {
 		.length = 11} }
 };
 
+static struct nand_ecclayout fsl_nfc_ecc30 = {
+	.eccbytes = 30,
+	.eccpos = {19, 20, 21, 22, 23,
+		   24, 25, 26, 27, 28, 29, 30, 31,
+		   32, 33, 34, 35, 36, 37, 38, 39,
+		   40, 41, 42, 43, 44, 45, 46, 47, 48},
+	.oobfree = {
+		{.offset = 8,
+		.length = 11} }
+};
+
 static inline u32 nfc_read(struct mtd_info *mtd, uint reg)
 {
 	struct nand_chip *chip = mtd->priv;
@@ -361,7 +372,7 @@ fsl_nfc_command(struct mtd_info *mtd, unsigned command,
 		if (hardware_ecc)
 			nfc_set_field(mtd, NFC_FLASH_CONFIG,
 				CONFIG_ECC_MODE_MASK,
-				CONFIG_ECC_MODE_SHIFT, ECC_45_BYTE);
+				CONFIG_ECC_MODE_SHIFT, ECC_30_BYTE);
 		else
 			/* set ECC BY_PASS */
 			nfc_set_field(mtd, NFC_FLASH_CONFIG,
@@ -451,6 +462,109 @@ read0:
 
 	fsl_nfc_done(mtd);
 }
+
+#if defined(CONFIG_NAND_READ_CACHE)
+int do_nload_cached(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	loff_t i;
+	struct mtd_info *mtd = &nand_info[0];
+	struct nand_chip *chip = mtd->priv;
+	struct fsl_nfc_prv *prv = chip->priv;
+	int cmd = 0;
+	unsigned long addr, off, size, cnt, curaddr;
+	int need_skip;
+
+	if (argc < 4) {
+		return CMD_RET_USAGE;
+	}
+
+	addr = simple_strtoul(argv[1], NULL, 16);
+	off = simple_strtoul(argv[2], NULL, 16);
+	size = simple_strtoul(argv[3], NULL, 16);
+
+	if ((off & (mtd->writesize - 1)) != 0) {
+		printf ("Attempt to read non page aligned data\n");
+		return -EINVAL;
+	}
+
+	prv->column = 0;
+	prv->spareonly = 0;
+
+	i = off;
+	cnt = 0;
+	curaddr = addr;
+	while (cnt < size) {
+		if (nand_block_isbad (mtd, i & ~(mtd->erasesize - 1))) {
+			printf ("Skipping bad block 0x%08llx\n",
+				i & ~(mtd->erasesize - 1));
+			i += mtd->erasesize - (i & (mtd->erasesize - 1));
+			continue;
+		}
+
+		prv->page = i / mtd->writesize;
+
+		nfc_set_field(mtd, NFC_FLASH_CONFIG,
+			CONFIG_ECC_MODE_MASK,
+			CONFIG_ECC_MODE_SHIFT, ECC_30_BYTE);
+
+		if ((prv->page % (mtd->erasesize / mtd->writesize)) == 0) {
+			nfc_set_field(mtd, NFC_FLASH_CONFIG,
+				CONFIG_ECC_MODE_MASK,
+				CONFIG_ECC_MODE_SHIFT, ECC_BYPASS);
+
+			fsl_nfc_clear(mtd);
+			nfc_set_field(mtd, NFC_FLASH_CMD2, CMD_BYTE1_MASK,
+					CMD_BYTE1_SHIFT, 0);
+
+			nfc_set_field(mtd, NFC_FLASH_CMD1, CMD_BYTE2_MASK,
+					CMD_BYTE2_SHIFT, 0x30);
+
+			nfc_set_field(mtd, NFC_FLASH_CMD1, CMD_BYTE3_MASK,
+					CMD_BYTE3_SHIFT, 0x31);
+
+			nfc_set_field(mtd, NFC_FLASH_CMD2, BUFNO_MASK,
+					BUFNO_SHIFT, 0);
+
+			nfc_set_field(mtd, NFC_FLASH_CMD2, CMD_CODE_MASK,
+					CMD_CODE_SHIFT, 0x7ed0);
+
+			fsl_nfc_addr_cycle(mtd, 0, prv->page);
+			fsl_nfc_done(mtd);
+			cmd = 0x60;
+		} else {
+			nfc_set_field(mtd, NFC_FLASH_CMD2, CMD_BYTE1_MASK,
+					CMD_BYTE1_SHIFT, 0x31);
+
+			nfc_set_field(mtd, NFC_FLASH_CMD2, BUFNO_MASK,
+					BUFNO_SHIFT, 0);
+
+			cmd = 0x4060;
+		}
+
+		nfc_write(mtd, NFC_DMA1_ADDR, curaddr);
+		nfc_write(mtd, NFC_DMA_CONFIG, (((mtd->writesize) << 20) | 2));
+		nfc_set(mtd, NFC_FLASH_CONFIG, CONFIG_DMA_REQ_MASK);
+		nfc_set_field(mtd, NFC_FLASH_CMD2, CMD_CODE_MASK,
+				CMD_CODE_SHIFT, cmd);
+		fsl_nfc_done(mtd);
+		nfc_clear(mtd, NFC_FLASH_CONFIG, CONFIG_DMA_REQ_MASK);
+		nfc_write(mtd, NFC_DMA_CONFIG, 0);
+
+		i += mtd->writesize;
+		cnt += min(mtd->writesize, size - cnt);
+		curaddr += mtd->writesize;
+	}
+
+	invalidate_dcache_range(addr, roundup(addr + size, mtd->writesize));
+	return 0;
+}
+
+U_BOOT_CMD(
+	nload_cached,	4,		0,	do_nload_cached,
+	"loads an image from NAND to RAM using Spansion's Read Cache command",
+	""
+);
+#endif /* defined(CONFIG_NAND_READ_CACHE) */
 
 /* Copy data from/to NFC spare buffers. */
 static void
@@ -740,7 +854,7 @@ int board_nand_init(struct nand_chip *chip)
 		chip->ecc.write_page = fsl_nfc_write_page;
 		chip->ecc.read_oob = fsl_nfc_read_oob;
 		chip->ecc.write_oob = fsl_nfc_write_oob;
-		chip->ecc.layout = &fsl_nfc_ecc45;
+		chip->ecc.layout = &fsl_nfc_ecc30;
 
 		/* propagate ecc.layout to mtd_info */
 		mtd->ecclayout = chip->ecc.layout;
@@ -750,12 +864,12 @@ int board_nand_init(struct nand_chip *chip)
 		chip->ecc.mode = NAND_ECC_HW;
 		/* RS-ECC is applied for both MAIN+SPARE not MAIN alone */
 		chip->ecc.steps = 1;
-		chip->ecc.bytes = 45;
+		chip->ecc.bytes = 30;
 		chip->ecc.size = 0x800;
 
 		nfc_set_field(mtd, NFC_FLASH_CONFIG,
 				CONFIG_ECC_MODE_MASK,
-				CONFIG_ECC_MODE_SHIFT, ECC_45_BYTE);
+				CONFIG_ECC_MODE_SHIFT, ECC_30_BYTE);
 		/* set ECC_STATUS write position */
 		nfc_set_field(mtd, NFC_FLASH_CONFIG,
 				CONFIG_ECC_SRAM_ADDR_MASK,
@@ -874,7 +988,6 @@ int do_nand_boot_update(cmd_tbl_t *cmdtp, int flag,
 	addr = (u_char *)mem_addr + 0xf80;
 
 	data_size = ((data_size - 0xf80) + 0x800) & ~(0x800 - 1) ;
-
 
 	if (nand_write_skip_bad(nand, 0x2000, &data_size, addr, 0)) {
 		printf("write nand boot error!\n");

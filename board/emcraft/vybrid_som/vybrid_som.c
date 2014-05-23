@@ -35,8 +35,10 @@
 #include <asm/arch/scsc_regs.h>
 #include <i2c.h>
 #include <mmc.h>
+#include <nand.h>
 #include <fsl_esdhc.h>
 #include <usb/ehci-fsl.h>
+#include <bmp_layout.h>
 #include "ocotp_ctrl_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -620,8 +622,8 @@ int board_early_init_f(void)
 	return 0;
 }
 
-#ifdef CONFIG_CMD_SET_QSPI_BOOT
-int do_set_qspi_boot(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+#ifdef CONFIG_CMD_SET_BOOT_MEDIA
+int do_set_boot_media(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	typedef struct fuse_struct {
 		char bankno;
@@ -629,12 +631,21 @@ int do_set_qspi_boot(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		char bytepos;
 		char value;
 	} fusedata_t, *pfuse_t;
-#if 1
+	int c;
+#if defined(CONFIG_BOOT_MEDIA_NAND)
+       // nand
+	fusedata_t fuse[3] = {
+		0, 5, 1, 0x1a,  /* boot search count 8, pages in block 64 */
+		0, 5, 0, 0x80,  /* NAND */
+		0, 6, 0, 0x10,
+	};
+
+#elif defined(CONFIG_BOOT_MEDIA_QSPI)
 	// quadspi
 	fusedata_t fuse[1] = {
 		{ 0, 6, 0, 0x10 },
 	};
-#else
+#elif 0
 	// sdhc
 	fusedata_t fuse[3] = {
 		0, 5, 1, 0x28,	/* 4-bit, esdhc 1 */
@@ -642,13 +653,34 @@ int do_set_qspi_boot(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 				0, 6, 0, 0x10,
 //			0, 5, 2, 0x40
 	};
+#else
+#error Boot media is not defined!
 #endif
+
+	if (argc < 2 || strcmp(argv[1], "-f") != 0) {
+		printf("This will program Vybrid eFUSES to boot from "
+#if defined(CONFIG_BOOT_MEDIA_NAND)
+				"NAND"
+#elif defined(CONFIG_BOOT_MEDIA_QSPI)
+				"QSPI"
+#elif 0
+				"ESDHC"
+#else
+#error Boot media is not defined!
+#endif
+				". This cannot be undone."
+				"\nContinue? (Y/N): ");
+                c = getc(); putc('\n');
+                if ((c != 'y') && (c != 'Y')) {
+                        return 0;
+                }
+	}
 
 	int sz, temp;
 	char bank_num=0, word_num=0, byte_pos=0, fuse_val=0;
 	int i;
 
-	/* timings for 132MHz IPG clock
+	/* timings for 132MHz IPG clock (must work for lesser frequencies)
 	   relax = 2, (2+1)/132000000=22ns > 16.2ns
 	   read = 10,(10+1-2*(2+1))/132000000=37ns > 36ns
 	   prog = 1325,(1325+1-2*(2+1))/132000000=10000ns */
@@ -671,20 +703,27 @@ int do_set_qspi_boot(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			;  //no use. Just to remove if
 		else
 			printf("Successful programming of fuse bank number 0x%x, word_num 0x%x, at byte position 0x%x with fuse data 0x%x\n",bank_num,word_num,byte_pos,fuse_val);
-		
-		//Reload cache 
+
+		//Reload cache
 		HW_OCOTP_CTRL_WR(HW_OCOTP_CTRL_RD() | BM_OCOTP_CTRL_RELOAD_SHADOWS);
 		//wait for busy
 		wait4Busy();
 	}
-		
-
 }
 
 U_BOOT_CMD(
-	set_qspi_boot,	5,		0,	do_set_qspi_boot,
-	"sets eFuses of Vybrid to boot from QSPI",
-	""
+	set_boot_media,	5,		0,	do_set_boot_media,
+	"sets eFuses of Vybrid to boot from "
+#if defined(CONFIG_BOOT_MEDIA_NAND)
+	"NAND",
+#elif defined(CONFIG_BOOT_MEDIA_QSPI)
+	"QSPI",
+#elif 0
+	"ESDHC",
+#else
+#error Boot media is not defined!
+#endif
+	"-f to suppress warning"
 );
 #endif
 
@@ -751,19 +790,28 @@ void v7_outer_cache_enable(void)
 #endif
 #endif
 
-#if defined(CONFIG_LCD) && defined(CONFIG_CMD_NAND)
-static int splash_load_from_nand(u32 bmp_load_addr)
+#if defined(CONFIG_SPLASH_SCREEN) && defined(CONFIG_CMD_NAND)
+int splash_screen_prepare(void)
 {
         struct bmp_header *bmp_hdr;
-        int res, splash_screen_nand_offset = 0x100000;
+        int res, splash_screen_nand_offset;
         size_t bmp_size, bmp_header_size = sizeof(struct bmp_header);
+	u32 bmp_load_addr;
+	char *s;
+
+	if ((s = getenv("splashimage")) == NULL) {
+		return -1;
+	}
+
+	bmp_load_addr = simple_strtoul (s, NULL, 16);
+
+	splash_screen_nand_offset = simple_strtoul (SPLASH_FLASH_BASE, NULL, 16);
 
         if (bmp_load_addr + bmp_header_size >= gd->start_addr_sp)
                 goto splash_address_too_high;
 
         res = nand_read_skip_bad(&nand_info[nand_curr_device],
                         splash_screen_nand_offset, &bmp_header_size,
-                        NULL, nand_info[nand_curr_device].size,
                         (u_char *)bmp_load_addr);
         if (res < 0)
                 return res;
@@ -776,7 +824,6 @@ static int splash_load_from_nand(u32 bmp_load_addr)
 
         return nand_read_skip_bad(&nand_info[nand_curr_device],
                         splash_screen_nand_offset, &bmp_size,
-                        NULL, nand_info[nand_curr_device].size,
                         (u_char *)bmp_load_addr);
 
 splash_address_too_high:

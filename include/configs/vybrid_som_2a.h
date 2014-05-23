@@ -28,6 +28,14 @@
 
 #define CONFIG_SYS_BOARD_REV            0x2A
 
+#define CONFIG_BOOT_MEDIA_NAND
+/* #define CONFIG_BOOT_MEDIA_QSPI */
+
+#if !defined(CONFIG_BOOT_MEDIA_NAND) && !defined(CONFIG_BOOT_MEDIA_QSPI) || \
+	defined(CONFIG_BOOT_MEDIA_NAND) && defined(CONFIG_BOOT_MEDIA_QSPI)
+#error Only one boot media must be configured!
+#endif
+
 /* #define CONFIG_SYS_ICACHE_OFF */
 /* #define CONFIG_SYS_DCACHE_OFF */
 /* #define CONFIG_SYS_ARM_CACHE_WRITETHROUGH */
@@ -43,9 +51,22 @@
 
 #define CONFIG_VYBRID_QSPI_512MBIT_DEVICE
 
-#define CONFIG_ENV_IS_IN_QSPI_FLASH
-#define CONFIG_ENV_OFFSET		(0x40000)
+#if defined(CONFIG_BOOT_MEDIA_NAND)
+#define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_ENV_SIZE			(0x10000)
+#define CONFIG_ENV_OFFSET		(0xe0000)
+#define CONFIG_ENV_OFFSET_REDUND	(0x100000)
+
+#define CONFIG_MTD_SPLASH_PART_START	0x120000
+#define CONFIG_MTD_SPLASH_PART_LEN	0x180000
+#elif defined(CONFIG_BOOT_MEDIA_QSPI)
+#define CONFIG_ENV_IS_IN_QSPI_FLASH
+#define CONFIG_ENV_SIZE			(0x10000)
+#define CONFIG_ENV_OFFSET		(0x40000)
+
+#define CONFIG_MTD_SPLASH_PART_START	0x080000
+#define CONFIG_MTD_SPLASH_PART_LEN	0x180000
+#endif
 
 #undef CONFIG_LCD
 #undef CONFIG_VIDEO_MVF_DCU
@@ -57,9 +78,6 @@
 #undef CONFIG_SETUP_VIDEOLFB_TAG
 #undef CONFIG_SETUP_MTDSPLASHPART_TAG
 
-#define CONFIG_MTD_SPLASH_PART_START	0x080000
-#define CONFIG_MTD_SPLASH_PART_LEN	0x180000
-
 #define CONFIG_BMP
 #undef CONFIG_CMD_BMP
 #define CONFIG_BMP_24BPP
@@ -69,21 +87,63 @@
 
 #ifdef CONFIG_SETUP_MTDSPLASHPART_TAG
 
+#if defined(CONFIG_BOOT_MEDIA_NAND)
 # if CONFIG_MTD_SPLASH_PART_LEN != 0x180000
 #  error "Current partition config is for splash len = 0x180000"
 # endif
 
-# if CONFIG_MTD_SPLASH_PART_START != 0x080000
+# if CONFIG_MTD_SPLASH_PART_START != 0x120000
+#  error "Current partition config is for splash start = 0x080000"
+# endif
+
+# define KERNEL_FLASH_BASE	"2A0000"
+
+#elif defined(CONFIG_BOOT_MEDIA_QSPI)
+
+# if CONFIG_MTD_SPLASH_PART_LEN != 0x180000
+#  error "Current partition config is for splash len = 0x180000"
+# endif
+
+# if CONFIG_MTD_SPLASH_PART_START != 0x800000
 #  error "Current partition config is for splash start = 0x080000"
 # endif
 
 # define KERNEL_FLASH_BASE	"200000"
 # define KERNEL_MEM_BASE	"20200000"
 
-#else /* CONFIG_SPLASH_SCREEN */
+#endif /* defined(CONFIG_BOOT_MEDIA_NAND) */
+
+#else /* CONFIG_SETUP_MTDSPLASHPART_TAG */
+
+#if defined(CONFIG_BOOT_MEDIA_NAND)
+# define KERNEL_FLASH_BASE	"120000"
+#elif defined(CONFIG_BOOT_MEDIA_QSPI)
 # define KERNEL_FLASH_BASE	"80000"
 # define KERNEL_MEM_BASE	"20080000"
-#endif /* CONFIG_SPLASH_SCREEN */
+#endif
+#endif /* CONFIG_SETUP_MTDSPLASHPART_TAG */
+
+#if defined(CONFIG_BOOT_MEDIA_NAND)
+# define BOOTCMD \
+	"nandboot=nload_cached ${loadaddr} " KERNEL_FLASH_BASE		\
+	" ${flashsize} && run addip && bootm\0"				\
+	"bootcmd=run nandboot\0"
+# define UPDATECMD \
+	"update=tftp ${image} && nand erase.spread "			\
+	KERNEL_FLASH_BASE " ${filesize} && nand write ${loadaddr} "	\
+	KERNEL_FLASH_BASE " ${filesize} && setenv flashsize ${filesize}"\
+	" && saveenv\0"
+#elif defined(CONFIG_BOOT_MEDIA_QSPI)
+# define BOOTCMD \
+	"qspiboot=qspi probe 1 && cp.b " KERNEL_MEM_BASE " ${loadaddr} "\
+	"${flashsize} && run addip && bootm\0"				\
+	"bootcmd=run qspiboot\0"
+# define UPDATECMD \
+	"update=tftp ${image} && qspi probe 1 && qspi erase "		\
+	KERNEL_FLASH_BASE " +${filesize} && qspi write ${loadaddr} "	\
+	KERNEL_FLASH_BASE " ${filesize} && setenv flashsize ${filesize}"\
+	" && saveenv\0"
+#endif
 
 #define CONFIG_HOSTNAME		vf6-som
 #define CONFIG_EXTRA_ENV_SETTINGS					\
@@ -97,14 +157,10 @@
         "serverip=172.17.0.1\0"						\
         "image=uImage\0"						\
 	"netboot=tftp ${image};run addip;bootm\0"			\
-	"bootcmd=qspi probe 1;cp.b " KERNEL_MEM_BASE " ${loadaddr} "	\
-	"${flashsize};run addip;bootm\0"				\
+	BOOTCMD								\
 	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200 "	\
 	LCD_BOOTARG "\0"						\
 	"verify=no\0"							\
 	"bootdelay=3\0"							\
-	"update=tftp ${image} && qspi probe 1 && qspi erase "		\
-	KERNEL_FLASH_BASE " +${filesize} && qspi write ${loadaddr} "	\
-	KERNEL_FLASH_BASE " ${filesize} && setenv flashsize ${filesize}"\
-	" && saveenv\0"
+	UPDATECMD
 #endif /* __CONFIG_H */

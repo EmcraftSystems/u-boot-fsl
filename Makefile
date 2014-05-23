@@ -447,7 +447,7 @@ $(obj)u-boot.sb:       $(obj)u-boot.bin $(obj)spl/u-boot-spl.bin
 		elftosb -zdf imx28 -c $(TOPDIR)/board/$(BOARDDIR)/u-boot.bd \
 			-o $(obj)u-boot.sb
 
-$(obj)u-boot.qspi:       $(obj)u-boot.imx
+$(obj)u-boot.flash:       $(obj)u-boot.imx
 		cat board/$(BOARDDIR)/qspi-header $< > $@
 
 ifeq ($(CONFIG_SANDBOX),y)
