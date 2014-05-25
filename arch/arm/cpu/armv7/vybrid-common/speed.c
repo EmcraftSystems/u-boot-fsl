@@ -32,10 +32,10 @@ DECLARE_GLOBAL_DATA_PTR;
 
 int get_clocks(void)
 {
-	gd->bus_clk = 66000000;
-	gd->ipg_clk = 66000000;
+	gd->bus_clk = CONFIG_SYS_CLOCK_FREQUENCY / 3;
+	gd->ipg_clk = gd->bus_clk / 2;
 #ifdef CONFIG_FSL_ESDHC
-	gd->sdhc_clk = 132000000;
+	gd->sdhc_clk = CONFIG_SYS_CLOCK_FREQUENCY / 3;
 #endif
 	return 0;
 }

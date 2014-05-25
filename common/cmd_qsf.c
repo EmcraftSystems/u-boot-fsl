@@ -441,11 +441,13 @@ void quadspi_setup_clocks(void)
 {
 	u32 temp;
 
-	temp = __raw_readl(0x4006b010) | 0x03C00000;
+	temp = __raw_readl(0x4006b010) & 0xfc3fffff;
+	temp |= 0x02800000;
 	__raw_writel(temp, 0x4006b010);
-
 	temp = __raw_readl(0x4006b01C) | 0x1F1D;	// cdsr3
 	__raw_writel(temp, 0x4006b01C);
+
+	mdelay(100);
 }
 
 void quadspi_config_spi0(void)

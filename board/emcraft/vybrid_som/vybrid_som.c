@@ -358,17 +358,17 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x00202000, DDR_CR114);
 	__raw_writel(0x20200000, DDR_CR115);
 #endif
-	
+
 	//
 	// AXI ports
 	//
-//	__raw_writel(0x00000101, DDR_CR117);	// FIFO type (0-async, 1-2:1, 2-1:2, 3- sync, w_pri, r_prii
-	__raw_writel(0x00020101, DDR_CR117);	// FIFO type (0-async, 1-2:1, 2-1:2, 3- sync, w_pri, r_prii
+	__raw_writel(0x00000101, DDR_CR117);	// FIFO type (0-async, 1-2:1, 2-1:2, 3- sync, w_pri, r_prii
+//	__raw_writel(0x00020101, DDR_CR117);	// FIFO type (0-async, 1-2:1, 2-1:2, 3- sync, w_pri, r_prii
 
 	__raw_writel(0x01010000, DDR_CR118);	// w_pri, rpri, en
 
-//	__raw_writel(0x00000000, DDR_CR119);	// fifo_type
-	__raw_writel(0x00000002, DDR_CR119);	// fifo_type/
+	__raw_writel(0x00000000, DDR_CR119);	// fifo_type
+//	__raw_writel(0x00000002, DDR_CR119);	// fifo_type/
 
 	__raw_writel(0x02020000, DDR_CR120);
 	__raw_writel(0x00000202, DDR_CR121);	// round robin port ordering

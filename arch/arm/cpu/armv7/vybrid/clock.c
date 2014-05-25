@@ -40,70 +40,71 @@ enum pll_clocks {
 	PLL_CLOCKS,
 };
 
-struct mxc_pll_reg *vybridc_plls[PLL_CLOCKS] = {
-/*
-	[PLL1_CLOCK] = (struct mxc_pll_reg *)PLL1_BASE_ADDR,
-	[PLL2_CLOCK] = (struct mxc_pll_reg *)PLL2_BASE_ADDR,
-	[PLL3_CLOCK] = (struct mxc_pll_reg *)PLL3_BASE_ADDR,
-*/
+unsigned long anadig_ctrl[PLL_CLOCKS] = {
+	0x40050270,
+	0x40050030,
+	0x40050010,
+	0x40050070,
+};
+
+unsigned long anadig_num[PLL_CLOCKS] = {
+	0x40050290,
+	0x40050050,
+	0x00000000,
+	0x40050080,
+};
+
+unsigned long anadig_denum[PLL_CLOCKS] = {
+	0x400502A0,
+	0x40050060,
+	0x00000000,
+	0x40050090,
+};
+
+unsigned long anadig_pfd[PLL_CLOCKS] = {
+	0x400502B0,
+	0x40050100,
+	0x400500F0,
+	0x00000000,
 };
 
 struct clkctl *ccm = (struct clkctl *)CCM_BASE_ADDR;
 
 /* Calculate the frequency of PLLn. */
-static uint32_t decode_pll(struct mxc_pll_reg *pll, uint32_t infreq)
+static uint32_t decode_pll(enum pll_clocks pll, uint32_t pfd)
 {
-#if 0
-	uint32_t ctrl, op, mfd, mfn, mfi, pdf, ret;
-	uint64_t refclk, temp;
-	int32_t mfn_abs;
+	unsigned long freq;
 
-	ctrl = readl(&pll->ctrl);
-
-	if (ctrl & MXC_DPLLC_CTL_HFSM) {
-		mfn = __raw_readl(&pll->hfs_mfn);
-		mfd = __raw_readl(&pll->hfs_mfd);
-		op = __raw_readl(&pll->hfs_op);
-	} else {
-		mfn = __raw_readl(&pll->mfn);
-		mfd = __raw_readl(&pll->mfd);
-		op = __raw_readl(&pll->op);
+	switch (pll) {
+	case PLL1_CLOCK:
+	case PLL2_CLOCK:
+	case PLL3_CLOCK:
+		if (pll == PLL3_CLOCK)
+			freq = CONFIG_SYS_VYBRID_HCLK * 20;
+		else
+			freq = (__raw_readl(anadig_ctrl[pll]) & 1 ?
+				CONFIG_SYS_VYBRID_HCLK * 22 :
+					CONFIG_SYS_VYBRID_HCLK * 20) +
+				CONFIG_SYS_VYBRID_HCLK *
+				__raw_readl(anadig_num[pll]) /
+				__raw_readl(anadig_denum[pll]);
+		if (!pfd)
+			return freq;
+		else if (!((__raw_readl(anadig_pfd[pll]) >> ((pfd - 1) * 8)) &
+						(1 << 6)))
+			return 0;
+		else
+			return (unsigned long long)freq * 18 /
+				((__raw_readl(anadig_pfd[pll]) >>
+						((pfd - 1) * 8)) & 0x3F);
+		break;
+	case PLL4_CLOCK:
+		return CONFIG_SYS_VYBRID_HCLK * (__raw_readl(anadig_ctrl[pll]) & 0xFF);
+		break;
+	default:
+		return 0;
 	}
-
-	mfd &= MXC_DPLLC_MFD_MFD_MASK;
-	mfn &= MXC_DPLLC_MFN_MFN_MASK;
-	pdf = op & MXC_DPLLC_OP_PDF_MASK;
-	mfi = (op & MXC_DPLLC_OP_MFI_MASK) >> MXC_DPLLC_OP_MFI_OFFSET;
-
-	/* 21.2.3 */
-	if (mfi < 5)
-		mfi = 5;
-
-	/* Sign extend */
-	if (mfn >= 0x04000000) {
-		mfn |= 0xfc000000;
-		mfn_abs = -mfn;
-	} else
-		mfn_abs = mfn;
-
-	refclk = infreq * 2;
-	if (ctrl & MXC_DPLLC_CTL_DPDCK0_2_EN)
-		refclk *= 2;
-
-	do_div(refclk, pdf + 1);
-	temp = refclk * mfn_abs;
-	do_div(temp, mfd + 1);
-	ret = refclk * mfi;
-
-	if ((int)mfn < 0)
-		ret -= temp;
-	else
-		ret += temp;
-
-	return ret;
-#else
 	return 0;
-#endif
 }
 
 /* Get mcu main rate */
@@ -117,7 +118,7 @@ u32 get_mcu_main_clk(void)
 	return freq / (reg + 1);
 #else
 	/* FIXME: calculate the CA5 frequency rather than hard-coding */
-	return 396000000;
+	return CONFIG_SYS_CLOCK_FREQUENCY;
 #endif
 }
 
@@ -181,7 +182,7 @@ static u32 get_ipg_clk(void)
 
 	return freq / div;
 #else
-	return 66000000;
+	return CONFIG_SYS_CLOCK_FREQUENCY / 6;
 #endif
 }
 
@@ -295,26 +296,256 @@ u32 vybrid_get_fecclk(void)
 #endif
 }
 
-/* Dump some core clockes. */
+/* Dump some core clocks. */
 int do_vybrid_showclocks(cmd_tbl_t *cmdtp, int flag, int argc,
 			 char * const argv[])
 {
-#if 0
-	u32 freq;
-	freq = decode_pll(vybridc_plls[PLL1_CLOCK], CONFIG_SYS_VYBRID_HCLK);
-	printf("PLL1       %8d MHz\n", freq / 1000000);
-	freq = decode_pll(vybridc_plls[PLL2_CLOCK], CONFIG_SYS_VYBRID_HCLK);
-	printf("PLL2       %8d MHz\n", freq / 1000000);
-	freq = decode_pll(vybridc_plls[PLL3_CLOCK], CONFIG_SYS_VYBRID_HCLK);
-	printf("PLL3       %8d MHz\n", freq / 1000000);
-#endif
+	u32 freq, ca5_freq;
+
 	printf("\n");
-	printf("AHB        %8d kHz\n",
-		vybrid_get_clock(VYBRID_AHB_CLK) / 1000);
-	printf("IPG        %8d kHz\n",
-		vybrid_get_clock(VYBRID_IPG_CLK) / 1000);
-	printf("IPG PERCLK %8d kHz\n",
-		vybrid_get_clock(VYBRID_IPG_PERCLK) / 1000);
+
+	printf("Cortex-A5  ");
+	switch (__raw_readl(0x4006b008) & 7) {
+	case 0:
+		ca5_freq = 24000000;
+		printf("FAST CLK");
+		break;
+	case 1:
+		ca5_freq = 32000;
+		printf("SLOW CLK");
+		break;
+	case 2:
+		ca5_freq = decode_pll(PLL2_CLOCK,
+				(__raw_readl(0x4006b008) >> 19) & 7);
+		printf("PLL2");
+		if ((__raw_readl(0x4006b008) >> 19) & 7)
+			printf(" PFD%i", (__raw_readl(0x4006b008) >> 19) & 7);
+		break;
+	case 3:
+		ca5_freq = decode_pll(PLL2_CLOCK, 0);
+		printf("PLL2");
+		break;
+	case 4:
+		ca5_freq = decode_pll(PLL1_CLOCK,
+				(__raw_readl(0x4006b008) >> 16) & 7);
+		printf("PLL1");
+		if ((__raw_readl(0x4006b008) >> 16) & 7)
+			printf(" PFD%i", (__raw_readl(0x4006b008) >> 16) & 7);
+		break;
+	case 5:
+		ca5_freq = decode_pll(PLL3_CLOCK, 0);
+		printf("PLL3");
+		break;
+	default:
+		ca5_freq = 0;
+		break;
+	}
+
+	printf(" (%3d MHz)\n", ca5_freq / 1000000);
+	printf("Cortex-M4  %3d MHz\n",
+			ca5_freq / (((__raw_readl(0x4006b00c) >> 3) & 7) + 1) /
+			1000000);
+	printf("PlatBus    %3d MHz\n",
+			ca5_freq / (((__raw_readl(0x4006b00c) >> 3) & 7) + 1) /
+			1000000);
+	printf("IPG        %3d MHz\n",
+			ca5_freq / (((__raw_readl(0x4006b00c) >> 3) & 7) + 1) /
+			(((__raw_readl(0x4006b00c) >> 11) & 3) + 1) /
+			1000000);
+	printf("PLL1       %3d MHz (%10d, %10d, %10d, %10d)\n",
+			decode_pll(PLL1_CLOCK, 0) / 1000000,
+			decode_pll(PLL1_CLOCK, 1),
+			decode_pll(PLL1_CLOCK, 2),
+			decode_pll(PLL1_CLOCK, 3),
+			decode_pll(PLL1_CLOCK, 4));
+	printf("PLL2       %3d MHz (%10d, %10d, %10d, %10d)\n",
+			decode_pll(PLL2_CLOCK, 0) / 1000000,
+			decode_pll(PLL2_CLOCK, 1),
+			decode_pll(PLL2_CLOCK, 2),
+			decode_pll(PLL2_CLOCK, 3),
+			decode_pll(PLL2_CLOCK, 4));
+	printf("PLL3       %3d MHz (%10d, %10d, %10d, %10d)\n",
+			decode_pll(PLL3_CLOCK, 0) / 1000000,
+			decode_pll(PLL3_CLOCK, 1),
+			decode_pll(PLL3_CLOCK, 2),
+			decode_pll(PLL3_CLOCK, 3),
+			decode_pll(PLL3_CLOCK, 4));
+	printf("PLL4       %3d MHz\n",
+			decode_pll(PLL3_CLOCK, 0) / 1000000);
+
+	printf("DDR        ");
+	if ((__raw_readl(0x4006b008) >> 6) & 1) {
+		printf("SYS_DIV_OUT_CLK (%d)\n", ca5_freq);
+	} else {
+		printf("PLL2 PFD2 (%d)\n", decode_pll(PLL2_CLOCK, 2));
+	}
+
+	printf("NFC        ");
+	if (!(__raw_readl(0x4006b018) & 0x200)) {
+		printf("Disabled\n");
+	} else {
+		switch ((__raw_readl(0x4006b010) >> 12) & 3) {
+		case 0:
+			printf("Platform Bus Clock");
+			freq = gd->bus_clk;
+			break;
+		case 1:
+			printf("PLL1 PFD1");
+			freq = decode_pll(PLL1_CLOCK, 1);
+			break;
+		case 2:
+			printf("PLL3 PFD1");
+			freq = decode_pll(PLL3_CLOCK, 1);
+			break;
+		case 3:
+			printf("PLL3 PFD3");
+			freq = decode_pll(PLL3_CLOCK, 3);
+			break;
+		default:
+			printf("impossible");
+			freq = 0;
+			break;
+		}
+		printf(" (%d)\n", freq /
+				(((__raw_readl(0x4006B01C) >> 13) & 7) + 1) /
+				(((__raw_readl(0x4006B018) >> 4) & 0xF) + 1));
+	}
+
+	printf("QSPI0      ");
+	if (!(__raw_readl(0x4006B01C) & 0x10)) {
+		printf("Disabled\n");
+	} else {
+		if (__raw_readl(0x4006b03C) & 2) {
+			printf("Platform Bus Clock");
+			freq = gd->bus_clk;
+		} else {
+			switch ((__raw_readl(0x4006b010) >> 22) & 3) {
+			case 0:
+				printf("PLL3");
+				freq = decode_pll(PLL3_CLOCK, 0);
+				break;
+			case 1:
+				printf("PLL3 PFD4");
+				freq = decode_pll(PLL3_CLOCK, 4);
+				break;
+			case 2:
+				printf("PLL2 PFD4");
+				freq = decode_pll(PLL2_CLOCK, 4);
+				break;
+			case 3:
+				printf("PLL1 PFD4");
+				freq = decode_pll(PLL1_CLOCK, 4);
+				break;
+			default:
+				printf("impossible");
+				freq = 0;
+				break;
+			}
+		}
+
+		printf(" (%d)\n", freq /
+				(1 + ((__raw_readl(0x4006B01C) >> 3) & 1)) /
+				(1 + ((__raw_readl(0x4006B01C) >> 2) & 1)) /
+				(1 + ((__raw_readl(0x4006B01C) >> 0) & 3)));
+	}
+
+	printf("QSPI1      ");
+	if (!(__raw_readl(0x4006B01C) & 0x1000)) {
+		printf("Disabled\n");
+	} else {
+		if (__raw_readl(0x4006b03C) & 2) {
+			printf("Platform Bus Clock");
+			freq = gd->bus_clk;
+		} else {
+			switch ((__raw_readl(0x4006b010) >> 24) & 3) {
+			case 0:
+				printf("PLL3");
+				freq = decode_pll(PLL3_CLOCK, 0);
+				break;
+			case 1:
+				printf("PLL3 PFD4");
+				freq = decode_pll(PLL3_CLOCK, 4);
+				break;
+			case 2:
+				printf("PLL2 PFD4");
+				freq = decode_pll(PLL2_CLOCK, 4);
+				break;
+			case 3:
+				printf("PLL1 PFD4");
+				freq = decode_pll(PLL1_CLOCK, 4);
+				break;
+			default:
+				printf("impossible");
+				freq = 0;
+				break;
+			}
+		}
+
+		printf(" (%d)\n", freq /
+				(1 + ((__raw_readl(0x4006B01C) >> 11) & 1)) /
+				(1 + ((__raw_readl(0x4006B01C) >> 10) & 1)) /
+				(1 + ((__raw_readl(0x4006B01C) >> 8) & 3)));
+	}
+
+	printf("eSDHC0     ");
+	if (!(__raw_readl(0x4006b018) & (1 << 28))) {
+		printf("Disabled\n");
+	} else {
+		switch ((__raw_readl(0x4006b010) >> 16) & 0x3) {
+		case 3:
+			printf("Platform Bus Clock");
+			freq = gd->bus_clk;
+			break;
+		case 0:
+			printf("PLL3");
+			freq = decode_pll(PLL3_CLOCK, 0);
+			break;
+		case 1:
+			printf("PLL3 PFD3");
+			freq = decode_pll(PLL3_CLOCK, 3);
+			break;
+		case 2:
+			printf("PLL1 PFD3");
+			freq = decode_pll(PLL1_CLOCK, 3);
+			break;
+		default:
+			printf("impossible");
+			freq = 0;
+			break;
+		}
+		printf(" (%d)\n", freq /
+				(((__raw_readl(0x4006B018) >> 16) & 0xF) + 1));
+	}
+
+	printf("eSDHC1     ");
+	if (!(__raw_readl(0x4006b018) & (1 << 29))) {
+		printf("Disabled\n");
+	} else {
+		switch ((__raw_readl(0x4006b010) >> 18) & 0x3) {
+		case 3:
+			printf("Platform Bus Clock");
+			freq = gd->bus_clk;
+			break;
+		case 0:
+			printf("PLL3");
+			freq = decode_pll(PLL3_CLOCK, 0);
+			break;
+		case 1:
+			printf("PLL3 PFD3");
+			freq = decode_pll(PLL3_CLOCK, 3);
+			break;
+		case 2:
+			printf("PLL1 PFD3");
+			freq = decode_pll(PLL1_CLOCK, 3);
+			break;
+		default:
+			printf("impossible");
+			freq = 0;
+			break;
+		}
+		printf(" (%d)\n", freq /
+				(((__raw_readl(0x4006B018) >> 20) & 0xF) + 1));
+	}
 
 	return 0;
 }

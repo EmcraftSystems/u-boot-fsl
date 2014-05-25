@@ -91,6 +91,11 @@
 .macro init_clock
 	ldr r0, =CCM_BASE_ADDR
 
+	/* reset CCSR to defaults;
+	   probably this is only needed for JLink programmer */
+	ldr r1, =0
+	str r1, [r0, #CLKCTL_CCSR]
+
 	ldr r1, =CONFIG_SYS_CLKCTRL_CLPCR
 	str r1, [r0, #CLKCTL_CLPCR]
 
@@ -123,10 +128,19 @@
 	ldr r2, =ANATOP_BASE_ADDR
 	ldr r1, =CONFIG_SYS_ANADIG_528_CTRL
 	str r1, [r2, #0x30]
+	ldr r1, =CONFIG_SYS_ANADIG_PFD_528
+	str r1, [r2, #0x100]
 	ldr r1, =CONFIG_SYS_ANADIG_ENET_CTRL
 	str r1, [r2, #0xE0]
 	ldr r1, =CONFIG_SYS_ANADIG_SYS_CTRL
 	str r1, [r2, #0x270]
+	ldr r1, =CONFIG_SYS_ANADIG_SYS_NUM
+	str r1, [r2, #0x290]
+	ldr r1, =CONFIG_SYS_ANADIG_SYS_DENOM
+	str r1, [r2, #0x2A0]
+	ldr r1, =CONFIG_SYS_ANADIG_SYS_PFD_528
+	ldr r1, =CONFIG_SYS_ANADIG_SYS_PFD_528
+	str r1, [r2, #0x2B0]
 
 	/*check for PLL2 lock*/
 wait_PLL2:	ldr r1, [r2, #0x30]
