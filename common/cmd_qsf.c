@@ -441,13 +441,11 @@ void quadspi_setup_clocks(void)
 {
 	u32 temp;
 
-	temp = __raw_readl(0x4006b010) & 0xfc3fffff;
-	temp |= 0x02800000;
+	temp = __raw_readl(0x4006b010) | 0x01400000;
 	__raw_writel(temp, 0x4006b010);
-	temp = __raw_readl(0x4006b01C) | 0x1F1D;	// cdsr3
-	__raw_writel(temp, 0x4006b01C);
 
-	mdelay(100);
+	temp = __raw_readl(0x4006b01C) | 0x1C1C;	// cdsr3
+	__raw_writel(temp, 0x4006b01C);
 }
 
 void quadspi_config_spi0(void)
@@ -461,7 +459,8 @@ void quadspi_config_spi0(void)
 
 	QSPI0.BUF0CR.R = 0x005;
 	QSPI0.BUF1CR.R = 0x002;
-	QSPI0.BUF3CR.R = 0x80000000;
+	// Set AHB Buffer to 1kB
+	QSPI0.BUF3CR.R = 0x80007f00;
 
 #if defined(CONFIG_VYBRID_QSPI_128MBIT_DEVICE)
 	QSPI0.SFA1AD.R = 0x21000000;	// top address of FA1 
@@ -1062,6 +1061,131 @@ int do_qspi_flash_probe(int argc, char * const argv[])
 	return qspi_flash_probe(simple_strtoul(argv[1], &endp, 16));
 }
 
+int do_qspi_flash_bench(int argc, char * const argv[])
+{
+	float throughput;
+	unsigned int float1, float2;
+	volatile ulong start, end;
+	ulong	count, ReadSize, SizeInMB;
+	int size;
+	u_char *u_char_dest, *u_char_addr;
+	ushort *ushort_dest, *ushort_addr;
+	ulong  *ulong_dest, *ulong_addr;
+	unsigned long long  *ulonglong_dest, *ulonglong_addr;
+	char *endp;
+
+	if (argc < 3)
+	{
+		printf("too few arguments\n");
+		return -1;
+	}
+
+	u_char_addr = (u_char*)0x24050000;
+	u_char_dest = (u_char*)0x80007fc0;
+	ushort_addr = (ushort*)0x24050000;
+	ushort_dest = (ushort*)0x80007fc0;
+	ulong_addr = (ulong*)0x24050000;
+	ulong_dest = (ulong*)0x80007fc0;
+	ulonglong_addr = (unsigned long long*)0x24050000;
+	ulonglong_dest = (unsigned long long*)0x80007fc0;
+
+	if (strcmp(argv[1], "1") == 0)
+		size = 1;
+	else if (strcmp(argv[1], "2") == 0)
+		size = 2;
+	else if (strcmp(argv[1], "4") == 0)
+		size = 4;
+	else if (strcmp(argv[1], "8") == 0)
+		size = 8;
+	else
+		size = 8;
+
+	SizeInMB = simple_strtoul(argv[2], &endp, 16);
+	if (*argv[2] == 0 || *endp != 0)
+		return -1;
+
+	ReadSize = (1024 * 1024) * SizeInMB;
+	count = ReadSize / size;
+
+	timer_init();
+	switch (size)
+	{
+	case 1:
+	{
+		printf ("size: %d, count: %d\n", size, count);
+		start = get_timer(0);
+		while (count-- > 0) {
+			*u_char_dest = *u_char_addr;
+			u_char_addr++;
+			u_char_dest++;
+		}
+		end = get_timer(0);
+	}
+	break;
+
+	case 2:
+	{
+		printf ("size: %d, count: %d\n", size, count);
+		start = get_timer(0);
+		while (count-- > 0) {
+			*ushort_dest = *ushort_addr;
+			ushort_addr++;
+			ushort_dest++;
+		}
+		end = get_timer(0);
+	}
+	break;
+
+	case 4:
+	{
+		printf ("size: %d, count: %d\n", size, count);
+		start = get_timer(0);
+		while (count-- > 0) {
+			*ulong_dest = *ulong_addr;
+			ulong_addr++;
+			ulong_dest++;
+		}
+		end = get_timer(0);
+	}
+	break;
+
+	case 8:
+	{
+		printf ("size: %d, count: %d\n", size, count);
+		start = get_timer(0);
+		while (count-- > 0) {
+			*ulonglong_dest = *ulonglong_addr;
+			ulonglong_addr++;
+			ulonglong_dest++;
+		}
+		end = get_timer(0);
+	}
+	break;
+
+	default:
+	{
+		printf ("size: %d, count: %d\n", size, count);
+		start = get_timer(0);
+		while (count-- > 0) {
+			*ulonglong_dest = *ulonglong_addr;
+			ulonglong_addr++;
+			ulonglong_dest++;
+		}
+		end = get_timer(0);
+	}
+	break;
+
+	}
+
+	throughput = (float)(((float)ReadSize / (1024 * 1024)) / ((float)(end - start) / 1000));
+	float1 = (unsigned int)throughput;
+	float2 = (unsigned int)((throughput - (float)float1) * 100);
+
+	printf("Measured SPI Read Throughput: %d.%d MB/s\n", float1, float2);
+
+	return 0;
+}
+
 static int do_qspi_flash_read_write(int argc, char * const argv[])
 {
 	unsigned long addr;
@@ -1168,6 +1292,11 @@ static int do_qspi_flash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 		goto done;
 	}
 
+	if (strcmp(cmd, "bench") == 0) {
+		ret = do_qspi_flash_bench(argc, argv);
+		goto done;
+	}
+
 	if (strcmp(cmd, "read") == 0 || strcmp(cmd, "write") == 0 ||
 	    strcmp(cmd, "update") == 0)
 		ret = do_qspi_flash_read_write(argc, argv);
@@ -1193,6 +1322,7 @@ U_BOOT_CMD(
 	"				  at `addr' to flash at `offset'\n"
 	"qspi erase offset [+]len	- erase `len' bytes from `offset'\n"
 	"				  `+len' round up `len' to block size\n"
+	"qspi bench <data_width> <data_size_in_MB>\n - Measure SPI throughput"
 /*	"qspi update addr offset len	- erase and write `len' bytes from memory\n"
 	"				  at `addr' to flash at `offset'"*/
 );
