@@ -727,6 +727,73 @@ U_BOOT_CMD(
 );
 #endif
 
+int do_boot_cm4(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	image_header_t *hdr;
+
+	if (argc < 2) {
+		return CMD_RET_USAGE;
+	}
+
+	hdr = (image_header_t *)simple_strtoul(argv[1], NULL, 16);
+
+	printf("## Booting MQX from Legacy Image at %08lx ...\n",
+			(long)hdr);
+
+	if (genimg_get_format((void *)hdr) != IMAGE_FORMAT_LEGACY) {
+		puts("MQX Boot Image Format is incorrect\n");
+		return 0;
+	}
+
+	if (!image_check_magic(hdr)) {
+		puts("Bad Magic Number\n");
+		return 0;
+	}
+
+	if (!image_check_hcrc(hdr)) {
+		puts("Bad Header Checksum\n");
+		return 0;
+	}
+
+	if (!image_check_dcrc(hdr)) {
+		printf("Bad Data CRC\n");
+		return 0;
+	}
+
+	if (!image_check_target_arch(hdr)) {
+		printf("Unsupported Architecture 0x%x\n", image_get_arch(hdr));
+		return 0;
+	}
+
+	if (image_get_type(hdr) != IH_TYPE_FIRMWARE) {
+		printf("Wrong Image Type for %s command\n", cmdtp->name);
+		return 0;
+	}
+
+	if (image_get_os(hdr) != IH_OS_U_BOOT) {
+		printf("Wrong OS Type for %s command\n", cmdtp->name);
+		return 0;
+	}
+
+	image_print_contents(hdr);
+
+	memcpy((void *)image_get_load(hdr), (void *)image_get_data(hdr),
+			image_get_size(hdr));
+
+	/* Set Cortex-M4 starting address in SRC_GPR2 */
+	__raw_writel(image_get_ep(hdr), 0x4006E028);
+	/* Write to the CCM CORE Wakeup Register to start Cortex-M4 core */
+	__raw_writel(0x15a5a, 0x4006B08C);
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	boot_cm4,	2,		0,	do_boot_cm4,
+	"Boots Cortex-M4 core from the specified address",
+	"<start address>"
+);
+
 int board_init(void)
 {
 	u32 temp;
