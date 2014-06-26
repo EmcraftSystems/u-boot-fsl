@@ -177,7 +177,7 @@
 	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200 "	\
 	LCD_BOOTARG "\0"						\
 	"verify=no\0"							\
-	"bootdelay=3\0"							\
+	"bootdelay=1\0"							\
 	UPDATECMD							\
 	SPLASHUPDATECMD
 #endif /* __CONFIG_H */
