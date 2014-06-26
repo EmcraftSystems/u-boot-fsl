@@ -71,15 +71,15 @@
 #define CONFIG_MTD_SPLASH_PART_LEN	0x180000
 #endif
 
-#undef CONFIG_LCD
-#undef CONFIG_VIDEO_MVF_DCU
-#undef LCD_FUSION7
-#undef CONFIG_SYS_CONSOLE_IS_IN_ENV
-#undef CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
-#undef CONFIG_SPLASH_SCREEN
-#undef CONFIG_SPLASH_SCREEN_ALIGN
-#undef CONFIG_SETUP_VIDEOLFB_TAG
-#undef CONFIG_SETUP_MTDSPLASHPART_TAG
+#define CONFIG_LCD
+#define CONFIG_VIDEO_MVF_DCU
+#define LCD_ADDON
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+#define CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
+#define CONFIG_SPLASH_SCREEN
+#define CONFIG_SPLASH_SCREEN_ALIGN
+#define CONFIG_SETUP_VIDEOLFB_TAG
+#define CONFIG_SETUP_MTDSPLASHPART_TAG
 
 #define CONFIG_BMP
 #undef CONFIG_CMD_BMP
@@ -100,6 +100,7 @@
 # endif
 
 # define KERNEL_FLASH_BASE	"2A0000"
+# define SPLASH_FLASH_BASE      "120000"
 
 #elif defined(CONFIG_BOOT_MEDIA_QSPI)
 
@@ -112,6 +113,7 @@
 # endif
 
 # define KERNEL_FLASH_BASE	"200000"
+# define SPLASH_FLASH_BASE	"80000"
 # define KERNEL_MEM_BASE	"20200000"
 
 #endif /* defined(CONFIG_BOOT_MEDIA_NAND) */
@@ -136,6 +138,11 @@
 	KERNEL_FLASH_BASE " ${filesize} && nand write ${loadaddr} "	\
 	KERNEL_FLASH_BASE " ${filesize} && setenv flashsize ${filesize}"\
 	" && saveenv\0"
+#define SPLASHUPDATECMD \
+	"splashupdate=tftp ${splashfile} && nand erase.spread "		\
+	SPLASH_FLASH_BASE " ${filesize} && nand write ${loadaddr} "	\
+	SPLASH_FLASH_BASE " ${filesize}\0"				\
+
 #elif defined(CONFIG_BOOT_MEDIA_QSPI)
 # define BOOTCMD \
 	"qspiboot=qspi probe 1 && cp.b " KERNEL_MEM_BASE " ${loadaddr} "\
@@ -146,6 +153,10 @@
 	KERNEL_FLASH_BASE " +${filesize} && qspi write ${loadaddr} "	\
 	KERNEL_FLASH_BASE " ${filesize} && setenv flashsize ${filesize}"\
 	" && saveenv\0"
+#define SPLASHUPDATECMD \
+	"splashupdate=tftp ${splashfile} && qspi probe 1 && qspi erase "\
+	SPLASH_FLASH_BASE " +${filesize} && qspi write ${loadaddr} "	\
+	SPLASH_FLASH_BASE " ${filesize}\0"
 #endif
 
 #define CONFIG_HOSTNAME		vf6-som
@@ -159,11 +170,14 @@
         "ipaddr=172.17.44.46\0"						\
         "serverip=172.17.0.1\0"						\
         "image=uImage\0"						\
+	"splashimage=0x80007fc0\0"					\
+	"splashpos='m,m'\0"						\
 	"netboot=tftp ${image};run addip;bootm\0"			\
 	BOOTCMD								\
 	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200 "	\
 	LCD_BOOTARG "\0"						\
 	"verify=no\0"							\
 	"bootdelay=3\0"							\
-	UPDATECMD
+	UPDATECMD							\
+	SPLASHUPDATECMD
 #endif /* __CONFIG_H */
