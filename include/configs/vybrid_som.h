@@ -132,7 +132,7 @@
 # define BOOTCMD \
 	"nandboot=nload_cached ${loadaddr} " KERNEL_FLASH_BASE		\
 	" ${flashsize} && run addip && bootm\0"				\
-	"bootcmd=run nandboot\0"
+	"bootcmd=run sdboot || run nandboot\0"
 # define UPDATECMD \
 	"update=tftp ${image} && nand erase.spread "			\
 	KERNEL_FLASH_BASE " ${filesize} && nand write ${loadaddr} "	\
@@ -147,7 +147,7 @@
 # define BOOTCMD \
 	"qspiboot=qspi probe 1 && cp.b " KERNEL_MEM_BASE " ${loadaddr} "\
 	"${flashsize} && run addip && bootm\0"				\
-	"bootcmd=run qspiboot\0"
+	"bootcmd=run sdboot || run qspiboot\0"
 # define UPDATECMD \
 	"update=tftp ${image} && qspi probe 1 && qspi erase "		\
 	KERNEL_FLASH_BASE " +${filesize} && qspi write ${loadaddr} "	\
@@ -178,6 +178,9 @@
 	LCD_BOOTARG "\0"						\
 	"verify=no\0"							\
 	"bootdelay=1\0"							\
+	"sdimage=iot-kit.uImage\0"					\
+	"sdboot=mmc rescan && fatload mmc 0:1 ${loadaddr} ${sdimage} "	\
+	"&& run addip && bootm\0"					\
 	UPDATECMD							\
 	SPLASHUPDATECMD
 #endif /* __CONFIG_H */
