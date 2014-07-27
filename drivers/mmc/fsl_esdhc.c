@@ -137,7 +137,9 @@ esdhc_pio_read_write(struct mmc *mmc, struct mmc_data *data)
 				return;
 			}
 			while (size && (!(irqstat & IRQSTAT_TC))) {
+#ifndef CONFIG_VYBRID
 				udelay(100); /* Wait before last byte transfer complete */
+#endif
 				irqstat = esdhc_read32(&regs->irqstat);
 				databuf = in_le32(&regs->datport);
 				*((uint *)buffer) = databuf;
