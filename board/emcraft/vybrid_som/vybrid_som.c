@@ -394,7 +394,7 @@ unsigned long ddr_ctrl_init(void)
 //	__raw_writel(0x000012e3, DDR_CR136);	// tdfi_ctrlupd_interval_f1
 	__raw_writel(0, DDR_CR136);	// tdfi_ctrlupd_interval_f1
 
-#if CONFIG_SYS_BOARD_REV >= 0x2A
+#if defined(CONFIG_VF6_SOM_LC) || CONFIG_SYS_BOARD_REV >= 0x2A
 	/* Silicon difference between 1.0 and 1.1 */
 	__raw_writel(0x682C0000, DDR_CR154);	// pad_zq: _early_cmp_en_timer, _mode, _hw_for, _cmp_out_smp
 #else
@@ -495,12 +495,41 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 {
 	struct fec_info_s *info = (struct fec_info_s *)dev->priv;
 
-#define ENET_SRE	(1 << 11)
-#define ENET_ODE	(0 << 10)
-#define ENET_DRV	(2 << 6)
+#define ENET_SRE	(MUX_SRE_FAST << 11)
+#define ENET_ODE	(MUX_ODE_CMOS << 10)
+#define ENET_DRV	(MUX_DSE_37_OHM << 6)
+#define ENET_DRV_CLK	(MUX_DSE_20_OHM << 6)
+#define ENET_SPEED	(MUX_SPD_100MHZ << 12)
 #define ENETMUX		(ENET_SRE | ENET_ODE | ENET_DRV)
-	__raw_writel(0x00200001 | ENETMUX, IOMUXC_PAD_000);
 
+#define ENET_PLL_DIV_SELECT	0
+#define ENET_PLL_ENABLE		13
+#define ENET_PLL_LOCK		31
+
+#define CCM_CSCMR2		0x20
+#define CSCMR2_RMII_CLKSEL	4
+
+#define GPIO0_PCOR		0x8
+#define GPIO1_PSOR		0x44
+
+#if !defined(CONFIG_VF6_SOM_LC)
+	/* Phy: use external clock for VF6-SOM-1ETH */
+	__raw_writel((MUX_MODE_ALT2 << 20) | (MUX_IBE_EN << 0) | ENET_SRE | ENET_ODE |
+		ENET_DRV | ENET_SPEED, IOMUXC_PAD_000);
+#else /* VF6-SOM-LC 1A */
+	/* Phy: use CLKOUT for VF6-SOM-LC */
+	__raw_writel((MUX_MODE_ALT1 << 20) | (MUX_OBE_EN << 1) | ENET_SRE | ENET_ODE |
+		ENET_DRV | ENET_SPEED, IOMUXC_PAD_000);
+
+	__raw_writel((1 << ENET_PLL_ENABLE) | (1 << ENET_PLL_DIV_SELECT),
+		ANATOP_BASE_ADDR + ANADIG_PLL_ENET_CTRL);
+
+	while(!(__raw_readl(ANATOP_BASE_ADDR + ANADIG_PLL_ENET_CTRL) &
+			(1 << ENET_PLL_LOCK)));
+
+	__raw_writel((2 << CSCMR2_RMII_CLKSEL) |
+		__raw_readl(CCM_BASE_ADDR + CCM_CSCMR2), CCM_BASE_ADDR + CCM_CSCMR2);
+#endif
 	if (setclear) {
 		if (info->iobase == MACNET0_BASE_ADDR) {
 			/* MDC,MDIO,RxDV,RxD1,RxD0 */
