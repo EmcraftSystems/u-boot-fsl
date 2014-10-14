@@ -254,6 +254,17 @@ void __mii_init(void)
 
 	info->phy_addr = mii_discover_phy(dev);
 
+#ifdef CONFIG_VYBRID
+	/* Fix RMII mode */
+	miiphy_write(dev->name, info->phy_addr, 0x16, 2);
+#endif
+	miiphy_write(dev->name, info->phy_addr, MII_BMCR, BMCR_RESET);
+	while( miiphy_read(dev->name, info->phy_addr, MII_BMCR, &status) && (status & BMCR_RESET) );
+
+#ifdef CONFIG_VYBRID
+	/* Fix RMII mode */
+	miiphy_write(dev->name, info->phy_addr, 0x16, 2);
+#endif
 	/* dk: TBD: move to vybrid_som specific code */
 	miiphy_read(dev->name, info->phy_addr, 0x1f, &status);
 	status |= 0x80;
