@@ -26,7 +26,9 @@
 
 /*#define DEBUG*/
 
+#ifndef CONFIG_SYS_BOARD_REV
 #define CONFIG_SYS_BOARD_REV            0x3A
+#endif
 
 #define CONFIG_SYS_CLOCK_FREQUENCY	498000000UL
 /* #define CONFIG_SYS_CLOCK_FREQUENCY	396000000UL */
@@ -52,7 +54,9 @@
 
 #include "vybrid_som_common.h"
 
+#if !defined(CONFIG_VF6_SOM_LC)
 #define CONFIG_VYBRID_QSPI_512MBIT_DEVICE
+#endif
 
 #if defined(CONFIG_BOOT_MEDIA_NAND)
 #define CONFIG_ENV_IS_IN_NAND

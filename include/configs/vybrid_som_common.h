@@ -98,7 +98,9 @@
 #define CONFIG_CMD_NET
 #undef CONFIG_CMD_NFS		/* NFS support			*/
 #define CONFIG_CMD_PING
+#if !defined(CONFIG_VF6_SOM_LC)
 #define CONFIG_CMD_QSF
+#endif
 #undef CONFIG_CMD_DATE
 
 #define CONFIG_CMD_NAND
