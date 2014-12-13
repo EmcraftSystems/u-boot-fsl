@@ -449,6 +449,10 @@ $(obj)u-boot.sb:       $(obj)u-boot.bin $(obj)spl/u-boot-spl.bin
 
 $(obj)u-boot.flash:       $(obj)u-boot.imx
 		cat board/$(BOARDDIR)/qspi-header $< > $@
+$(obj)u-boot.nand:        $(obj)u-boot.imx
+		cat board/$(BOARDDIR)/nand_fcb-header > $@
+		dd if=/dev/zero bs=1K count=1 2> /dev/null >> $@
+		cat $< >> $@
 
 ifeq ($(CONFIG_SANDBOX),y)
 GEN_UBOOT = \

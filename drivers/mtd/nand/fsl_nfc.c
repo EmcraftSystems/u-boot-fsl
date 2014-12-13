@@ -367,31 +367,13 @@ fsl_nfc_command(struct mtd_info *mtd, unsigned command,
 	if (page != -1)
 		prv->page = page;
 
-	if (!prv->pg_boot) {
-
-		if (hardware_ecc)
-			nfc_set_field(mtd, NFC_FLASH_CONFIG,
-				CONFIG_ECC_MODE_MASK,
-				CONFIG_ECC_MODE_SHIFT, ECC_30_BYTE);
-		else
-			/* set ECC BY_PASS */
-			nfc_set_field(mtd, NFC_FLASH_CONFIG,
-				CONFIG_ECC_MODE_MASK,
-				CONFIG_ECC_MODE_SHIFT, ECC_BYPASS);
-
-		if (!(page%0x40))
-			nfc_set_field(mtd, NFC_FLASH_CONFIG,
-				CONFIG_ECC_MODE_MASK,
-				CONFIG_ECC_MODE_SHIFT, ECC_BYPASS);
-	}
+	if (hardware_ecc)
+		nfc_set_field(mtd, NFC_FLASH_CONFIG,
+			CONFIG_ECC_MODE_MASK,
+			CONFIG_ECC_MODE_SHIFT, ECC_45_BYTE);
 
 	switch (command) {
 	case NAND_CMD_PAGEPROG:
-		if (!(prv->page%0x40) && !prv->pg_boot)
-			nfc_set_field(mtd, NFC_FLASH_CONFIG,
-				CONFIG_ECC_MODE_MASK,
-				CONFIG_ECC_MODE_SHIFT, ECC_BYPASS);
-
 		fsl_nfc_send_cmd(mtd,
 				PROGRAM_PAGE_CMD_BYTE1,
 				PROGRAM_PAGE_CMD_BYTE2,
@@ -503,15 +485,7 @@ int do_nload_cached(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 		prv->page = i / mtd->writesize;
 
-		nfc_set_field(mtd, NFC_FLASH_CONFIG,
-			CONFIG_ECC_MODE_MASK,
-			CONFIG_ECC_MODE_SHIFT, ECC_30_BYTE);
-
 		if ((prv->page % (mtd->erasesize / mtd->writesize)) == 0) {
-			nfc_set_field(mtd, NFC_FLASH_CONFIG,
-				CONFIG_ECC_MODE_MASK,
-				CONFIG_ECC_MODE_SHIFT, ECC_BYPASS);
-
 			fsl_nfc_clear(mtd);
 			nfc_set_field(mtd, NFC_FLASH_CMD2, CMD_BYTE1_MASK,
 					CMD_BYTE1_SHIFT, 0);
@@ -854,7 +828,7 @@ int board_nand_init(struct nand_chip *chip)
 		chip->ecc.write_page = fsl_nfc_write_page;
 		chip->ecc.read_oob = fsl_nfc_read_oob;
 		chip->ecc.write_oob = fsl_nfc_write_oob;
-		chip->ecc.layout = &fsl_nfc_ecc30;
+		chip->ecc.layout = &fsl_nfc_ecc45;
 
 		/* propagate ecc.layout to mtd_info */
 		mtd->ecclayout = chip->ecc.layout;
@@ -864,12 +838,12 @@ int board_nand_init(struct nand_chip *chip)
 		chip->ecc.mode = NAND_ECC_HW;
 		/* RS-ECC is applied for both MAIN+SPARE not MAIN alone */
 		chip->ecc.steps = 1;
-		chip->ecc.bytes = 30;
+		chip->ecc.bytes = 45;
 		chip->ecc.size = 0x800;
 
 		nfc_set_field(mtd, NFC_FLASH_CONFIG,
 				CONFIG_ECC_MODE_MASK,
-				CONFIG_ECC_MODE_SHIFT, ECC_30_BYTE);
+				CONFIG_ECC_MODE_SHIFT, ECC_45_BYTE);
 		/* set ECC_STATUS write position */
 		nfc_set_field(mtd, NFC_FLASH_CONFIG,
 				CONFIG_ECC_SRAM_ADDR_MASK,
@@ -892,7 +866,7 @@ int board_nand_init(struct nand_chip *chip)
 	bbt_mirror_descr.pattern = mirror_pattern;
 
 	/* SET SECTOR SIZE */
-	nfc_write(mtd, NFC_SECTOR_SIZE, (PAGE_2K | PAGE_64) + 1);
+	nfc_write(mtd, NFC_SECTOR_SIZE, (PAGE_2K | PAGE_64));
 
 	nfc_set_field(mtd, NFC_FLASH_CONFIG,
 			CONFIG_ADDR_AUTO_INCR_MASK,
