@@ -134,7 +134,7 @@
 #if defined(CONFIG_BOOT_MEDIA_NAND)
 # define BOOTCMD \
 	"nandboot=nload_cached ${loadaddr} " KERNEL_FLASH_BASE		\
-	" ${flashsize} && run addip && bootm\0"				\
+	" ${flashsize} && run args addip && bootm\0"				\
 	"bootcmd=run nandboot\0"
 # define UPDATECMD \
 	"update=tftp ${image} && nand erase.spread "			\
@@ -144,7 +144,7 @@
 #elif defined(CONFIG_BOOT_MEDIA_QSPI)
 # define BOOTCMD \
 	"qspiboot=qspi probe 1 && cp.b " KERNEL_MEM_BASE " ${loadaddr} "\
-	"${flashsize} && run addip && bootm\0"				\
+	"${flashsize} && run args addip && bootm\0"				\
 	"bootcmd=run qspiboot\0"
 # define UPDATECMD \
 	"update=tftp ${image} && qspi probe 1 && qspi erase "		\
@@ -156,6 +156,7 @@
 #define CONFIG_HOSTNAME		vf6-som
 #define CONFIG_EXTRA_ENV_SETTINGS					\
         "autoload=yes\0"						\
+        "args=setenv bootargs " CONFIG_BOOTARGS "\0"			\
         "addip=setenv bootargs ${bootargs} "				\
                 "ip=${ipaddr}:${serverip}:${gatewayip}:"		\
                         "${netmask}:${hostname}:eth0:off "		\
@@ -164,7 +165,7 @@
         "ipaddr=172.17.44.46\0"						\
         "serverip=172.17.0.1\0"						\
         "image=uImage\0"						\
-	"netboot=tftp ${image};run addip;bootm\0"			\
+	"netboot=tftp ${image};run args addip;bootm\0"			\
 	BOOTCMD								\
 	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200 "	\
 	LCD_BOOTARG "\0"						\
