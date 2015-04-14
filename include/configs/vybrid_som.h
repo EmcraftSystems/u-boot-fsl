@@ -156,7 +156,6 @@
 #define CONFIG_HOSTNAME		vf6-som
 #define CONFIG_EXTRA_ENV_SETTINGS					\
         "autoload=yes\0"						\
-        "args=setenv bootargs " CONFIG_BOOTARGS "\0"			\
         "addip=setenv bootargs ${bootargs} "				\
                 "ip=${ipaddr}:${serverip}:${gatewayip}:"		\
                         "${netmask}:${hostname}:eth0:off "		\
@@ -167,8 +166,8 @@
         "image=uImage\0"						\
 	"netboot=tftp ${image};run args addip;bootm\0"			\
 	BOOTCMD								\
-	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200 "	\
-	LCD_BOOTARG "\0"						\
+        "args=setenv bootargs mem=" KERNEL_MEM_INFO " "			\
+                 "console=ttymxc0,115200 " LCD_BOOTARG "\0"		\
 	"verify=no\0"							\
 	"bootdelay=3\0"							\
 	UPDATECMD
