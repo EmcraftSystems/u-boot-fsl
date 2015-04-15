@@ -136,7 +136,7 @@
 #if defined(CONFIG_BOOT_MEDIA_NAND)
 # define BOOTCMD \
 	"nandboot=nload_cached ${loadaddr} " KERNEL_FLASH_BASE		\
-	" ${flashsize} && run addip && bootm\0"				\
+	" ${flashsize} && run args addip && bootm\0"				\
 	"bootcmd=run sdboot || run nandboot\0"
 # define UPDATECMD \
 	"update=tftp ${image} && nand erase.spread "			\
@@ -151,7 +151,7 @@
 #elif defined(CONFIG_BOOT_MEDIA_QSPI)
 # define BOOTCMD \
 	"qspiboot=qspi probe 1 && cp.b " KERNEL_MEM_BASE " ${loadaddr} "\
-	"${flashsize} && run addip && bootm\0"				\
+	"${flashsize} && run args addip && bootm\0"				\
 	"bootcmd=run sdboot || run qspiboot\0"
 # define UPDATECMD \
 	"update=tftp ${image} && qspi probe 1 && qspi erase "		\
@@ -177,15 +177,15 @@
         "image=uImage\0"						\
 	"splashimage=0x80007fc0\0"					\
 	"splashpos='m,m'\0"						\
-	"netboot=tftp ${image};run addip;bootm\0"			\
+	"netboot=tftp ${image};run args addip;bootm\0"			\
 	BOOTCMD								\
-	"bootargs=mem=" KERNEL_MEM_INFO " console=ttymxc0,115200 "	\
+	"args=setenv bootargs mem=" KERNEL_MEM_INFO " console=ttymxc0,115200 "	\
 	LCD_BOOTARG "\0"						\
 	"verify=no\0"							\
 	"bootdelay=1\0"							\
 	"sdimage=iot-kit.uImage\0"					\
 	"sdboot=mmc rescan && fatload mmc 0:1 ${loadaddr} ${sdimage} "	\
-	"&& run addip && bootm\0"					\
+	"&& run args addip && bootm\0"					\
 	UPDATECMD							\
 	SPLASHUPDATECMD
 #endif /* __CONFIG_H */
