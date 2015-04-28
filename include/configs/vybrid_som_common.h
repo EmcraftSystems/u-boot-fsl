@@ -195,7 +195,6 @@
 
 #define CONFIG_BOOTDELAY		3
 #define CONFIG_ZERO_BOOTDELAY_CHECK
-#define CONFIG_ETHPRIME			"FEC0"
 #define CONFIG_LOADADDR			0x80007fc0	/* loadaddr env var */
 #define CONFIG_ARP_TIMEOUT		200UL
 
