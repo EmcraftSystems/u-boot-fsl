@@ -137,7 +137,7 @@
 # define BOOTCMD \
 	"nandboot=nload_cached ${loadaddr} " KERNEL_FLASH_BASE		\
 	" ${flashsize} && run args addip && bootm\0"				\
-	"bootcmd=run sdboot || run nandboot\0"
+	"bootcmd=run nandboot\0"
 # define UPDATECMD \
 	"update=tftp ${image} && nand erase.spread "			\
 	KERNEL_FLASH_BASE " ${filesize} && nand write ${loadaddr} "	\
@@ -152,7 +152,7 @@
 # define BOOTCMD \
 	"qspiboot=qspi probe 1 && cp.b " KERNEL_MEM_BASE " ${loadaddr} "\
 	"${flashsize} && run args addip && bootm\0"				\
-	"bootcmd=run sdboot || run qspiboot\0"
+	"bootcmd=run qspiboot\0"
 # define UPDATECMD \
 	"update=tftp ${image} && qspi probe 1 && qspi erase "		\
 	KERNEL_FLASH_BASE " +${filesize} && qspi write ${loadaddr} "	\
