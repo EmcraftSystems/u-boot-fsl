@@ -184,7 +184,7 @@
 	"verify=no\0"							\
 	"bootdelay=1\0"							\
 	"sdimage=iot-kit.uImage\0"					\
-	"sdboot=mmc rescan && fatload mmc 0:1 ${loadaddr} ${sdimage} "	\
+	"sdboot=mmc rescan && mmc rescan && fatload mmc 0:1 ${loadaddr} ${sdimage} "	\
 	"&& run args addip && bootm\0"					\
 	UPDATECMD							\
 	SPLASHUPDATECMD
