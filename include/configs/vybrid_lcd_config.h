@@ -94,6 +94,30 @@
 
 #	define LCD_BOOTARG_NAME		"twr-pim-fusion7"
 
+#elif defined(LCD_PROMATE7)
+
+
+#	define LCD_XRES			800
+#	define LCD_YRES			480
+#	define LCD_BIT_PER_PIXEL	LCD_BPP
+
+#	define LCD_LEFT_MARGIN			0
+#	define LCD_HSYNC_LEN			256
+#	define LCD_RIGHT_MARGIN			0
+
+#	define LCD_UPPER_MARGIN			0
+#	define LCD_VSYNC_LEN			45
+#	define LCD_LOWER_MARGIN			0
+
+#	define LCD_DCU_DIV_RATIO		2
+
+#	define LCD_SYN_POL_INV_PXCK		0
+#	define LCD_SYN_POL_NEG			0
+#	define LCD_SYN_POL_INV_VS		1
+#	define LCD_SYN_POL_INV_HS		1
+
+#	define LCD_BOOTARG_NAME		"promate7"
+
 #elif defined(CONFIG_VIDEO_MVF_DCU)
 #	error "MVF DCU is enabled but no LCD configured"
 #endif

@@ -69,29 +69,6 @@ int fsl_nfc_chip;
 static int get_status;
 static int get_id;
 
-static u8 bbt_pattern[] = {'B', 'b', 't', '0' };
-static u8 mirror_pattern[] = {'1', 't', 'b', 'B' };
-
-static struct nand_bbt_descr bbt_main_descr = {
-	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE |
-		   NAND_BBT_2BIT | NAND_BBT_VERSION,
-	.offs =	11,
-	.len = 4,
-	.veroffs = 15,
-	.maxblocks = 4,
-	.pattern = bbt_pattern,
-};
-
-static struct nand_bbt_descr bbt_mirror_descr = {
-	.options = NAND_BBT_LASTBLOCK | NAND_BBT_CREATE | NAND_BBT_WRITE |
-		   NAND_BBT_2BIT | NAND_BBT_VERSION,
-	.offs =	11,
-	.len = 4,
-	.veroffs = 15,
-	.maxblocks = 4,
-	.pattern = mirror_pattern,
-};
-
 static struct nand_ecclayout fsl_nfc_ecc45 = {
 	.eccbytes = 45,
 	.eccpos = {19, 20, 21, 22, 23,
@@ -446,23 +423,14 @@ read0:
 }
 
 #if defined(CONFIG_NAND_READ_CACHE)
-int do_nload_cached(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int nand_read_cached(nand_info_t *mtd, loff_t off, size_t *size,
+		       u_char *addr)
 {
 	loff_t i;
-	struct mtd_info *mtd = &nand_info[0];
 	struct nand_chip *chip = mtd->priv;
 	struct fsl_nfc_prv *prv = chip->priv;
 	int cmd = 0;
-	unsigned long addr, off, size, cnt, curaddr;
-	int need_skip;
-
-	if (argc < 4) {
-		return CMD_RET_USAGE;
-	}
-
-	addr = simple_strtoul(argv[1], NULL, 16);
-	off = simple_strtoul(argv[2], NULL, 16);
-	size = simple_strtoul(argv[3], NULL, 16);
+	unsigned long cnt, curaddr;
 
 	if ((off & (mtd->writesize - 1)) != 0) {
 		printf ("Attempt to read non page aligned data\n");
@@ -474,8 +442,8 @@ int do_nload_cached(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	i = off;
 	cnt = 0;
-	curaddr = addr;
-	while (cnt < size) {
+	curaddr = (unsigned long)addr;
+	while (cnt < *size) {
 		if (nand_block_isbad (mtd, i & ~(mtd->erasesize - 1))) {
 			printf ("Skipping bad block 0x%08llx\n",
 				i & ~(mtd->erasesize - 1));
@@ -484,6 +452,11 @@ int do_nload_cached(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		}
 
 		prv->page = i / mtd->writesize;
+
+		if (hardware_ecc)
+			nfc_set_field(mtd, NFC_FLASH_CONFIG,
+					CONFIG_ECC_MODE_MASK,
+					CONFIG_ECC_MODE_SHIFT, ECC_45_BYTE);
 
 		if ((prv->page % (mtd->erasesize / mtd->writesize)) == 0) {
 			fsl_nfc_clear(mtd);
@@ -516,7 +489,10 @@ int do_nload_cached(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		}
 
 		nfc_write(mtd, NFC_DMA1_ADDR, curaddr);
-		nfc_write(mtd, NFC_DMA_CONFIG, (((mtd->writesize) << 20) | 2));
+		/* FIXME: handle the case if length of data to read is less
+		   than mtd->writesize */
+		nfc_write(mtd, NFC_DMA_CONFIG,
+			(mtd->writesize << 20) | 2);
 		nfc_set(mtd, NFC_FLASH_CONFIG, CONFIG_DMA_REQ_MASK);
 		nfc_set_field(mtd, NFC_FLASH_CMD2, CMD_CODE_MASK,
 				CMD_CODE_SHIFT, cmd);
@@ -525,12 +501,33 @@ int do_nload_cached(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		nfc_write(mtd, NFC_DMA_CONFIG, 0);
 
 		i += mtd->writesize;
-		cnt += min(mtd->writesize, size - cnt);
+		cnt += min(mtd->writesize, *size - cnt);
 		curaddr += mtd->writesize;
 	}
 
-	invalidate_dcache_range(addr, roundup(addr + size, mtd->writesize));
+	invalidate_dcache_range((unsigned long)addr,
+		roundup((unsigned long)addr + *size, mtd->writesize));
 	return 0;
+}
+
+int do_nload_cached(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int ret;
+	loff_t off;
+	size_t size;
+	u_char *addr;
+
+	if (argc < 4) {
+		return CMD_RET_USAGE;
+	}
+
+	addr = (u_char *)simple_strtoul(argv[1], NULL, 16);
+	off = (loff_t)simple_strtoul(argv[2], NULL, 16);
+	size = (size_t)simple_strtoul(argv[3], NULL, 16);
+
+	ret = nand_read_cached(&nand_info[0], off, &size, addr);
+
+	return ret < 0 ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
 }
 
 U_BOOT_CMD(
@@ -819,7 +816,7 @@ int board_nand_init(struct nand_chip *chip)
 	chip->write_buf = fsl_nfc_write_buf;
 	chip->verify_buf = fsl_nfc_verify_buf;
 	chip->options = NAND_NO_AUTOINCR | NAND_USE_FLASH_BBT |
-		/*NAND_BUSWIDTH_16 |*/ NAND_CACHEPRG;
+		/*NAND_BUSWIDTH_16 |*/ NAND_CACHEPRG | NAND_USE_FLASH_BBT_NO_OOB;
 
 	chip->select_chip = nfc_select_chip;
 
@@ -860,10 +857,6 @@ int board_nand_init(struct nand_chip *chip)
 				CONFIG_ECC_MODE_MASK,
 				CONFIG_ECC_MODE_SHIFT, ECC_BYPASS);
 	}
-	chip->bbt_td = &bbt_main_descr;
-	chip->bbt_md = &bbt_mirror_descr;
-	bbt_main_descr.pattern = bbt_pattern;
-	bbt_mirror_descr.pattern = mirror_pattern;
 
 	/* SET SECTOR SIZE */
 	nfc_write(mtd, NFC_SECTOR_SIZE, (PAGE_2K | PAGE_64));
@@ -880,10 +873,14 @@ int board_nand_init(struct nand_chip *chip)
 			CONFIG_16BIT_MASK,
 			CONFIG_16BIT_SHIFT, 0);
 
-	/* SET FAST_FLASH = 1 */
 	nfc_set_field(mtd, NFC_FLASH_CONFIG,
 			CONFIG_BOOT_MODE_MASK,
 			CONFIG_BOOT_MODE_SHIFT, 0);
+
+	/* SET FAST_FLASH = 1 */
+	nfc_set_field(mtd, NFC_FLASH_CONFIG,
+			CONFIG_FAST_FLASH_MASK,
+			CONFIG_FAST_FLASH_SHIFT, 1);
 
 	return 0;
 }

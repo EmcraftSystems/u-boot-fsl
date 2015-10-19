@@ -140,6 +140,12 @@
 	str r1, [r2, #0x2A0]
 	ldr r1, =CONFIG_SYS_ANADIG_SYS_PFD_528
 	str r1, [r2, #0x2B0]
+	/* Reset PLL3 setting to defaults as it is used
+	   by the Vybrid NAND loader */
+	ldr r1, =0x2000
+	str r1, [r2, #0x10]
+	ldr r1, =CONFIG_SYS_ANADIG_USB1_CTRL
+	str r1, [r2, #0x10]
 	ldr r1, =CONFIG_SYS_ANADIG_PFD_USB1
 	str r1, [r2, #0xF0]
 
@@ -152,6 +158,11 @@ wait_PLL2:	ldr r1, [r2, #0x30]
 wait_PLL1:	ldr r1, [r2, #0x270]
 		ands r1, r1, #(1<<31)
 		beq wait_PLL1
+
+	/*check for PLL3 lock*/
+wait_PLL3:	ldr r1, [r2, #0x10]
+		ands r1, r1, #(1<<31)
+		beq wait_PLL3
 
 	ldr r1, =CONFIG_SYS_CLKCTRL_CCR
 	str r1, [r0, #CLKCTL_CCR]

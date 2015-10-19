@@ -29,19 +29,41 @@
 #include <asm/io.h>
 #include <errno.h>
 
+#define GPIO_PDOR	0x0
+#define GPIO_PSOR	0x4
+#define GPIO_PCOR	0x8
+#define GPIO_PTOR	0xC
+#define GPIO_PDIR	0x10
+
+static unsigned long gpio_port_base(unsigned gpio)
+{
+	return GPIO_BASE_ADDR + (gpio / 32) * 0x40;
+}
+
+static int gpio_off(unsigned gpio)
+{
+	return gpio % 32;
+}
+
 int gpio_set_value(unsigned gpio, int value)
 {
+	unsigned long reg = gpio_port_base(gpio) + GPIO_PDOR;
+	int off = gpio_off(gpio);
+	int reg_val = (__raw_readl(reg) & (~(1 << off))) | (!!value << off);
+	__raw_writel(reg_val, reg);
 	return 0;
 }
 
 int gpio_get_value(unsigned gpio)
 {
-	return 0;
+	unsigned long reg = gpio_port_base(gpio) + GPIO_PDIR;
+	int off = gpio_off(gpio);
+	return !!(__raw_readl(reg) & (1 << off));
 }
 
 int gpio_request(unsigned gpio, const char *label)
 {
-	return 0;
+	return (gpio < (5*32)) ? 0 : -1;
 }
 
 int gpio_free(unsigned gpio)
@@ -56,5 +78,6 @@ int gpio_direction_input(unsigned gpio)
 
 int gpio_direction_output(unsigned gpio, int value)
 {
+	gpio_set_value(gpio, value);
 	return 0;
 }

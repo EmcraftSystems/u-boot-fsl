@@ -72,6 +72,10 @@ typedef struct phy_info_struct {
 	char *strid;
 } phy_info_t;
 
+#define PHY_SMSC8742_ID			0x0007c131
+#define PHY_SMSC8742_ID_MASK		0xFFFFFFF0
+#define PHY_SMSC8742			"SMSC8742Ai"
+
 phy_info_t phyinfo[] = {
 	{0x0022561B, "AMD79C784VC"},	/* AMD 79C784VC */
 	{0x00406322, "BCM5222"},	/* Broadcom 5222 */
@@ -87,6 +91,7 @@ phy_info_t phyinfo[] = {
 	{0x20005CA2, "N83849"},		/* National 83849 */
 	{0x0007C0F1, "SMSC8720A"},	/* SMSC 8720a */
 	{0x01814400, "QS6612"},		/* QS6612 */
+	{PHY_SMSC8742_ID, PHY_SMSC8742},/* Microchip LAN8742Ai-CZ */
 #if defined(CONFIG_SYS_UNSPEC_PHYID) && defined(CONFIG_SYS_UNSPEC_STRID)
 	{CONFIG_SYS_UNSPEC_PHYID, CONFIG_SYS_UNSPEC_STRID},
 #endif
@@ -179,7 +184,6 @@ int mii_discover_phy(struct eth_device *dev)
 #endif
 			if (phytype == 0xffff)
 				continue;
-			phyaddr = phyno;
 			phytype <<= 16;
 			phytype |=
 			    mii_send(mk_mii_read(phyno, MII_PHYSID2));
@@ -187,6 +191,7 @@ int mii_discover_phy(struct eth_device *dev)
 #ifdef ET_DEBUG
 			printf("PHY @ 0x%x pass %d\n", phyno, pass);
 #endif
+			phyaddr = phyno;
 
 			for (i = 0; (i < (sizeof(phyinfo) / sizeof(phy_info_t)))
 				&& (phyinfo[i].phyid != 0); i++) {
@@ -231,6 +236,7 @@ void __mii_init(void)
 	int miispd = 0, i = 0;
 	u16 status = 0;
 	u16 linkgood = 0;
+	int is_smsc8742 = 0;
 
 	/* retrieve from register structure */
 	dev = eth_get_dev();
@@ -253,22 +259,35 @@ void __mii_init(void)
 	fecp->mscr = miispd << 1;
 
 	info->phy_addr = mii_discover_phy(dev);
+	is_smsc8742 = !!(0 == strcmp(PHY_SMSC8742, info->phy_name));
 
 #ifdef CONFIG_VYBRID
-	/* Fix RMII mode */
-	miiphy_write(dev->name, info->phy_addr, 0x16, 2);
+	if (is_smsc8742) {
+		/* Special Modes Register: MODE (bits 7:5)*/
+		/* Set to 7: All capable; Auto-negotiation enabled */
+		const u16 spm_reg_addr = 0x12;
+		u16 spm_val = 0;
+		miiphy_read(dev->name, info->phy_addr, spm_reg_addr, &spm_val);
+		spm_val |= (7 << 5);
+		miiphy_write(dev->name, info->phy_addr, spm_reg_addr, spm_val);
+	} else {
+		/* Fix RMII mode */
+		miiphy_write(dev->name, info->phy_addr, 0x16, 2);
+	}
 #endif
 	miiphy_write(dev->name, info->phy_addr, MII_BMCR, BMCR_RESET);
 	while( miiphy_read(dev->name, info->phy_addr, MII_BMCR, &status) && (status & BMCR_RESET) );
 
 #ifdef CONFIG_VYBRID
-	/* Fix RMII mode */
-	miiphy_write(dev->name, info->phy_addr, 0x16, 2);
+	if (!is_smsc8742) {
+		/* Fix RMII mode */
+		miiphy_write(dev->name, info->phy_addr, 0x16, 2);
+		/* dk: TBD: move to vybrid_som specific code */
+		miiphy_read(dev->name, info->phy_addr, 0x1f, &status);
+		status |= 0x80;
+		miiphy_write(dev->name, info->phy_addr, 0x1f, status);
+	}
 #endif
-	/* dk: TBD: move to vybrid_som specific code */
-	miiphy_read(dev->name, info->phy_addr, 0x1f, &status);
-	status |= 0x80;
-	miiphy_write(dev->name, info->phy_addr, 0x1f, status);
 
 	while (i < MCFFEC_TOUT_LOOP) {
 		status = 0;

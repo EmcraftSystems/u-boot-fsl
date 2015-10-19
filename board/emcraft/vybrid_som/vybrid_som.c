@@ -26,6 +26,8 @@
 #include <asm/gpio.h>
 #include <asm/arch/vybrid-regs.h>
 #include <asm/arch/vybrid-pins.h>
+#include <asm/arch/clock.h>
+#include <asm/arch/timer.h>
 #include <asm/arch/iomux.h>
 #include <asm/errno.h>
 #include <asm/arch/sys_proto.h>
@@ -42,6 +44,8 @@
 #include "ocotp_ctrl_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+
+#define setenv_ulong_hex(n, v)	setenv_addr((n), (void *)(v))
 
 #ifdef CONFIG_FSL_ESDHC
 struct fsl_esdhc_cfg esdhc_cfg[2] = {
@@ -473,21 +477,104 @@ void setup_iomux_dcu(void)
 #define MVF600_DCU_PAD_CTRL     (MVF600_HIGH_DRV | PAD_CTL_OBE_ENABLE)
 	int i;
 
-	/* Backlight control pin */
+#ifdef LCD_PROMATE7
+
+#define	MVF600_PTB8_FTM1_MUX_MODE	(1 << 20)
+#define	MVF600_PTB8_FTM_PAD		(PAD_CTL_OBE_ENABLE | \
+						MVF600_PTB8_FTM1_MUX_MODE |\
+						MVF600_HIGH_DRV)
+
+	/* PTB2 -- LCD EN signal */
+	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_024);
+
+	/* PTB8 -- LCD backlight control */
+	__raw_writel(MVF600_PTB8_FTM_PAD, IOMUXC_PAD_030);
+
+	/* PTC11 -- nPOWERDOWN */
+	writel(1 << CONFIG_DCU_POWERDOWN_GPIO_NUM,
+		CONFIG_DCU_POWERDOWN_GPIO_ADDR_SET);
+	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_056);
+
+#else /* !defined(LCD_PROMATE7) */
+
+	/* PTB8 -- LCD EN signal */
 	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_030);
+
+#endif /* defined(LCD_PROMATE7) */
 
 #define IOMUXC_PAD_NUMBER 29
 #define IOMUXC_DCU_PAD_FIRST (IOMUXC_BASE_ADDR + 0x01A4)
 #define MVF600_MUX_MODE_TCON (1 << 20)
-#define MVF600_DCU_PAD_CTRL_FLEXTIMER \
+#define MVF600_DCU_PAD_CTRL_TCON \
 		(MVF600_DCU_PAD_CTRL | MVF600_MUX_MODE_TCON)
 
 	/* Signal pins */
 	for (i = 0; i < IOMUXC_PAD_NUMBER; i++) {
-		__raw_writel(MVF600_DCU_PAD_CTRL_FLEXTIMER,
+		__raw_writel(MVF600_DCU_PAD_CTRL_TCON,
 				IOMUXC_DCU_PAD_FIRST + 4 * i);
 	}
 }
+
+#if defined(LCD_PROMATE7)
+
+/* These overwrite weak references to __lcd_enable and __lcd_disable
+ * defined in drivers/video/mvf_dcu.c */
+void lcd_enable(void)
+{
+	long brightness = 100;
+	unsigned int clk;
+	char *s = NULL;
+
+	if ((s = getenv("lcdbrightness")) != NULL) {
+		brightness = simple_strtol(s, NULL, 10);
+		brightness = min(100, max(brightness, 0));
+	}
+
+	__raw_writel(FTM_CnSC_MSB | FTM_CnSC_ELSB,
+		FTM1_BASE_ADDR - FTM_BASE_ADDR + FTM_C0SC);
+
+	/* Mask all FTM1 except FTM1CH0 */
+	__raw_writel(0xFE, FTM1_BASE_ADDR - FTM_BASE_ADDR + FTM_OUTMASK);
+
+	/* Init only FTM1CH0 */
+	__raw_writel(0x01, FTM1_BASE_ADDR - FTM_BASE_ADDR + FTM_OUTINIT);
+	__raw_writel(0x0, FTM1_BASE_ADDR - FTM_BASE_ADDR + FTM_CNTIN);
+
+	__raw_writel(FTM_SC_CLKS(1) | FTM_SC_PS(7),
+		FTM1_BASE_ADDR - FTM_BASE_ADDR + FTM_SC);
+
+	clk = vybrid_get_clock(VYBRID_IPG_CLK);
+	clk = clk / 128 / 500;
+
+	/* Corresponding to frequency of 500 Hz */
+	__raw_writel(clk - 1, FTM1_BASE_ADDR - FTM_BASE_ADDR + FTM_MOD);
+	/* Set brightness */
+	__raw_writel(clk * brightness / 100,
+		FTM1_BASE_ADDR - FTM_BASE_ADDR + FTM_C0V);
+
+	mdelay(10);
+
+	/* backlight on */
+	writel(1 << CONFIG_DCU_BACKLIGHT_GPIO_NUM,
+		CONFIG_DCU_BACKLIGHT_GPIO_ADDR_SET);
+
+}
+
+void lcd_disable(void)
+{
+	/* backlight off */
+	writel(1 << CONFIG_DCU_BACKLIGHT_GPIO_NUM,
+		CONFIG_DCU_BACKLIGHT_GPIO_ADDR_CLEAR);
+
+	mdelay(10);
+
+	writel(0, FTM1_BASE_ADDR - FTM_BASE_ADDR + FTM_C0V);
+	writel(1 << CONFIG_DCU_POWERDOWN_GPIO_NUM,
+		CONFIG_DCU_POWERDOWN_GPIO_ADDR_CLEAR);
+
+}
+#endif /* defined(LCD_PROMATE7) */
+
 #endif /* CONFIG_VIDEO_MVF_DCU */
 
 #if defined(CONFIG_CMD_NET)
@@ -511,6 +598,13 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 
 #define GPIO0_PCOR		0x8
 #define GPIO1_PSOR		0x44
+
+#if defined(CONFIG_PHY_ENABLE_GPIO)
+	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_PHY_ENABLE_GPIO*4);
+
+	gpio_request(CONFIG_PHY_ENABLE_GPIO, "phy_enable");
+	gpio_direction_output(CONFIG_PHY_ENABLE_GPIO, CONFIG_PHY_ENABLE_GPIO_ACTIVE_LVL);
+#endif
 
 #if !defined(CONFIG_VF6_SOM_LC)
 	/* Phy: use external clock for VF6-SOM-1ETH */
@@ -580,6 +674,15 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 		}
 	}
 
+#if defined(CONFIG_PHY_RESET_GPIO)
+	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_PHY_RESET_GPIO*4);
+
+	gpio_request(CONFIG_PHY_RESET_GPIO, "phy_reset");
+	gpio_direction_output(CONFIG_PHY_RESET_GPIO, 0);
+	udelay(200);
+	gpio_direction_output(CONFIG_PHY_RESET_GPIO, 1);
+#endif
+
 	return 0;
 }
 #endif
@@ -617,6 +720,40 @@ int board_mmc_init(bd_t *bis)
 }
 #endif
 
+#if defined(CONFIG_ERROR_LED_GPIO)
+int board_leds_init(void)
+{
+	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_ERROR_LED_GPIO*4);
+
+	gpio_request(CONFIG_ERROR_LED_GPIO, "error_led");
+	gpio_direction_output(CONFIG_ERROR_LED_GPIO, 0);
+
+	return 0;
+}
+
+void board_signal_led_error(void)
+{
+	gpio_set_value(CONFIG_ERROR_LED_GPIO, 1);
+}
+
+void board_clear_led_error(void)
+{
+	gpio_set_value(CONFIG_ERROR_LED_GPIO, 0);
+}
+#else
+int board_leds_init(void)
+{
+	return 0;
+}
+void board_signal_led_error(void)
+{
+}
+
+void board_clear_led_error(void)
+{
+}
+#endif /* CONFIG_ERROR_LED_GPIO */
+
 #ifdef CONFIG_NAND_FSL_NFC
 void setup_iomux_nfc(void)
 {
@@ -638,8 +775,40 @@ void setup_iomux_nfc(void)
 }
 #endif
 
+void setup_lcd(void)
+{
+#if defined(CONFIG_LCD_BACKLIGHT_GPIO)
+	{
+	#if defined(CONFIG_LCD_BACKLIGHT_INVERTED)
+		int backlight_value = 0;
+	#else
+		int backlight_value = 1;
+	#endif
+		int bl_gpio = CONFIG_LCD_BACKLIGHT_GPIO;
+		__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + bl_gpio*4);
+		gpio_request(bl_gpio, "lcd_enable");
+		gpio_direction_output(bl_gpio, backlight_value);
+	}
+#endif
+
+#if defined(CONFIG_LCD_ENABLE_GPIO)
+	{
+		int lcden_gpio = CONFIG_LCD_ENABLE_GPIO;
+		__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + lcden_gpio*4);
+		gpio_request(lcden_gpio, "lcd_enable");
+		gpio_direction_output(lcden_gpio, 1);
+	}
+#endif
+}
+
 int board_early_init_f(void)
 {
+#ifdef CONFIG_POWERDOWN_GPIO
+	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_POWERDOWN_GPIO*4);
+	gpio_request(CONFIG_POWERDOWN_GPIO, "power_down");
+	gpio_direction_output(CONFIG_POWERDOWN_GPIO, !CONFIG_POWERDOWN_GPIO_ACTIVE_LVL);
+#endif
+
 	setup_iomux_uart();
 #ifdef CONFIG_NAND_FSL_NFC
 	setup_iomux_nfc();
@@ -647,6 +816,7 @@ int board_early_init_f(void)
 #ifdef CONFIG_VIDEO_MVF_DCU
 	setup_iomux_dcu();
 #endif /* CONFIG_VIDEO_MVF_DCU */
+	setup_lcd();
 
 	return 0;
 }
@@ -756,7 +926,7 @@ U_BOOT_CMD(
 );
 #endif
 
-int do_boot_cm4(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_boot_cm4(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	image_header_t *hdr;
 
@@ -823,6 +993,212 @@ U_BOOT_CMD(
 	"<start address>"
 );
 
+int nand_read_cached(nand_info_t *nand, loff_t off, size_t *size,
+		u_char *buffer);
+
+int validate_uimage(unsigned long offset, char *img_size_env)
+{
+	image_header_t hdr;
+	size_t size = sizeof(hdr);
+	char *verify = NULL;
+	void *loadaddr;
+	int res;
+
+	printf("Validating component at offset %08lx\n", offset);
+
+	if (nand_read_skip_bad(&nand_info[nand_curr_device],
+			offset, &size, (u_char *)&hdr) < 0)
+		return 0;
+
+	if (genimg_get_format((void *)&hdr) != IMAGE_FORMAT_LEGACY) {
+		puts("Component Boot Image Format is incorrect\n");
+		return 0;
+	}
+
+	if (!image_check_magic(&hdr)) {
+		puts("Bad Magic Number\n");
+		return 0;
+	}
+
+	if (!image_check_hcrc(&hdr)) {
+		puts("Bad Header Checksum\n");
+		return 0;
+	}
+
+	if (!image_check_target_arch(&hdr)) {
+		printf("Unsupported Architecture 0x%x\n", image_get_arch(&hdr));
+		return 0;
+	}
+
+	verify = getenv("verify");
+	if (verify && strcmp(verify, "yes") == 0) {
+		loadaddr = (void *)getenv_ulong("loadaddr", 16, CONFIG_LOADADDR);
+		size = image_get_header_size() + image_get_data_size(&hdr);
+
+		res = nand_read_cached(&nand_info[nand_curr_device],
+				offset, &size, (u_char *)loadaddr);
+		if (res < 0)
+			return 0;
+
+		if (!image_check_dcrc(loadaddr)) {
+			printf("Bad Data CRC\n");
+			return 0;
+		}
+	}
+
+	if (img_size_env) {
+		setenv_ulong_hex(img_size_env,
+			image_get_header_size() + image_get_data_size(&hdr));
+	}
+
+	return 1;
+}
+
+#ifdef KERNEL1_FLASH_BASE
+int validate_boot_set(int nset)
+{
+	if (!nset) {
+		return validate_uimage(KERNEL1_FLASH_BASE, "flashsize")
+#ifdef MQX1_FLASH_BASE
+			&& validate_uimage(MQX1_FLASH_BASE, "mqxsize")
+#endif
+			;
+	} else {
+		return validate_uimage(KERNEL2_FLASH_BASE, "flashsize")
+#ifdef MQX2_FLASH_BASE
+			&& validate_uimage(MQX2_FLASH_BASE, "mqxsize")
+#endif
+			;
+	}
+}
+#endif
+
+int do_validate_boot_images(void)
+{
+#ifdef KERNEL1_FLASH_BASE
+	int boot_set1_valid = 0, boot_set2_valid = 0;
+	int active_boot_set = 0, env_changed = 0;
+	char fullupdate[1024] = "";
+	int force_recovery = 0;
+
+	boot_set1_valid = getenv_ulong("boot_set1_valid", 10, 0);
+	boot_set2_valid = getenv_ulong("boot_set2_valid", 10, 0);
+	active_boot_set = getenv_ulong("active_boot_set", 10, -1);
+
+#ifdef CONFIG_RECOVERY_BOOT_GPIO
+	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_RECOVERY_BOOT_GPIO*4);
+	gpio_request(CONFIG_RECOVERY_BOOT_GPIO, "recovery_boot");
+	force_recovery = gpio_get_value(CONFIG_RECOVERY_BOOT_GPIO) ==
+		CONFIG_RECOVERY_BOOT_GPIO_ACTIVE_LVL;
+#endif
+
+	if (force_recovery ||
+		(active_boot_set != 0 && active_boot_set != 1)) {
+		active_boot_set = -1;
+	}
+
+	if (active_boot_set == 0 &&
+		(!boot_set1_valid || !validate_boot_set(0))) {
+		boot_set1_valid = 0;
+		active_boot_set = boot_set2_valid ? 1 : -1;
+		env_changed = 1;
+	}
+
+	if (active_boot_set == 1 &&
+		(!boot_set2_valid || !validate_boot_set(1))) {
+		boot_set2_valid = 0;
+		if (!env_changed && boot_set1_valid &&
+			validate_boot_set(0)) {
+			active_boot_set = 0;
+		} else {
+			boot_set1_valid = 0;
+			active_boot_set = -1;
+		}
+		env_changed = 1;
+	}
+
+	if (env_changed){
+		setenv_ulong("boot_set1_valid", boot_set1_valid);
+		setenv_ulong("boot_set2_valid", boot_set2_valid);
+		setenv_ulong("active_boot_set", active_boot_set);
+		saveenv();
+	}
+
+
+	setenv_ulong_hex("uImage_backup_offset", !active_boot_set ?
+			KERNEL2_FLASH_BASE : KERNEL1_FLASH_BASE);
+#ifdef SPLASH2_FLASH_BASE
+	setenv_ulong_hex("splash_backup_offset", !active_boot_set ?
+			SPLASH2_FLASH_BASE : SPLASH1_FLASH_BASE);
+#endif
+#ifdef  MQX2_FLASH_BASE
+	setenv_ulong_hex("mqx_backup_offset", !active_boot_set ?
+			MQX2_FLASH_BASE : MQX1_FLASH_BASE);
+#endif
+#ifdef ROMFS2_FLASH_BASE
+	setenv_ulong_hex("romfs_backup_offset", !active_boot_set ?
+			ROMFS2_FLASH_BASE : ROMFS1_FLASH_BASE);
+#endif
+#ifdef RECOVERY_FLASH_BASE
+	setenv_ulong_hex("recovery_offset", RECOVERY_FLASH_BASE);
+#endif
+
+	strcat(fullupdate, "setenv boot_set");
+	strcat(fullupdate, active_boot_set ? "1" : "2");
+	strcat(fullupdate, "_valid 0 && saveenv && run update "
+#ifdef MQX1_FLASH_BASE
+			"&& run mqxupdate "
+#endif
+#ifdef SPLASH1_FLASH_BASE
+			"&& run splashupdate "
+#endif
+#ifdef ROMFS1_FLASH_BASE
+			"&& run romfsupdate "
+#endif
+			"&& setenv active_boot_set ");
+	strcat(fullupdate, active_boot_set ? "0" : "1");
+	strcat(fullupdate, " && set boot_set");
+	strcat(fullupdate, active_boot_set ? "1" : "2");
+	strcat(fullupdate, "_valid 1 && saveenv");
+	setenv("fullupdate", fullupdate);
+
+	if (active_boot_set == -1) {
+#ifdef RECOVERY_FLASH_BASE
+		if (validate_uimage(RECOVERY_FLASH_BASE, "flashsize")) {
+			setenv_ulong_hex("uImage_offset", RECOVERY_FLASH_BASE);
+			setenv("reliableboot", "run recoveryboot");
+		} else {
+#endif
+		board_signal_led_error();
+		printf("No valid boot set\n");
+		setenv("reliableboot", "");
+#ifdef RECOVERY_FLASH_BASE
+		}
+#endif
+		return 0;
+	} else {
+		setenv("reliableboot", "run activesetboot");
+	}
+
+	setenv_ulong_hex("uImage_offset", active_boot_set ? KERNEL2_FLASH_BASE :
+		KERNEL1_FLASH_BASE);
+#ifdef SPLASH1_FLASH_BASE
+	setenv_ulong_hex("splash_offset", active_boot_set ? SPLASH2_FLASH_BASE :
+		SPLASH1_FLASH_BASE);
+#endif
+#ifdef  MQX1_FLASH_BASE
+	setenv_ulong_hex("mqx_offset", active_boot_set ? MQX2_FLASH_BASE :
+		MQX1_FLASH_BASE);
+#endif
+#ifdef ROMFS1_FLASH_BASE
+	setenv_ulong_hex("romfs_offset", active_boot_set ? ROMFS2_FLASH_BASE :
+		ROMFS1_FLASH_BASE);
+#endif
+
+#endif /* KERNEL1_FLASH_BASE */
+	return 0;
+}
+
 int board_init(void)
 {
 	u32 temp;
@@ -845,12 +1221,28 @@ int board_init(void)
 	return 0;
 }
 
+void init_dtb(void)
+{
+#if defined(DTB_FLASH_BASE)
+	setenv_ulong_hex("dtb_offset", DTB_FLASH_BASE);
+#endif
+}
+
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+	init_dtb();
+
 #ifdef CONFIG_MXC_SPI
 	setup_iomux_spi();
 #endif
+
+	board_leds_init();
+
+#if !defined(CONFIG_SPLASH_SCREEN)
+	do_validate_boot_images();
+#endif
+
 	return 0;
 }
 #endif
@@ -895,13 +1287,20 @@ int splash_screen_prepare(void)
 	u32 bmp_load_addr;
 	char *s;
 
+	do_validate_boot_images();
+
 	if ((s = getenv("splashimage")) == NULL) {
 		return -1;
 	}
 
 	bmp_load_addr = simple_strtoul (s, NULL, 16);
 
+#ifdef SPLASH1_FLASH_BASE
+	splash_screen_nand_offset = getenv_ulong("splash_offset", 16,
+			(u32)SPLASH1_FLASH_BASE);
+#else
 	splash_screen_nand_offset = simple_strtoul (SPLASH_FLASH_BASE, NULL, 16);
+#endif
 
         if (bmp_load_addr + bmp_header_size >= gd->start_addr_sp)
                 goto splash_address_too_high;

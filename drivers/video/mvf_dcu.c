@@ -30,7 +30,8 @@ vidinfo_t panel_info = {
 	vl_bpix:	LCD_BIT_PER_PIXEL
 };
 
-//#define CONFIG_VIDEO_MVF_DCU_COLBAR
+/*#define CONFIG_VIDEO_MVF_DCU_COLBAR*/	/* Activate to test board-to-lcd connectivity
+				   via colorbar generation */
 
 void *lcd_base;			/* Start of framebuffer memory */
 void *lcd_console_address;	/* Start of console buffer     */
@@ -41,12 +42,6 @@ int lcd_color_bg;
 
 short console_col;
 short console_row;
-
-#define DCU_BACKLIGHT_GPIO_ADDR         (GPIO_BASE_ADDR)
-#define DCU_BACKLIGHT_GPIO_ADDR_SET     (GPIO_BASE_ADDR + 4)
-#define DCU_BACKLIGHT_GPIO_ADDR_CLEAR   (GPIO_BASE_ADDR + 8)
-#define DCU_BACKLIGHT_GPIO_NUM 30
-
 
 static inline u32 dcu_writel(u32 val, u32 offset)
 {
@@ -63,17 +58,21 @@ static inline void dcu_update(void)
 	dcu_writel(DCU_UPDATE_MODE_READREG(1), DCU_UPDATE_MODE);
 }
 
-void lcd_enable(void)
+void __lcd_enable(void)
 {
 	/* backlight on */
-	writel(1 << DCU_BACKLIGHT_GPIO_NUM, DCU_BACKLIGHT_GPIO_ADDR_SET);
+	writel(1 << CONFIG_DCU_BACKLIGHT_GPIO_NUM,
+		CONFIG_DCU_BACKLIGHT_GPIO_ADDR_SET);
 }
+void lcd_enable(void) __attribute__((weak, alias("__lcd_enable")));
 
-void lcd_disable(void)
+void __lcd_disable(void)
 {
 	/* backlight off */
-	writel(1 << DCU_BACKLIGHT_GPIO_NUM, DCU_BACKLIGHT_GPIO_ADDR_CLEAR);
+	writel(1 << CONFIG_DCU_BACKLIGHT_GPIO_NUM,
+		CONFIG_DCU_BACKLIGHT_GPIO_ADDR_CLEAR);
 }
+void lcd_disable(void) __attribute__((weak, alias("__lcd_disable")));
 
 ulong calc_fbsize(void)
 {
