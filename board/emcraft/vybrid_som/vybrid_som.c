@@ -757,6 +757,16 @@ void board_clear_led_error(void)
 #ifdef CONFIG_NAND_FSL_NFC
 void setup_iomux_nfc(void)
 {
+#ifdef CONFIG_SYS_NAND_BUSWIDTH_16BIT
+	__raw_writel(0x002038df, IOMUXC_PAD_063);
+	__raw_writel(0x002038df, IOMUXC_PAD_064);
+	__raw_writel(0x002038df, IOMUXC_PAD_065);
+	__raw_writel(0x002038df, IOMUXC_PAD_066);
+	__raw_writel(0x002038df, IOMUXC_PAD_067);
+	__raw_writel(0x002038df, IOMUXC_PAD_068);
+	__raw_writel(0x002038df, IOMUXC_PAD_069);
+	__raw_writel(0x002038df, IOMUXC_PAD_070);
+#endif
 	__raw_writel(0x002038df, IOMUXC_PAD_071);
 	__raw_writel(0x002038df, IOMUXC_PAD_072);
 	__raw_writel(0x002038df, IOMUXC_PAD_073);
@@ -835,7 +845,11 @@ int do_set_boot_media(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
        // nand
 	fusedata_t fuse[3] = {
 		0, 5, 1, 0x1a,  /* boot search count 8, pages in block 64 */
-		0, 5, 0, 0x80,  /* NAND */
+#ifdef CONFIG_SYS_NAND_BUSWIDTH_16BIT
+		0, 5, 0, 0x84,  /* NAND, 16bit */
+#else
+		0, 5, 0, 0x80,  /* NAND, 8bit */
+#endif
 		0, 6, 0, 0x10,
 	};
 
