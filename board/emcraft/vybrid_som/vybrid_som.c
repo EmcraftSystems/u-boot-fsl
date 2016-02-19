@@ -1078,11 +1078,15 @@ int validate_boot_set(int nset)
 #endif
 			;
 	} else {
+#ifdef KERNEL2_FLASH_BASE
 		return validate_uimage(KERNEL2_FLASH_BASE, "flashsize")
 #ifdef MQX2_FLASH_BASE
 			&& validate_uimage(MQX2_FLASH_BASE, "mqxsize")
 #endif
 			;
+#else
+		return 0;
+#endif /* KERNEL2_FLASH_BASE */
 	}
 }
 #endif
@@ -1092,7 +1096,9 @@ int do_validate_boot_images(void)
 #ifdef KERNEL1_FLASH_BASE
 	int boot_set1_valid = 0, boot_set2_valid = 0;
 	int active_boot_set = 0, env_changed = 0;
-	char fullupdate[1024] = "";
+	char fullupdate[1024] = "", ubirfs[1024] = "";
+	char *ubirfs_fmt = "rootwait=1 ro ubi.mtd=%d,2048 rootfstype=ubifs " \
+		"root=ubi0:rootfs ubi.fm_autoconvert=1";
 	int force_recovery = 0;
 
 	boot_set1_valid = getenv_ulong("boot_set1_valid", 10, 0);
@@ -1138,9 +1144,10 @@ int do_validate_boot_images(void)
 		saveenv();
 	}
 
-
+#ifdef KERNEL2_FLASH_BASE
 	setenv_ulong_hex("uImage_backup_offset", !active_boot_set ?
 			KERNEL2_FLASH_BASE : KERNEL1_FLASH_BASE);
+#endif
 #ifdef SPLASH2_FLASH_BASE
 	setenv_ulong_hex("splash_backup_offset", !active_boot_set ?
 			SPLASH2_FLASH_BASE : SPLASH1_FLASH_BASE);
@@ -1149,12 +1156,13 @@ int do_validate_boot_images(void)
 	setenv_ulong_hex("mqx_backup_offset", !active_boot_set ?
 			MQX2_FLASH_BASE : MQX1_FLASH_BASE);
 #endif
-#ifdef ROMFS2_FLASH_BASE
-	setenv_ulong_hex("romfs_backup_offset", !active_boot_set ?
-			ROMFS2_FLASH_BASE : ROMFS1_FLASH_BASE);
+#ifdef DTB2_FLASH_BASE
+	setenv_ulong_hex("dtb_backup_offset", !active_boot_set ?
+			DTB2_FLASH_BASE : DTB1_FLASH_BASE);
 #endif
-#ifdef RECOVERY_FLASH_BASE
-	setenv_ulong_hex("recovery_offset", RECOVERY_FLASH_BASE);
+#ifdef ROOTFS2_FLASH_BASE
+	setenv_ulong_hex("rootfs_backup_offset", !active_boot_set ?
+			ROOTFS2_FLASH_BASE : ROOTFS1_FLASH_BASE);
 #endif
 
 	strcat(fullupdate, "setenv boot_set");
@@ -1166,8 +1174,11 @@ int do_validate_boot_images(void)
 #ifdef SPLASH1_FLASH_BASE
 			"&& run splashupdate "
 #endif
-#ifdef ROMFS1_FLASH_BASE
-			"&& run romfsupdate "
+#ifdef ROOTFS1_FLASH_BASE
+			"&& run rootfsupdate "
+#endif
+#ifdef DTB1_FLASH_BASE
+			"&& run dtbupdate "
 #endif
 			"&& setenv active_boot_set ");
 	strcat(fullupdate, active_boot_set ? "0" : "1");
@@ -1176,10 +1187,17 @@ int do_validate_boot_images(void)
 	strcat(fullupdate, "_valid 1 && saveenv");
 	setenv("fullupdate", fullupdate);
 
+#ifdef RECOVERY_FLASH_BASE
+	setenv_ulong_hex("recovery_offset", RECOVERY_FLASH_BASE);
+	setenv_ulong_hex("recovery_dtb_offset", RECOVERY_DTB_FLASH_BASE);
+#endif
+
 	if (active_boot_set == -1) {
 #ifdef RECOVERY_FLASH_BASE
 		if (validate_uimage(RECOVERY_FLASH_BASE, "flashsize")) {
 			setenv_ulong_hex("uImage_offset", RECOVERY_FLASH_BASE);
+			setenv_ulong_hex("dtb_offset", RECOVERY_DTB_FLASH_BASE);
+			setenv("ubirfs", "");
 			setenv("reliableboot", "run recoveryboot");
 		} else {
 #endif
@@ -1194,19 +1212,45 @@ int do_validate_boot_images(void)
 		setenv("reliableboot", "run activesetboot");
 	}
 
+#ifdef KERNEL2_FLASH_BASE
 	setenv_ulong_hex("uImage_offset", active_boot_set ? KERNEL2_FLASH_BASE :
 		KERNEL1_FLASH_BASE);
-#ifdef SPLASH1_FLASH_BASE
+#else
+	setenv_ulong_hex("uImage_offset", KERNEL1_FLASH_BASE);
+#endif
+
+#ifdef SPLASH2_FLASH_BASE
 	setenv_ulong_hex("splash_offset", active_boot_set ? SPLASH2_FLASH_BASE :
 		SPLASH1_FLASH_BASE);
+#elif SPLASH1_FLASH_BASE
+	setenv_ulong_hex("splash_offset", SPLASH1_FLASH_BASE);
 #endif
-#ifdef  MQX1_FLASH_BASE
+
+#ifdef MQX2_FLASH_BASE
 	setenv_ulong_hex("mqx_offset", active_boot_set ? MQX2_FLASH_BASE :
 		MQX1_FLASH_BASE);
+#elif MQX1_FLASH_BASE
+	setenv_ulong_hex("mqx_offset", MQX1_FLASH_BASE);
 #endif
-#ifdef ROMFS1_FLASH_BASE
-	setenv_ulong_hex("romfs_offset", active_boot_set ? ROMFS2_FLASH_BASE :
-		ROMFS1_FLASH_BASE);
+
+#ifdef DTB2_FLASH_BASE
+	setenv_ulong_hex("dtb_offset", active_boot_set ?
+		DTB2_FLASH_BASE : DTB1_FLASH_BASE);
+#elif DTB1_FLASH_BASE
+	setenv_ulong_hex("dtb_offset", DTB1_FLASH_BASE);
+#endif
+
+#ifdef ROOTFS2_FLASH_BASE
+	setenv_ulong_hex("rootfs_offset", active_boot_set ? ROOTFS2_FLASH_BASE :
+		ROOTFS1_FLASH_BASE);
+	//TODO: Make this dynamic!
+	sprintf(ubirfs, ubirfs_fmt, active_boot_set ? 10 : 5);
+	setenv("ubirfs", ubirfs);
+#elif ROOTFS1_FLASH_BASE
+	setenv_ulong_hex("rootfs_offset", ROOTFS1_FLASH_BASE);
+	//TODO: Make this dynamic!
+	sprintf(ubirfs, ubirfs_fmt, 4);
+	setenv("ubirfs", ubirfs);
 #endif
 
 #endif /* KERNEL1_FLASH_BASE */
