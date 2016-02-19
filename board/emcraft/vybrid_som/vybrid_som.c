@@ -1238,6 +1238,14 @@ void init_dtb(void)
 #endif
 }
 
+void board_codec_init(void)
+{
+#ifdef CONFIG_CODEC_GPIO
+	gpio_request(CONFIG_CODEC_GPIO, "codec");
+	gpio_direction_output(CONFIG_CODEC_GPIO, !CONFIG_CODEC_GPIO_ACTIVE_LVL);
+#endif
+
+}
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
@@ -1248,6 +1256,8 @@ int board_late_init(void)
 #endif
 
 	board_leds_init();
+
+	board_codec_init();
 
 #if !defined(CONFIG_SPLASH_SCREEN)
 	do_validate_boot_images();
