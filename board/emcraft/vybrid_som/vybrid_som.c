@@ -604,8 +604,6 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 #define GPIO1_PSOR		0x44
 
 #if defined(CONFIG_PHY_ENABLE_GPIO)
-	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_PHY_ENABLE_GPIO*4);
-
 	gpio_request(CONFIG_PHY_ENABLE_GPIO, "phy_enable");
 	gpio_direction_output(CONFIG_PHY_ENABLE_GPIO, CONFIG_PHY_ENABLE_GPIO_ACTIVE_LVL);
 #endif
@@ -680,8 +678,6 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 	}
 
 #if defined(CONFIG_PHY_RESET_GPIO)
-	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_PHY_RESET_GPIO*4);
-
 	gpio_request(CONFIG_PHY_RESET_GPIO, "phy_reset");
 	gpio_direction_output(CONFIG_PHY_RESET_GPIO, 0);
 	udelay(200);
@@ -728,8 +724,6 @@ int board_mmc_init(bd_t *bis)
 #if defined(CONFIG_ERROR_LED_GPIO)
 int board_leds_init(void)
 {
-	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_ERROR_LED_GPIO*4);
-
 	gpio_request(CONFIG_ERROR_LED_GPIO, "error_led");
 	gpio_direction_output(CONFIG_ERROR_LED_GPIO, 0);
 
@@ -800,7 +794,6 @@ void setup_lcd(void)
 		int backlight_value = 1;
 	#endif
 		int bl_gpio = CONFIG_LCD_BACKLIGHT_GPIO;
-		__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + bl_gpio*4);
 		gpio_request(bl_gpio, "lcd_enable");
 		gpio_direction_output(bl_gpio, backlight_value);
 	}
@@ -809,7 +802,6 @@ void setup_lcd(void)
 #if defined(CONFIG_LCD_ENABLE_GPIO)
 	{
 		int lcden_gpio = CONFIG_LCD_ENABLE_GPIO;
-		__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + lcden_gpio*4);
 		gpio_request(lcden_gpio, "lcd_enable");
 		gpio_direction_output(lcden_gpio, 1);
 	}
@@ -819,7 +811,6 @@ void setup_lcd(void)
 int board_early_init_f(void)
 {
 #ifdef CONFIG_POWERDOWN_GPIO
-	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_POWERDOWN_GPIO*4);
 	gpio_request(CONFIG_POWERDOWN_GPIO, "power_down");
 	gpio_direction_output(CONFIG_POWERDOWN_GPIO, !CONFIG_POWERDOWN_GPIO_ACTIVE_LVL);
 #endif
@@ -1105,8 +1096,8 @@ int do_validate_boot_images(void)
 	active_boot_set = getenv_ulong("active_boot_set", 10, -1);
 
 #ifdef CONFIG_RECOVERY_BOOT_GPIO
-	__raw_writel(CONFIG_GPIO_PIN_IOMUX_OUT, IOMUXC_PAD_000 + CONFIG_RECOVERY_BOOT_GPIO*4);
 	gpio_request(CONFIG_RECOVERY_BOOT_GPIO, "recovery_boot");
+	gpio_direction_input(CONFIG_RECOVERY_BOOT_GPIO);
 	force_recovery = gpio_get_value(CONFIG_RECOVERY_BOOT_GPIO) ==
 		CONFIG_RECOVERY_BOOT_GPIO_ACTIVE_LVL;
 #endif

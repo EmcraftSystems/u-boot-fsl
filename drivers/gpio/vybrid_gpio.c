@@ -25,6 +25,7 @@
  */
 #include <common.h>
 #include <asm/arch/vybrid-regs.h>
+#include <asm/arch/iomux.h>
 #include <asm/gpio.h>
 #include <asm/io.h>
 #include <errno.h>
@@ -63,7 +64,16 @@ int gpio_get_value(unsigned gpio)
 
 int gpio_request(unsigned gpio, const char *label)
 {
-	return (gpio < (5*32)) ? 0 : -1;
+	int ret = -1;
+
+	if (gpio < (5*32)) {
+		__raw_writel(VF610_GPIO_CTRL | PAD_CTL_OBE_IBE_ENABLE, IOMUXC_PAD_000 + gpio*4);
+		ret = 0;
+	} else {
+		printf("%s: requesting invalid GPIO %d \"%s\"\n", __func__, gpio, label);
+	}
+
+	return ret;
 }
 
 int gpio_free(unsigned gpio)
@@ -73,11 +83,14 @@ int gpio_free(unsigned gpio)
 
 int gpio_direction_input(unsigned gpio)
 {
+	__raw_writel(VF610_GPIO_CTRL | PAD_CTL_IBE_ENABLE, IOMUXC_PAD_000 + gpio*4);
+	udelay(100);
 	return 0;
 }
 
 int gpio_direction_output(unsigned gpio, int value)
 {
+	__raw_writel(VF610_GPIO_CTRL | PAD_CTL_OBE_ENABLE, IOMUXC_PAD_000 + gpio*4);
 	gpio_set_value(gpio, value);
 	return 0;
 }

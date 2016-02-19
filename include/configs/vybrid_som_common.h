@@ -76,9 +76,6 @@
 #define CONFIG_VYBRID_UART_BASE		UART0_BASE
 #define CONFIG_VYBRID_GPIO
 
-/* Default IOMUX config for GPIO output pin: PKE, PUE, SPEED_MED, PUS_47K, PSE_25ohm */
-#define CONFIG_GPIO_PIN_IOMUX_OUT	0x0000219E
-
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_SYS_UART_PORT		(0)
