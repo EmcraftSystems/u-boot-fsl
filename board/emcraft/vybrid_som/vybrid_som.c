@@ -467,8 +467,8 @@ int dram_init(void)
 void setup_iomux_uart(void)
 {
 	/* UART0 */
-	__raw_writel(0x001021a3, IOMUXC_PAD_032);
-	__raw_writel(0x001021a1, IOMUXC_PAD_033);
+	__raw_writel(0x001021bf, IOMUXC_PAD_032);
+	__raw_writel(0x001021bd, IOMUXC_PAD_033);
 }
 
 #ifdef CONFIG_VIDEO_MVF_DCU
