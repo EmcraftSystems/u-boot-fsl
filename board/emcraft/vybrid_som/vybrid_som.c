@@ -425,7 +425,11 @@ unsigned long ddr_ctrl_init(void)
 	banks = 1 << (3 - (__raw_readl(DDR_CR073) & 3));
 	port = ((__raw_readl(DDR_CR078) >> 8) & 1) ? 1 : 2;
 
+#ifdef PHYS_RAM_VIRT_SIZE
+	dram_size = PHYS_RAM_VIRT_SIZE;
+#else
 	dram_size = (1 << (rows + cols)) * banks * port;
+#endif
 
 	return dram_size;
 }
