@@ -40,6 +40,7 @@
 #endif
 #include <lcd.h>
 #include <watchdog.h>
+#include <libfdt.h>
 
 #if defined(CONFIG_CPU_PXA25X) || defined(CONFIG_CPU_PXA27X) || \
 	defined(CONFIG_CPU_MONAHANS)
@@ -334,10 +335,12 @@ int drv_lcd_init (void)
 {
 	struct stdio_dev lcddev;
 	int rc;
+	int fb_offset = fdt_path_offset(gd->fdt_blob, "/reserved-memory/framebuffer");
+
+	if (fb_offset > 0)
+		gd->fb_base = fdt32_to_cpu(*(u32*)fdt_getprop(gd->fdt_blob, fb_offset, "reg", NULL));
 
 	lcd_base = (void *)(gd->fb_base);
-
-	lcd_line_length = (panel_info.vl_col * NBITS (panel_info.vl_bpix)) / 8;
 
 	lcd_init (lcd_base);		/* LCD initialization */
 
@@ -390,6 +393,8 @@ void lcd_clear(void)
 	lcd_setbgcolor (CONSOLE_COLOR_BLACK);
 #endif	/* CONFIG_SYS_WHITE_ON_BLACK */
 
+	lcd_setbgcolor (CONSOLE_COLOR_BLACK);
+
 #ifdef	LCD_TEST_PATTERN
 	test_pattern();
 #else
@@ -420,6 +425,9 @@ static int lcd_init (void *lcdbase)
 	debug ("[LCD] Initializing LCD frambuffer at %p\n", lcdbase);
 
 	lcd_ctrl_init (lcdbase);
+
+	lcd_line_length = (panel_info.vl_col * NBITS (panel_info.vl_bpix)) / 8;
+
 	lcd_is_enabled = 1;
 	lcd_clear();
 	lcd_enable ();
