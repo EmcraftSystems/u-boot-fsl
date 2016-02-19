@@ -28,6 +28,92 @@
 #include <asm/arch/vybrid-regs.h>
 #include <asm/arch/vybrid-pins.h>
 
+#define ALT0	(0 << 20)
+#define ALT1	(1 << 20)
+#define ALT2	(2 << 20)
+#define ALT3	(3 << 20)
+#define ALT4	(4 << 20)
+#define ALT5	(5 << 20)
+#define ALT6	(6 << 20)
+#define ALT7	(7 << 20)
+
+#define PAD_CTL_SPEED_LOW		(1 << 12)
+#define PAD_CTL_SPEED_MED		(2 << 12)
+#define PAD_CTL_SPEED_HIGH		(3 << 12)
+
+#define PAD_CTL_SRE_FAST		(1 << 11)
+#define PAD_CTL_SRE_SLOW		(0 << 11)
+
+#define PAD_CTL_ODE			(1 << 10)
+#define PAD_CTL_HYS			(1 << 9)
+
+#define PAD_CTL_DSE_DISABLE		(0 << 6)
+#define PAD_CTL_DSE_150ohm		(1 << 6)
+#define PAD_CTL_DSE_75ohm		(2 << 6)
+#define PAD_CTL_DSE_50ohm		(3 << 6)
+#define PAD_CTL_DSE_37ohm		(4 << 6)
+#define PAD_CTL_DSE_30ohm		(5 << 6)
+#define PAD_CTL_DSE_25ohm		(6 << 6)
+#define PAD_CTL_DSE_20ohm		(7 << 6)
+
+#define PAD_CTL_PUS_100K_DOWN		(0 << 4)
+#define PAD_CTL_PUS_47K_UP		(1 << 4)
+#define PAD_CTL_PUS_100K_UP		(2 << 4)
+#define PAD_CTL_PUS_22K_UP		(3 << 4)
+
+#define PAD_CTL_PKE			(1 << 3)
+#define PAD_CTL_PUE			(1 << 2)
+
+#define PAD_CTL_OBE_ENABLE		(1 << 1)
+#define PAD_CTL_IBE_ENABLE		(1 << 0)
+#define PAD_CTL_OBE_IBE_ENABLE		(3 << 0)
+
+#define VF610_HIGH_DRV		(PAD_CTL_DSE_150ohm)
+
+
+#define VF610_UART_PAD_CTRL	(PAD_CTL_DSE_25ohm |	\
+				 PAD_CTL_PUS_100K_UP |	\
+				 PAD_CTL_SPEED_MED)
+
+#define VF610_SDHC_PAD_CTRL	(PAD_CTL_DSE_20ohm |	\
+				 PAD_CTL_PUS_100K_UP |	\
+				 PAD_CTL_SPEED_HIGH |	\
+				 PAD_CTL_PKE |		\
+				 PAD_CTL_PUE |		\
+				 PAD_CTL_OBE_IBE_ENABLE)
+
+#define VF610_ENET_PAD_CTRL	(PAD_CTL_DSE_75ohm |	\
+				 PAD_CTL_SPEED_HIGH |	\
+				 PAD_CTL_SRE_FAST)
+
+#define VF610_I2C_PAD_CTRL      (PAD_CTL_DSE_50ohm |	\
+				 PAD_CTL_PUS_100K_UP |	\
+				 PAD_CTL_SPEED_MED 	\
+				 PAD_CTL_HYS |		\
+				 PAD_CTL_ODE |		\
+				 PAD_CTL_PUE |		\
+				 PAD_CTL_PKE |		\
+				 PAD_CTL_SRE_FAST |	\
+				 PAD_CTL_OBE_IBE_ENABLE)
+
+#define VF610_NAND_PAD_CTRL	(PAD_CTL_DSE_50ohm |	\
+				 PAD_CTL_PUS_47K_UP |	\
+				 PAD_CTL_SPEED_HIGH |	\
+				 PAD_CTL_SRE_FAST)
+
+#define VF610_DSPI_PAD_CTRL	(PAD_CTL_DSE_50ohm |	\
+				 PAD_CTL_PUS_100K_UP |	\
+				 PAD_CTL_SPEED_HIGH |	\
+				 PAD_CTL_HYS)
+
+
+#define VF610_GPIO_CTRL		(PAD_CTL_DSE_25ohm |	\
+				 PAD_CTL_PUS_100K_UP |	\
+				 PAD_CTL_SPEED_MED)
+
+#define VF610_DCU_PAD_CTRL	(VF610_HIGH_DRV |	\
+				 PAD_CTL_OBE_ENABLE)
+
 #define IOMUXC_PAD_000		(IOMUXC_BASE_ADDR + 0x0000)
 #define IOMUXC_PAD_001		(IOMUXC_BASE_ADDR + 0x0004)
 #define IOMUXC_PAD_002		(IOMUXC_BASE_ADDR + 0x0008)
