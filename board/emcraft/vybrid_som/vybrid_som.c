@@ -582,6 +582,10 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 {
 	struct fec_info_s *info = (struct fec_info_s *)dev->priv;
 
+#define NETPADCFG(spd, sre, dse, ob, ib) \
+	((MUX_MODE_ALT1 << 20) | ((spd) << 12) | ((sre) << 11) | \
+		((dse) << 6) | ((ob) << 1) | (ib))
+
 #define ENET_SRE	(MUX_SRE_FAST << 11)
 #define ENET_ODE	(MUX_ODE_CMOS << 10)
 #define ENET_DRV	(MUX_DSE_37_OHM << 6)
@@ -612,8 +616,7 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 		ENET_DRV | ENET_SPEED, IOMUXC_PAD_000);
 #else /* VF6-SOM-LC 1A */
 	/* Phy: use CLKOUT for VF6-SOM-LC */
-	__raw_writel((MUX_MODE_ALT1 << 20) | (MUX_OBE_EN << 1) | ENET_SRE | ENET_ODE |
-		ENET_DRV | ENET_SPEED, IOMUXC_PAD_000);
+	__raw_writel(NETPADCFG(2, 1, 5, 1, 0), IOMUXC_PAD_000);
 
 	__raw_writel((1 << ENET_PLL_ENABLE) | (1 << ENET_PLL_DIV_SELECT),
 		ANATOP_BASE_ADDR + ANADIG_PLL_ENET_CTRL);
@@ -627,27 +630,29 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 	if (setclear) {
 		if (info->iobase == MACNET0_BASE_ADDR) {
 			/* MDC,MDIO,RxDV,RxD1,RxD0 */
-			__raw_writel(0x00103002 | ENETMUX, IOMUXC_PAD_045);
-			__raw_writel(0x00103003 | ENETMUX, IOMUXC_PAD_046);
-			__raw_writel(0x00103001 | ENETMUX, IOMUXC_PAD_047);
-			__raw_writel(0x00103001 | ENETMUX, IOMUXC_PAD_048);
-			__raw_writel(0x00103001 | ENETMUX, IOMUXC_PAD_049);
+			__raw_writel(NETPADCFG(2, 0, 3, 1, 0), IOMUXC_PAD_045);
+			__raw_writel(NETPADCFG(2, 0, 3, 1, 1), IOMUXC_PAD_046);
+			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_047);
+			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_048);
+			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_049);
 			/* RxER,TxD1,TxD0,TxEn */
-			__raw_writel(0x00103001 | ENETMUX, IOMUXC_PAD_050);
-			__raw_writel(0x00103002 | ENETMUX, IOMUXC_PAD_051);
-			__raw_writel(0x00103002 | ENETMUX, IOMUXC_PAD_052);
-			__raw_writel(0x00103002 | ENETMUX, IOMUXC_PAD_053);
+			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_050);
+			__raw_writel(NETPADCFG(0, 0, 1, 1, 0), IOMUXC_PAD_051);
+			__raw_writel(NETPADCFG(0, 0, 1, 1, 0), IOMUXC_PAD_052);
+			__raw_writel(NETPADCFG(2, 1, 3, 1, 0), IOMUXC_PAD_053);
 		}
 		if (info->iobase == MACNET1_BASE_ADDR) {
-			__raw_writel(0x00103182, IOMUXC_PAD_054); /* MDC */
-			__raw_writel(0x00103183, IOMUXC_PAD_055); /* MDIO */
-			__raw_writel(0x00103181, IOMUXC_PAD_056); /* RxDV */
-			__raw_writel(0x00103181, IOMUXC_PAD_057); /* RxD1 */
-			__raw_writel(0x00103181, IOMUXC_PAD_058); /* RxD0 */
-			__raw_writel(0x00103181, IOMUXC_PAD_059); /* RxER */
-			__raw_writel(0x00103182, IOMUXC_PAD_060); /* TxD1 */
-			__raw_writel(0x00103182, IOMUXC_PAD_061); /* TxD0 */
-			__raw_writel(0x00103182, IOMUXC_PAD_062); /* TxEn */
+			/* MDC,MDIO,RxDV,RxD1,RxD0 */
+			__raw_writel(NETPADCFG(2, 0, 3, 1, 0), IOMUXC_PAD_054);
+			__raw_writel(NETPADCFG(2, 0, 3, 1, 1), IOMUXC_PAD_055);
+			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_056);
+			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_057);
+			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_058);
+			/* RxER,TxD1,TxD0,TxEn */
+			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_059);
+			__raw_writel(NETPADCFG(0, 0, 1, 1, 0), IOMUXC_PAD_060);
+			__raw_writel(NETPADCFG(0, 0, 1, 1, 0), IOMUXC_PAD_061);
+			__raw_writel(NETPADCFG(2, 1, 3, 1, 0), IOMUXC_PAD_062);
 		}
 	} else {
 		if (info->iobase == MACNET0_BASE_ADDR) {
