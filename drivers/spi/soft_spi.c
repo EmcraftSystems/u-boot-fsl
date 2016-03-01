@@ -79,6 +79,7 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 
 	ss->slave.bus = bus;
 	ss->slave.cs = cs;
+	ss->slave.bits_per_word = 8;
 	ss->mode = mode;
 
 	/* TODO: Use max_hz to limit the SCK rate */
@@ -136,13 +137,18 @@ int  spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	volatile immap_t *immr = (immap_t *)CONFIG_SYS_IMMR;
 #endif
 	struct soft_spi_slave *ss = to_soft_spi(slave);
-	uchar		tmpdin  = 0;
-	uchar		tmpdout = 0;
-	const u8	*txd = dout;
-	u8		*rxd = din;
+	u32		tmpdin  = 0;
+	u32		tmpdout = 0;
+	const u8	*txd8 = dout;
+	u8		*rxd8 = din;
+	const u16	*txd16 = dout;
+	u16		*rxd16 = din;
+	const u32	*txd32 = dout;
+	u32		*rxd32 = din;
 	int		cpol = ss->mode & SPI_CPOL;
 	int		cpha = ss->mode & SPI_CPHA;
 	unsigned int	j;
+	int bits_per_word = slave->bits_per_word;
 
 	PRINTD("spi_xfer: slave %u:%u dout %08X din %08X bitlen %u\n",
 		slave->bus, slave->cs, *(uint *)txd, *(uint *)rxd, bitlen);
@@ -154,17 +160,28 @@ int  spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 		/*
 		 * Check if it is time to work on a new byte.
 		 */
-		if((j % 8) == 0) {
-			tmpdout = *txd++;
-			if(j != 0) {
-				*rxd++ = tmpdin;
+		if ((j % bits_per_word) == 0) {
+			if (bits_per_word <= 8)
+				tmpdout = *txd8++;
+			else if (bits_per_word <= 16)
+				tmpdout = *txd16++;
+			else
+				tmpdout = *txd32++;
+
+			if (din && j != 0) {
+				if (bits_per_word <= 8)
+					*rxd8++ = tmpdin;
+				else if (bits_per_word <= 16)
+					*rxd16++ = tmpdin;
+				else
+					*rxd32++ = tmpdin;
 			}
 			tmpdin  = 0;
 		}
 
 		if (!cpha)
 			SPI_SCL(!cpol);
-		SPI_SDA(tmpdout & 0x80);
+		SPI_SDA(tmpdout & (1 << (bits_per_word - 1)));
 		SPI_DELAY;
 		if (cpha)
 			SPI_SCL(!cpol);
@@ -176,15 +193,23 @@ int  spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 		SPI_DELAY;
 		if (cpha)
 			SPI_SCL(cpol);
+		SPI_DELAY;
 	}
 	/*
 	 * If the number of bits isn't a multiple of 8, shift the last
 	 * bits over to left-justify them.  Then store the last byte
 	 * read in.
 	 */
-	if((bitlen % 8) != 0)
-		tmpdin <<= 8 - (bitlen % 8);
-	*rxd++ = tmpdin;
+	if (din) {
+		if ((bitlen % bits_per_word) != 0)
+			tmpdin <<= bits_per_word - (bits_per_word % 8);
+		if (bits_per_word <= 8)
+			*rxd8++ = tmpdin;
+		else if (bits_per_word <= 16)
+			*rxd16++ = tmpdin;
+		else
+			*rxd32++ = tmpdin;
+	}
 
 	if (flags & SPI_XFER_END)
 		spi_cs_deactivate(slave);

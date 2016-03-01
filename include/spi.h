@@ -53,6 +53,7 @@
 struct spi_slave {
 	unsigned int	bus;
 	unsigned int	cs;
+	unsigned int	bits_per_word;
 };
 
 /*-----------------------------------------------------------------------
