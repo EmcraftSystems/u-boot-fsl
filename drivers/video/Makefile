@@ -44,6 +44,7 @@ COBJS-$(CONFIG_VIDEO_SM501) += sm501.o
 COBJS-$(CONFIG_VIDEO_SMI_LYNXEM) += smiLynxEM.o videomodes.o
 COBJS-$(CONFIG_VIDEO_VCXK) += bus_vcxk.o
 COBJS-$(CONFIG_VIDEO_MVF_DCU) += mvf_dcu.o
+COBJS-$(CONFIG_PROMATE_ILITEK98) += promate_ilitek98.o
 
 COBJS	:= $(sort $(COBJS-y))
 SRCS	:= $(COBJS:.o=.c)
