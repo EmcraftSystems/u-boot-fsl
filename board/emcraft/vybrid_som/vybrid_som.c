@@ -38,6 +38,7 @@
 #include <i2c.h>
 #include <mmc.h>
 #include <nand.h>
+#include <spi.h>
 #include <fsl_esdhc.h>
 #include <usb/ehci-fsl.h>
 #include <bmp_layout.h>
@@ -52,6 +53,10 @@ struct fsl_esdhc_cfg esdhc_cfg[2] = {
 	{ESDHC1_BASE_ADDR, 1},
 	{ESDHC2_BASE_ADDR, 1},
 };
+#endif
+
+#ifdef CONFIG_PROMATE_ILITEK98
+int promate_hw_init(struct spi_slave *spi);
 #endif
 
 void setup_iomux_ddr(void)
@@ -788,6 +793,18 @@ void setup_iomux_nfc(void)
 }
 #endif
 
+static void request_out_gpio(int gpio, const char *name, int level)
+{
+	gpio_request(gpio, name);
+	gpio_direction_output(gpio, level);
+}
+
+static void request_in_gpio(int gpio, const char *name)
+{
+	gpio_request(gpio, name);
+	gpio_direction_input(gpio);
+}
+
 void setup_lcd(void)
 {
 #if defined(CONFIG_LCD_BACKLIGHT_GPIO)
@@ -810,13 +827,29 @@ void setup_lcd(void)
 		gpio_direction_output(lcden_gpio, 1);
 	}
 #endif
+
+#if defined(CONFIG_SOFT_SPI) && defined(CONFIG_PROMATE_ILITEK98)
+	{
+		struct spi_slave *spi;
+		request_out_gpio(CONFIG_SPI_BITBANG_CS_GPIO, "spi_cs", 1);
+		request_in_gpio(CONFIG_SPI_BITBANG_SIN_GPIO, "spi_sin");
+		request_out_gpio(CONFIG_SPI_BITBANG_SOUT_GPIO, "spi_sout", 1);
+		request_out_gpio(CONFIG_SPI_BITBANG_SCK_GPIO, "spi_sck", 1);
+
+		spi_init();
+		spi = spi_setup_slave(0, 0, 200000, SPI_MODE_3);
+		spi->bits_per_word = 9;
+
+		promate_hw_init(spi);
+	}
+#endif /* CONFIG_SOFT_SPI && CONFIG_PROMATE_ILITEK98 */
 }
 
 int board_early_init_f(void)
 {
 #ifdef CONFIG_POWERDOWN_GPIO
-	gpio_request(CONFIG_POWERDOWN_GPIO, "power_down");
-	gpio_direction_output(CONFIG_POWERDOWN_GPIO, !CONFIG_POWERDOWN_GPIO_ACTIVE_LVL);
+	request_out_gpio(CONFIG_POWERDOWN_GPIO, "power_down",
+			 !CONFIG_POWERDOWN_GPIO_ACTIVE_LVL);
 #endif
 
 	setup_iomux_uart();
@@ -826,7 +859,6 @@ int board_early_init_f(void)
 #ifdef CONFIG_VIDEO_MVF_DCU
 	setup_iomux_dcu();
 #endif /* CONFIG_VIDEO_MVF_DCU */
-	setup_lcd();
 
 	return 0;
 }
@@ -1297,6 +1329,8 @@ void board_codec_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+	setup_lcd();
+
 	init_dtb();
 
 #ifdef CONFIG_MXC_SPI
@@ -1401,3 +1435,37 @@ xit:
         return -1;
 }
 #endif
+
+#ifdef CONFIG_SOFT_SPI
+void spi_bitbang_scl(int set)
+{
+	gpio_set_value(CONFIG_SPI_BITBANG_SCK_GPIO, !!set);
+}
+
+void spi_bitbang_sda(int set)
+{
+	gpio_set_value(CONFIG_SPI_BITBANG_SOUT_GPIO, !!set);
+}
+
+unsigned char spi_bitbang_read(void)
+{
+	return gpio_get_value(CONFIG_SPI_BITBANG_SIN_GPIO);
+}
+
+int spi_cs_is_valid(unsigned int bus, unsigned int cs)
+{
+	return bus == 0 && cs == 0;
+}
+
+void spi_cs_activate(struct spi_slave *slave)
+{
+	if (0 == slave->cs)
+		gpio_set_value(CONFIG_SPI_BITBANG_CS_GPIO, 0);
+}
+
+void spi_cs_deactivate(struct spi_slave *slave)
+{
+	if (0 == slave->cs)
+		gpio_set_value(CONFIG_SPI_BITBANG_CS_GPIO, 0);
+}
+#endif /* CONFIG_SOFT_SPI */

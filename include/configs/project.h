@@ -60,6 +60,7 @@
 
 #define CONFIG_LCD
 #define CONFIG_VIDEO_MVF_DCU
+#define CONFIG_PROMATE_ILITEK98
 #define LCD_PROMATE7
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV
 #define CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
@@ -79,19 +80,32 @@
 #define CONFIG_PHY_ENABLE_GPIO			31
 #define CONFIG_PHY_ENABLE_GPIO_ACTIVE_LVL	0
 
-#define CONFIG_POWERDOWN_GPIO			56
-#define CONFIG_POWERDOWN_GPIO_ACTIVE_LVL	0
-
 /* PTA21: 2Ch offset: 0x2C / 4 = 11*/
-/*#define CONFIG_RECOVERY_BOOT_GPIO		11*/
-/* PTE14: 1DCh offset: 0x1DC / 4 = 119*/
-/*#define CONFIG_RECOVERY_BOOT_GPIO		119*/
-/*#define CONFIG_RECOVERY_BOOT_GPIO_ACTIVE_LVL	0*/
+#define CONFIG_RECOVERY_BOOT_GPIO		11
+#define CONFIG_RECOVERY_BOOT_GPIO_ACTIVE_LVL	0
 
 #define CONFIG_CODEC_GPIO			88 /* PTD9 */
 #define CONFIG_CODEC_GPIO_ACTIVE_LVL		0
 
 #define CONFIG_OF_LIBFDT
+
+#define CONFIG_SOFT_SPI
+
+#ifdef CONFIG_SOFT_SPI
+#define SPI_SCL(val)				spi_bitbang_scl(val)
+#define SPI_SDA(val)				spi_bitbang_sda(val)
+#define SPI_READ				spi_bitbang_read()
+#define SPI_DELAY				udelay(10)
+#ifndef __ASSEMBLY__
+#define CONFIG_SPI_BITBANG_CS_GPIO		41
+#define CONFIG_SPI_BITBANG_SIN_GPIO		42
+#define CONFIG_SPI_BITBANG_SOUT_GPIO		43
+#define CONFIG_SPI_BITBANG_SCK_GPIO		44
+void spi_bitbang_scl(int set);
+void spi_bitbang_sda(int set);
+unsigned char spi_bitbang_read(void);
+#endif /* __ASSEMBLY__ */
+#endif /* CONFIG_SOFT_SPI */
 
 #define CONFIG_MTD_SPLASH_PART_START	0x120000
 #define CONFIG_MTD_SPLASH_PART_LEN	0x180000
@@ -133,7 +147,7 @@
 	" ${netmask}:${hostname}:eth0:off "				\
 	" fec_mac=${ethaddr}\0"						\
 	"ethaddr=C0:B1:3C:77:88:AB\0"					\
-	"ipaddr=172.17.80.2\0"						\
+	"ipaddr=172.17.80.3\0"						\
 	"serverip=172.17.0.1\0"						\
 	"image=ditting/ditting.uImage\0"				\
 	"bootcmd=run reliableboot\0"					\
@@ -179,6 +193,11 @@
 	"recoveryboot=run nandboot\0"					\
 	"boot_dtb=nand read ${dtb_addr} ${dtb_offset} 0x7000 &&"	\
 	" bootm ${loadaddr} - ${dtb_addr}\0"				\
-	"dtb_addr=0x80000100\0"
+	"dtb_addr=0x80000100\0"						\
+	"zrec=setenv active_boot_set -1 && "				\
+	" setenv boot_set1_valid 0; saveenv; reset\0"			\
+	"uboot_image=ditting/u-boot.nand\0"				\
+	"update_uboot=tftpboot ${uboot_image} && "			\
+	" nand erase 0 0x60000 && nand write ${loadaddr} 0 ${filesize}\0"
 
 #endif /* __CONFIG_H */
