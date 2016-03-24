@@ -232,6 +232,10 @@ static int bootm_linux_fdt(int machid, bootm_headers_t *images)
 
 	fdt_fixup_ethernet(*of_flat_tree);
 
+#ifdef CONFIG_LCD
+	fdt_fixup_framebuffer(*of_flat_tree);
+#endif
+
 	fdt_initrd(*of_flat_tree, *initrd_start, *initrd_end, 1);
 
 	announce_and_cleanup();

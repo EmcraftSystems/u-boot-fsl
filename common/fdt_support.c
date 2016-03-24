@@ -481,6 +481,24 @@ void fdt_fixup_ethernet(void *fdt)
 	}
 }
 
+#ifdef CONFIG_LCD
+/*
+ * Declare calc_fbsize
+ */
+ulong calc_fbsize(void);
+
+void fdt_fixup_framebuffer(void *fdt)
+{
+	u32 phy_addr[2];
+	int off = fdt_path_offset(fdt, "/reserved-memory/framebuffer");
+	if (off > 0) {
+		phy_addr[0] = cpu_to_fdt32(gd->fb_base);
+		phy_addr[1] = cpu_to_fdt32(calc_fbsize());
+		fdt_setprop(fdt, off, "reg", phy_addr, sizeof(phy_addr));
+	}
+}
+#endif
+
 /* Resize the fdt to its actual size + a bit of padding */
 int fdt_resize(void *blob)
 {
