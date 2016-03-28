@@ -44,9 +44,9 @@
 #define CONFIG_MCFFEC
 
 #define CONFIG_NR_DRAM_BANKS		1
-#define PHYS_NAND_SIZE			(128 * 1024 * 1024)
+#define PHYS_NAND_SIZE			(256 * 1024 * 1024)
 #define PHYS_SDRAM_1_SIZE		(512 * 1024 * 1024)
-#define PHYS_RAM_VIRT_SIZE		(128 * 1024 * 1024)
+#define PHYS_RAM_VIRT_SIZE		(256 * 1024 * 1024)
 
 #include "vybrid_som_common.h"
 
@@ -127,7 +127,7 @@ unsigned char spi_bitbang_read(void);
 
 #define DTB_PART_SIZE			0x100000
 #define KERNEL_PART_SIZE		0xc00000
-#define ROOTFS_PART_SIZE		0x5c00000
+#define ROOTFS_PART_SIZE		0xa000000
 #define RECOVERY_PART_SIZE		0x1000000
 
 # define SPLASH1_FLASH_BASE		(CONFIG_MTD_SPLASH_PART_START)
@@ -155,7 +155,7 @@ unsigned char spi_bitbang_read(void);
 	"nandboot=nand read ${loadaddr} ${uImage_offset}"		\
 	" ${flashsize} && run args addip && run boot_dtb\0"		\
 	"args=run args_quiet\0"						\
-	"args_common=mem=128M console=ttymxc0,115200"			\
+	"args_common=mem=256M console=ttymxc0,115200"			\
 	" ubi.fm_autoconvert=1 lpj=1646592 \0"				\
 	"args_quiet=setenv bootargs ${args_common} ${ubirfs}"		\
 	" quiet=quiet\0"						\
