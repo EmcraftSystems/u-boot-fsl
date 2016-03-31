@@ -161,6 +161,9 @@ unsigned char spi_bitbang_read(void);
 	" quiet=quiet\0"						\
 	"args_verbose=setenv bootargs ${args_common} ${ubirfs}"		\
 	" ignore_loglevel\0"						\
+	"args_nfs=setenv bootargs ${args_common} ignore_loglevel"	\
+	" root=/dev/nfs"						\
+	" nfsroot=172.17.0.19:/mnt/nfs/ditting/rootfs,v3,nolock\0"	\
 	"verify=no\0"							\
 	"bootdelay=1\0"							\
 	"splashimage=0x80007fc0\0"					\
