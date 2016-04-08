@@ -91,6 +91,9 @@
 
 #define CONFIG_SOFT_SPI
 
+#define CONFIG_CMD_SET_BOOT_MEDIA
+#define CONFIG_BOOT_MEDIA_NAND
+
 #ifdef CONFIG_SOFT_SPI
 #define SPI_SCL(val)				spi_bitbang_scl(val)
 #define SPI_SDA(val)				spi_bitbang_sda(val)
