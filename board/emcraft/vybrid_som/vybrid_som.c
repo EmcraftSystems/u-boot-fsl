@@ -637,16 +637,16 @@ int fecpin_setclear(struct eth_device *dev, int setclear)
 	if (setclear) {
 		if (info->iobase == MACNET0_BASE_ADDR) {
 			/* MDC,MDIO,RxDV,RxD1,RxD0 */
-			__raw_writel(NETPADCFG(2, 0, 3, 1, 0), IOMUXC_PAD_045);
-			__raw_writel(NETPADCFG(2, 0, 3, 1, 1), IOMUXC_PAD_046);
-			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_047);
-			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_048);
-			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_049);
+			__raw_writel(NETPADCFG(0, 0, 2, 1, 0), IOMUXC_PAD_045);
+			__raw_writel(NETPADCFG(0, 0, 2, 1, 1), IOMUXC_PAD_046);
+			__raw_writel(NETPADCFG(0, 0, 0, 0, 1), IOMUXC_PAD_047);
+			__raw_writel(NETPADCFG(0, 0, 0, 0, 1), IOMUXC_PAD_048);
+			__raw_writel(NETPADCFG(0, 0, 0, 0, 1), IOMUXC_PAD_049);
 			/* RxER,TxD1,TxD0,TxEn */
-			__raw_writel(NETPADCFG(2, 0, 0, 0, 1), IOMUXC_PAD_050);
-			__raw_writel(NETPADCFG(0, 0, 1, 1, 0), IOMUXC_PAD_051);
-			__raw_writel(NETPADCFG(0, 0, 1, 1, 0), IOMUXC_PAD_052);
-			__raw_writel(NETPADCFG(2, 1, 3, 1, 0), IOMUXC_PAD_053);
+			__raw_writel(NETPADCFG(0, 0, 0, 0, 1), IOMUXC_PAD_050);
+			__raw_writel(NETPADCFG(0, 0, 2, 1, 0), IOMUXC_PAD_051);
+			__raw_writel(NETPADCFG(0, 0, 2, 1, 0), IOMUXC_PAD_052);
+			__raw_writel(NETPADCFG(0, 0, 2, 1, 0), IOMUXC_PAD_053);
 		}
 		if (info->iobase == MACNET1_BASE_ADDR) {
 			/* MDC,MDIO,RxDV,RxD1,RxD0 */
