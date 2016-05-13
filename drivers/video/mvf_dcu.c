@@ -83,7 +83,7 @@ ulong calc_fbsize(void)
 	return 0x7FFFF;
 # endif
 #else
-	return ((panel_info.vl_col * panel_info.vl_row *
+	return 2 * ((panel_info.vl_col * panel_info.vl_row *
 		NBITS(panel_info.vl_bpix)) / 8);
 #endif
 }
