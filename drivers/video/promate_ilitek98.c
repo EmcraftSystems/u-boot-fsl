@@ -246,9 +246,9 @@ int promate_hw_init(struct spi_slave *spi)
 	promate_send_command(spi, 0xFF, 5, 0xFF, 0x98, 6, 4, 0);
 
 	promate_send_command(spi, 0x11, 0);
-	mdelay(120);
+	mdelay(10);
 	promate_send_command(spi, 0x29, 0);
-	mdelay(25);
+	mdelay(10);
 	promate_send_command(spi, 0x2C, 0);
 
 	return 0;
