@@ -159,7 +159,7 @@ unsigned char spi_bitbang_read(void);
 	" ${flashsize} && run args addip && run boot_dtb\0"		\
 	"args=run args_quiet\0"						\
 	"args_common=mem=256M console=ttymxc0,115200"			\
-	" ubi.fm_autoconvert=1 lpj=1646592 \0"				\
+	" ubi.fm_autoconvert=1 lpj=1646592 fbcon=rotate:3\0"		\
 	"args_quiet=setenv bootargs ${args_common} ${ubirfs}"		\
 	" quiet=quiet\0"						\
 	"args_verbose=setenv bootargs ${args_common} ${ubirfs}"		\

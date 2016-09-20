@@ -1214,7 +1214,7 @@ int do_validate_boot_images(void)
 #endif
 			"&& setenv active_boot_set ");
 	strcat(fullupdate, active_boot_set ? "0" : "1");
-	strcat(fullupdate, " && set boot_set");
+	strcat(fullupdate, " && setenv boot_set");
 	strcat(fullupdate, active_boot_set ? "1" : "2");
 	strcat(fullupdate, "_valid 1 && saveenv");
 	setenv("fullupdate", fullupdate);
