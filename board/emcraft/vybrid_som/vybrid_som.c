@@ -1401,7 +1401,7 @@ int splash_screen_prepare(void)
 	splash_screen_nand_offset = getenv_ulong("splash_offset", 16,
 			(u32)SPLASH1_FLASH_BASE);
 #else
-	splash_screen_nand_offset = simple_strtoul (SPLASH_FLASH_BASE, NULL, 16);
+	splash_screen_nand_offset = SPLASH_FLASH_BASE;
 #endif
 
         if (bmp_load_addr + bmp_header_size >= gd->start_addr_sp)
