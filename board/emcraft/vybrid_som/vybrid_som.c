@@ -506,6 +506,11 @@ void setup_iomux_dcu(void)
 
 #else /* !defined(LCD_PROMATE7) */
 
+	/* PTC11 -- nPOWERDOWN */
+	writel(1 << CONFIG_DCU_POWERDOWN_GPIO_NUM,
+		CONFIG_DCU_POWERDOWN_GPIO_ADDR_SET);
+	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_056);
+
 	/* PTB8 -- LCD EN signal */
 	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_030);
 

@@ -118,6 +118,29 @@
 
 #	define LCD_BOOTARG_NAME		"promate7"
 
+#elif defined(LCD_VF6_BSB)
+
+#	define LCD_XRES			480
+#	define LCD_YRES			272
+#	define LCD_BIT_PER_PIXEL	LCD_BPP
+
+#	define LCD_LEFT_MARGIN	2
+#	define LCD_HSYNC_LEN	41
+#	define LCD_RIGHT_MARGIN	2
+
+#	define LCD_UPPER_MARGIN	2
+#	define LCD_VSYNC_LEN	10
+#	define LCD_LOWER_MARGIN	2
+
+#	define LCD_DCU_DIV_RATIO	5
+
+#	define LCD_SYN_POL_INV_PXCK	0
+#	define LCD_SYN_POL_NEG		0
+#	define LCD_SYN_POL_INV_VS		0
+#	define LCD_SYN_POL_INV_HS		0
+
+#	define LCD_BOOTARG_NAME		"lcd-vf6-bsb"
+
 #elif defined(CONFIG_VIDEO_MVF_DCU)
 #	error "MVF DCU is enabled but no LCD configured"
 #endif
