@@ -1130,7 +1130,7 @@ int do_validate_boot_images(void)
 	int active_boot_set = 0, env_changed = 0;
 	char fullupdate[1024] = "", ubirfs[1024] = "";
 	char *ubirfs_fmt = "rootwait=1 ro ubi.mtd=%d,2048 rootfstype=ubifs " \
-		"root=ubi0:rootfs ubi.fm_autoconvert=1";
+		"root=ubi0:rootfs";
 	int force_recovery = 0;
 
 	boot_set1_valid = getenv_ulong("boot_set1_valid", 10, 0);
@@ -1214,7 +1214,7 @@ int do_validate_boot_images(void)
 #endif
 			"&& setenv active_boot_set ");
 	strcat(fullupdate, active_boot_set ? "0" : "1");
-	strcat(fullupdate, " && set boot_set");
+	strcat(fullupdate, " && setenv boot_set");
 	strcat(fullupdate, active_boot_set ? "1" : "2");
 	strcat(fullupdate, "_valid 1 && saveenv");
 	setenv("fullupdate", fullupdate);
