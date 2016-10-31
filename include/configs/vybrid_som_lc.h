@@ -171,7 +171,7 @@ unsigned char spi_bitbang_read(void);
 	"${uImage_offset} ${filesize} && nand write ${loadaddr} "	\
 	"${uImage_offset} ${filesize} "					\
 	"&& setenv flashsize ${filesize}  && saveenv\0"			\
-	"rootfsimage=secondary.ubi\0"					\
+	"rootfsimage=rootfs.ubi\0"					\
 	"rootfsupdate=tftp ${rootfsimage} && nand erase.spread "	\
 	"${rootfs_offset} " stringify(ROOTFS_PART_SIZE)			\
 	" && nand write ${loadaddr} ${rootfs_offset} ${filesize}\0"	\
