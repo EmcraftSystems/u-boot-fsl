@@ -154,7 +154,7 @@ unsigned char spi_bitbang_read(void);
 	" quiet=quiet\0"						\
 	"args_verbose=setenv bootargs ${args_common} ${ubirfs}"		\
 	" ignore_loglevel\0"						\
-	"ubirfs=rootwait=1 ro ubi.mtd=4,2048 rootfstype=ubifs"		\
+	"ubirfs=rootwait=1 rw ubi.mtd=4,2048 rootfstype=ubifs"		\
 	" root=ubi0:rootfs ubi.fm_autoconvert=1\0"			\
 	"args_nfs=setenv bootargs ${args_common} ignore_loglevel"	\
 	" root=/dev/nfs"						\
