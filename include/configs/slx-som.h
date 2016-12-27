@@ -110,11 +110,15 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_CONS_INDEX		1
 
+/* I2C Configs */
+#define CONFIG_CMD_I2C
+#define CONFIG_SYS_I2C
+#define CONFIG_SYS_I2C_MXC
+#define CONFIG_SYS_I2C_SPEED		100000
+
 /* VIDEO */
-#if 0
 #define CONFIG_VIDEO
 #define CONFIG_VIDEO_GIS
-#endif
 
 /* Command definition */
 #include <config_cmd_default.h>

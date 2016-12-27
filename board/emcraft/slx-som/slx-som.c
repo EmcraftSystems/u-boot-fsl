@@ -59,6 +59,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ENET_RX_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |          \
 	PAD_CTL_SPEED_HIGH   | PAD_CTL_SRE_FAST)
 
+#define I2C_PAD_CTRL    (PAD_CTL_PKE | PAD_CTL_PUE |            \
+	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED |               \
+	PAD_CTL_DSE_40ohm | PAD_CTL_HYS |			\
+	PAD_CTL_ODE)
+
 #define LCD_PAD_CTRL    (PAD_CTL_HYS | PAD_CTL_PUS_100K_UP | PAD_CTL_PUE | \
 	PAD_CTL_PKE | PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm)
 
@@ -372,6 +377,37 @@ int board_video_skip(void)
 }
 #endif
 
+#ifdef CONFIG_SYS_I2C_MXC
+#define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+/* I2C1 */
+static struct i2c_pads_info i2c_pad_info1 = {
+	.scl = {
+		.i2c_mode = MX6_PAD_GPIO1_IO00__I2C1_SCL | PC,
+		.gpio_mode = MX6_PAD_GPIO1_IO00__GPIO1_IO_0 | PC,
+		.gp = IMX_GPIO_NR(1, 0),
+	},
+	.sda = {
+		.i2c_mode = MX6_PAD_GPIO1_IO01__I2C1_SDA | PC,
+		.gpio_mode = MX6_PAD_GPIO1_IO01__GPIO1_IO_1 | PC,
+		.gp = IMX_GPIO_NR(1, 1),
+	},
+};
+
+/* I2C2 */
+struct i2c_pads_info i2c_pad_info2 = {
+	.scl = {
+		.i2c_mode = MX6_PAD_GPIO1_IO02__I2C2_SCL | PC,
+		.gpio_mode = MX6_PAD_GPIO1_IO02__GPIO1_IO_2 | PC,
+		.gp = IMX_GPIO_NR(1, 2),
+	},
+	.sda = {
+		.i2c_mode = MX6_PAD_QSPI1B_DATA2__I2C2_SDA | PC,
+		.gpio_mode = MX6_PAD_QSPI1B_DATA2__GPIO4_IO_26 | PC,
+		.gp = IMX_GPIO_NR(4, 26),
+	},
+};
+#endif
+
 #ifdef CONFIG_USB_EHCI_MX6
 #define USB_OTHERREGS_OFFSET	0x800
 #define UCTRL_PWR_POL		(1 << 9)
@@ -564,6 +600,11 @@ int board_init(void)
 
 	/* Active high for ncp692 */
 	gpio_direction_output(IMX_GPIO_NR(4, 16) , 1);
+
+#ifdef CONFIG_SYS_I2C_MXC
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
+#endif
 
 #ifdef CONFIG_USB_EHCI_MX6
 	setup_usb();
