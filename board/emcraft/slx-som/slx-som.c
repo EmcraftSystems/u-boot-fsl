@@ -222,14 +222,6 @@ int board_phy_config(struct phy_device *phydev)
 #endif
 
 #ifdef CONFIG_VIDEO_MXS
-static iomux_v3_cfg_t const lvds_ctrl_pads[] = {
-	/* CABC enable */
-	MX6_PAD_QSPI1A_DATA2__GPIO4_IO_18 | MUX_PAD_CTRL(NO_PAD_CTRL),
-
-	/* Use GPIO for Brightness adjustment, duty cycle = period */
-	MX6_PAD_SD1_DATA1__GPIO6_IO_3 | MUX_PAD_CTRL(NO_PAD_CTRL),
-};
-
 static iomux_v3_cfg_t const lcd_pads[] = {
 	MX6_PAD_LCD1_CLK__LCDIF1_CLK | MUX_PAD_CTRL(LCD_PAD_CTRL),
 	MX6_PAD_LCD1_ENABLE__LCDIF1_ENABLE | MUX_PAD_CTRL(LCD_PAD_CTRL),
@@ -273,21 +265,6 @@ struct lcd_panel_info_t {
 	struct fb_videomode mode;
 };
 
-void do_enable_lvds(struct lcd_panel_info_t const *dev)
-{
-	enable_lcdif_clock(dev->lcdif_base_addr);
-	enable_lvds(dev->lcdif_base_addr);
-
-	imx_iomux_v3_setup_multiple_pads(lvds_ctrl_pads,
-							ARRAY_SIZE(lvds_ctrl_pads));
-
-	/* Enable CABC */
-	gpio_direction_output(IMX_GPIO_NR(4, 18) , 1);
-
-	/* Set Brightness to high */
-	gpio_direction_output(IMX_GPIO_NR(6, 3) , 1);
-}
-
 void do_enable_parallel_lcd(struct lcd_panel_info_t const *dev)
 {
 	enable_lcdif_clock(dev->lcdif_base_addr);
@@ -302,36 +279,19 @@ void do_enable_parallel_lcd(struct lcd_panel_info_t const *dev)
 }
 
 static struct lcd_panel_info_t const displays[] = {{
-	.lcdif_base_addr = LCDIF2_BASE_ADDR,
-	.depth = 18,
-	.enable	= do_enable_lvds,
-	.mode	= {
-		.name			= "Hannstar-XGA",
-		.xres           = 1024,
-		.yres           = 768,
-		.pixclock       = 15385,
-		.left_margin    = 220,
-		.right_margin   = 40,
-		.upper_margin   = 21,
-		.lower_margin   = 7,
-		.hsync_len      = 60,
-		.vsync_len      = 10,
-		.sync           = 0,
-		.vmode          = FB_VMODE_NONINTERLACED
-} }, {
 	.lcdif_base_addr = LCDIF1_BASE_ADDR,
 	.depth = 24,
 	.enable	= do_enable_parallel_lcd,
 	.mode	= {
-		.name			= "MCIMX28LCD",
-		.xres           = 800,
-		.yres           = 480,
-		.pixclock       = 29850,
-		.left_margin    = 89,
-		.right_margin   = 164,
-		.upper_margin   = 23,
-		.lower_margin   = 10,
-		.hsync_len      = 10,
+		.name			= "lcd-vf6-bsb",
+		.xres           = 480,
+		.yres           = 272,
+		.pixclock       = 33500,
+		.left_margin    = 2,
+		.right_margin   = 2,
+		.upper_margin   = 2,
+		.lower_margin   = 2,
+		.hsync_len      = 41,
 		.vsync_len      = 10,
 		.sync           = 0,
 		.vmode          = FB_VMODE_NONINTERLACED
