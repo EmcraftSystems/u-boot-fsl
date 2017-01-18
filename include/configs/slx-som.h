@@ -127,9 +127,9 @@
 
 #undef CONFIG_CMD_IMLS
 
-#define CONFIG_BOOTDELAY		3
+#define CONFIG_BOOTDELAY		1
 
-#define CONFIG_LOADADDR			0x80800000
+#define CONFIG_LOADADDR			0x807fffc0
 #define CONFIG_SYS_TEXT_BASE		0x87800000
 
 #define CONFIG_SYS_AUXCORE_BOOTDATA 0x78000000 /* Set to QSPI2 B flash at default */
@@ -157,104 +157,72 @@
 #define UPDATE_M4_ENV ""
 #endif
 
+#define DTB_PART_SIZE			0x20000
+#define KERNEL_PART_SIZE		0xc00000
+#define ROOTFS_PART_SIZE		0x3a000000
+
+#if 0
+# define SPLASH_FLASH_BASE		0x120000 /* (CONFIG_MTD_SPLASH_PART_START) */
+#endif
+# define DTB_FLASH_BASE			0x5000000 /* (SPLASH_FLASH_BASE + CONFIG_MTD_SPLASH_PART_LEN) */
+# define KERNEL_FLASH_BASE		0x4000000 /* (DTB_FLASH_BASE + DTB_PART_SIZE) */
+# define ROOTFS_FLASH_BASE		0x6000000 /* (KERNEL_FLASH_BASE + KERNEL_PART_SIZE) */
+
 #ifdef CONFIG_VIDEO
 #define CONFIG_VIDEO_MODE \
-	"panel=Hannstar-XGA\0"
+	"panel=lcd-vf6-bsb\0"
 #else
 #define CONFIG_VIDEO_MODE ""
 #endif
 
-#define CONFIG_MFG_ENV_SETTINGS \
-	"mfgtool_args=setenv bootargs console=${console},${baudrate} " \
-		"rdinit=/linuxrc " \
-		"g_mass_storage.stall=0 g_mass_storage.removable=1 " \
-		"g_mass_storage.file=/fat g_mass_storage.ro=1 " \
-		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
-		"g_mass_storage.iSerialNumber=\"\" "\
-		"\0" \
-	"initrd_addr=0x83800000\0" \
-	"initrd_high=0xffffffff\0" \
-	"bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
-
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS \
-	UPDATE_M4_ENV \
-	CONFIG_VIDEO_MODE \
-	"script=boot.scr\0" \
-	"image=zImage\0" \
-	"console=ttymxc0\0" \
-	"fdt_high=0xffffffff\0" \
-	"initrd_high=0xffffffff\0" \
-	"fdt_file=imx6sx-sdb.dtb\0" \
-	"fdt_addr=0x83000000\0" \
-	"boot_fdt=try\0" \
-	"ip_dyn=yes\0" \
-	"loadbootscript=" \
-		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
-	"bootscript=echo Running bootscript from mmc ...; " \
-		"source\0" \
-	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
-	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
-	"mmcboot=echo Booting from mmc ...; " \
-		"run mmcargs; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if run loadfdt; then " \
-				"bootz ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"if test ${boot_fdt} = try; then " \
-					"bootz; " \
-				"else " \
-					"echo WARN: Cannot load the DT; " \
-				"fi; " \
-			"fi; " \
-		"else " \
-			"bootz; " \
-		"fi;\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} " \
-		"root=/dev/nfs " \
-	"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
-		"netboot=echo Booting from net ...; " \
-		"run netargs; " \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"${get_cmd} ${image}; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"bootz ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"if test ${boot_fdt} = try; then " \
-					"bootz; " \
-				"else " \
-					"echo WARN: Cannot load the DT; " \
-				"fi; " \
-			"fi; " \
-		"else " \
-			"bootz; " \
-		"fi;\0" \
-	"n=nand read ${fdt_addr} 5000000 10000 && nand read ${loadaddr} 4000000 1000000 && bootz ${loadaddr} - ${fdt_addr}\0" \
-	"bootargs=console=ttymxc0,115200 earlyprintk panic=3 mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs) rootwait=1 rw ubi.mtd=3,2048 rootfstype=ubifs root=ubi0:rootfs ubi.fm_autoconvert=1\0"
-
-#define CONFIG_BOOTCOMMAND \
-	"md.l 20e0264 1; md.l 20e05ac; mw.l 20e0848 1"
-
-#define CONFIG_BOOTCOMMAND2 \
-	"mw.l 0x80000000 0xaabbccdd 200 && nand erase c0000 20000 && nand write 0x80000000 c0000 800 &&  nand dump c0000; nand bad; clocks"
-
-#define CONFIG_BOOTCOMMAND1 \
-	   "mmc dev ${mmcdev};" \
-	   "mmc dev ${mmcdev}; if mmc rescan; then " \
-		   "if run loadbootscript; then " \
-			   "run bootscript; " \
-		   "else " \
-			   "if run loadimage; then " \
-				   "run mmcboot; " \
-			   "else run netboot; " \
-			   "fi; " \
-		   "fi; " \
-	   "else run netboot; fi"
+#define CONFIG_EXTRA_ENV_SETTINGS					\
+	CONFIG_VIDEO_MODE						\
+	"autoload=yes\0"						\
+	"addip=setenv bootargs ${bootargs}"				\
+	" ip=${ipaddr}:${serverip}:${gatewayip}:"			\
+	"${netmask}:${hostname}:eth0:off "				\
+	" fec_mac=${ethaddr}\0"						\
+	"ethaddr=3C:FB:96:77:88:AB\0"					\
+	"ipaddr=172.17.80.3\0"						\
+	"serverip=172.17.0.1\0"						\
+	"image=slx-som/rootfs.uImage\0"					\
+	"bootcmd=run reliableboot\0"					\
+	"reliableboot=run nandboot\0"					\
+	"netboot=tftp ${image} && run args addip && run boot_dtb\0"	\
+	"nandboot=nand read ${loadaddr} ${uImage_offset}"		\
+	" ${flashsize} && run args addip && run boot_dtb\0"		\
+	"args=run args_quiet\0"						\
+	"args_common=console=ttymxc0,115200\0"		\
+	"args_quiet=setenv bootargs ${args_common} ${ubirfs}"		\
+	" quiet=quiet\0"						\
+	"args_verbose=setenv bootargs ${args_common} ${ubirfs}"		\
+	" ignore_loglevel\0"						\
+	"ubirfs=mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)" \
+	" rootwait=1 rw ubi.mtd=3,2048 rootfstype=ubifs"		\
+	" root=ubi0:rootfs ubi.fm_autoconvert=1\0"			\
+	"args_nfs=setenv bootargs ${args_common} ignore_loglevel"	\
+	" root=/dev/nfs"						\
+	" nfsroot=${serverip}:/mnt/nfs/slx-som/rootfs,v3,nolock\0"	\
+	"verify=no\0"							\
+	"bootdelay=1\0"							\
+	"update=tftp ${image} && nand erase.spread "			\
+	"${uImage_offset} ${filesize} && nand write ${loadaddr} "	\
+	"${uImage_offset} ${filesize} "					\
+	"&& setenv flashsize ${filesize}  && saveenv\0"			\
+	"rootfsimage=rootfs.ubi\0"					\
+	"rootfsupdate=tftp ${rootfsimage} && nand erase.spread "	\
+	"${rootfs_offset} " __stringify(ROOTFS_PART_SIZE)			\
+	" && nand write ${loadaddr} ${rootfs_offset} ${filesize}\0"	\
+	"dtbimage=slx-som/rootfs.dtb\0"				\
+	"dtbupdate=tftp ${dtbimage} && nand erase.spread "		\
+	"${dtb_offset} ${filesize} && nand write ${loadaddr} "		\
+	"${dtb_offset} ${filesize}\0"					\
+	"boot_dtb=nand read ${dtb_addr} ${dtb_offset} "			\
+	__stringify(DTB_PART_SIZE) " && bootm ${loadaddr} - ${dtb_addr}\0"	\
+	"dtb_offset=" __stringify(DTB_FLASH_BASE) "\0"			\
+	"uImage_offset=" __stringify(KERNEL_FLASH_BASE) "\0"		\
+	"rootfs_offset=" __stringify(ROOTFS_FLASH_BASE) "\0"		\
+	"dtb_addr=0x83000000\0"
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP
