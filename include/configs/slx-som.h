@@ -157,16 +157,18 @@
 #define UPDATE_M4_ENV ""
 #endif
 
+#define CONFIG_MTD_SPLASH_PART_START	0x400000
+#define CONFIG_MTD_SPLASH_PART_LEN	0xa00000
+
 #define DTB_PART_SIZE			0x20000
 #define KERNEL_PART_SIZE		0xc00000
-#define ROOTFS_PART_SIZE		0x3a000000
+#define ROOTFS_PART_SIZE		0xa000000
 
-#if 0
-# define SPLASH_FLASH_BASE		0x120000 /* (CONFIG_MTD_SPLASH_PART_START) */
-#endif
-# define DTB_FLASH_BASE			0x5000000 /* (SPLASH_FLASH_BASE + CONFIG_MTD_SPLASH_PART_LEN) */
-# define KERNEL_FLASH_BASE		0x4000000 /* (DTB_FLASH_BASE + DTB_PART_SIZE) */
-# define ROOTFS_FLASH_BASE		0x6000000 /* (KERNEL_FLASH_BASE + KERNEL_PART_SIZE) */
+# define SPLASH_FLASH_BASE		CONFIG_MTD_SPLASH_PART_START
+
+# define DTB_FLASH_BASE			0xe00000 /* (SPLASH_FLASH_BASE + CONFIG_MTD_SPLASH_PART_LEN) */
+# define KERNEL_FLASH_BASE		0xe20000 /* (DTB_FLASH_BASE + DTB_PART_SIZE) */
+# define ROOTFS_FLASH_BASE		0x1a20000 /* (KERNEL_FLASH_BASE + KERNEL_PART_SIZE) */
 
 #ifdef CONFIG_VIDEO
 #define CONFIG_VIDEO_MODE \
@@ -197,14 +199,21 @@
 	" quiet=quiet\0"						\
 	"args_verbose=setenv bootargs ${args_common} ${ubirfs}"		\
 	" ignore_loglevel\0"						\
-	"ubirfs=mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)" \
-	" rootwait=1 rw ubi.mtd=3,2048 rootfstype=ubifs"		\
+	"ubirfs=mtdparts=gpmi-nand:4m(boot),10m(splash),128k(dtb),"	\
+	"12m(kernel),160m(rootfs)"					\
+	" rootwait=1 rw ubi.mtd=4,2048 rootfstype=ubifs"		\
 	" root=ubi0:rootfs ubi.fm_autoconvert=1\0"			\
 	"args_nfs=setenv bootargs ${args_common} ignore_loglevel"	\
 	" root=/dev/nfs"						\
 	" nfsroot=${serverip}:/mnt/nfs/slx-som/rootfs,v3,nolock\0"	\
 	"verify=no\0"							\
 	"bootdelay=1\0"							\
+	"splashimage=0x80007fc0\0"					\
+	"splashfile=vf6-som/boot_screen.bmp\0"				\
+	"splashpos=m,m\0"						\
+	"splashupdate=tftp ${splashfile} && nand erase.spread "		\
+	"${splash_offset} ${filesize} && nand write ${loadaddr} "	\
+	"${splash_offset} ${filesize}\0"				\
 	"update=tftp ${image} && nand erase.spread "			\
 	"${uImage_offset} ${filesize} && nand write ${loadaddr} "	\
 	"${uImage_offset} ${filesize} "					\
@@ -219,6 +228,7 @@
 	"${dtb_offset} ${filesize}\0"					\
 	"boot_dtb=nand read ${dtb_addr} ${dtb_offset} "			\
 	__stringify(DTB_PART_SIZE) " && bootm ${loadaddr} - ${dtb_addr}\0"	\
+	"splash_offset=" __stringify(SPLASH_FLASH_BASE) "\0"			\
 	"dtb_offset=" __stringify(DTB_FLASH_BASE) "\0"			\
 	"uImage_offset=" __stringify(KERNEL_FLASH_BASE) "\0"		\
 	"rootfs_offset=" __stringify(ROOTFS_FLASH_BASE) "\0"		\
