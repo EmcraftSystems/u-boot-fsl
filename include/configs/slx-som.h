@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Emcraft Systems
+ * Copyright (C) 2016, 2017 Emcraft Systems
  *
  * Configuration settings for the Emcraft solox-som board.
  *
@@ -199,9 +199,7 @@
 	" quiet=quiet\0"						\
 	"args_verbose=setenv bootargs ${args_common} ${ubirfs}"		\
 	" ignore_loglevel\0"						\
-	"ubirfs=mtdparts=gpmi-nand:4m(boot),10m(splash),128k(dtb),"	\
-	"12m(kernel),160m(rootfs)"					\
-	" rootwait=1 rw ubi.mtd=4,2048 rootfstype=ubifs"		\
+	"ubirfs=rootwait=1 rw ubi.mtd=4,2048 rootfstype=ubifs"		\
 	" root=ubi0:rootfs ubi.fm_autoconvert=1\0"			\
 	"args_nfs=setenv bootargs ${args_common} ignore_loglevel"	\
 	" root=/dev/nfs"						\
