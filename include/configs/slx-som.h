@@ -207,7 +207,7 @@
 	"verify=no\0"							\
 	"bootdelay=1\0"							\
 	"splashimage=0x80007fc0\0"					\
-	"splashfile=vf6-som/boot_screen.bmp\0"				\
+	"splashfile=slx-som/boot_screen.bmp\0"				\
 	"splashpos=m,m\0"						\
 	"splashupdate=tftp ${splashfile} && nand erase.spread "		\
 	"${splash_offset} ${filesize} && nand write ${loadaddr} "	\
@@ -287,7 +287,6 @@
 #ifdef CONFIG_VIDEO
 #define	CONFIG_CFB_CONSOLE
 #define	CONFIG_VIDEO_MXS
-#define	CONFIG_VIDEO_LOGO
 #define	CONFIG_VIDEO_SW_CURSOR
 #define	CONFIG_VGA_AS_SINGLE_DEVICE
 #define	CONFIG_SYS_CONSOLE_IS_IN_ENV
@@ -295,8 +294,6 @@
 #define CONFIG_SPLASH_SCREEN_ALIGN
 #define	CONFIG_CMD_BMP
 #define	CONFIG_BMP_16BPP
-#define	CONFIG_VIDEO_BMP_RLE8
-#define CONFIG_VIDEO_BMP_LOGO
 #ifdef CONFIG_VIDEO_GIS
 #define CONFIG_VIDEO_CSI
 #define CONFIG_VIDEO_PXP
