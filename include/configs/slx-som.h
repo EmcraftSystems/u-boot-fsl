@@ -172,7 +172,7 @@
 
 #ifdef CONFIG_VIDEO
 #define CONFIG_VIDEO_MODE \
-	"panel=lcd-vf6-bsb\0"
+	"panel=LCD-TN43\0"
 #else
 #define CONFIG_VIDEO_MODE ""
 #endif
