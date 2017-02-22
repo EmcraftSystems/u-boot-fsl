@@ -15,6 +15,10 @@
 #include "mx6_common.h"
 #include <asm/imx-common/gpio.h>
 
+#ifndef CONFIG_SYS_BOARD_REV
+#define CONFIG_SYS_BOARD_REV		0x2A
+#endif
+
 #define CONFIG_MX6
 #define CONFIG_ROM_UNIFIED_SECTIONS
 #define CONFIG_DISPLAY_CPUINFO
@@ -93,7 +97,13 @@
 
 #if (CONFIG_FEC_ENET_DEV == 0)
 #define IMX_FEC_BASE			ENET_BASE_ADDR
+
+#if (CONFIG_SYS_BOARD_REV == 0x2A)
+#define CONFIG_FEC_MXC_PHYADDR          0x1
+#else
 #define CONFIG_FEC_MXC_PHYADDR          0x4
+#endif
+
 #define CONFIG_FEC_XCV_TYPE             RGMII
 #elif (CONFIG_FEC_ENET_DEV == 1)
 #define IMX_FEC_BASE			ENET2_BASE_ADDR

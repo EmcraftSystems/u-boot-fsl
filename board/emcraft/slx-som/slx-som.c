@@ -588,7 +588,7 @@ u32 get_board_rev(void)
 
 int checkboard(void)
 {
-	puts("Board: Emcraft SLX-SOM\n");
+	printf("Board: Emcraft SLX-SOM rev %X\n", CONFIG_SYS_BOARD_REV);
 
 	return 0;
 }
