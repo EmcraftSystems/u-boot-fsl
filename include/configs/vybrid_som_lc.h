@@ -175,7 +175,7 @@ unsigned char spi_bitbang_read(void);
 	"rootfsupdate=tftp ${rootfsimage} && nand erase.spread "	\
 	"${rootfs_offset} " stringify(ROOTFS_PART_SIZE)			\
 	" && nand write ${loadaddr} ${rootfs_offset} ${filesize}\0"	\
-	"dtbimage=vf6-som/rootfs.dtb\0"				\
+	"dtbimage=vf6-som/rootfs.dtb\0"					\
 	"dtbupdate=tftp ${dtbimage} && nand erase.spread "		\
 	"${dtb_offset} ${filesize} && nand write ${loadaddr} "		\
 	"${dtb_offset} ${filesize}\0"					\
@@ -185,7 +185,11 @@ unsigned char spi_bitbang_read(void);
 	"dtb_offset=" stringify(DTB_FLASH_BASE) "\0"			\
 	"uImage_offset=" stringify(KERNEL_FLASH_BASE) "\0"		\
 	"rootfs_offset=" stringify(ROOTFS_FLASH_BASE) "\0"		\
-	"dtb_addr=0x80000100\0"
+	"dtb_addr=0x80000100\0"						\
+	"uboot_image=vf6-som/u-boot.nand\0"				\
+	"update_uboot=tftpboot ${uboot_image} && "			\
+	" nand erase 0 0x60000 && "					\
+	" nand write ${loadaddr} 0 ${filesize}\0"
 
 #define CONFIG_CMD_GPIO
 
