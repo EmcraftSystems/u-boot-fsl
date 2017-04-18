@@ -214,7 +214,7 @@
 	"args_nfs=setenv bootargs ${args_common} ignore_loglevel"	\
 	" root=/dev/nfs"						\
 	" nfsroot=${serverip}:/mnt/nfs/slx-som/rootfs,v3,nolock\0"	\
-	"verify=no\0"							\
+	"verify=yes\0"							\
 	"bootdelay=1\0"							\
 	"splashimage=0x80007fc0\0"					\
 	"splashfile=slx-som/boot_screen.bmp\0"				\
