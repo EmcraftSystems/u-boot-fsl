@@ -203,7 +203,7 @@
 	"netboot=tftp ${image} && run args addip && run boot_dtb\0"	\
 	"nandboot=nboot ${loadaddr} 0 ${uImage_offset}"		\
 	" && run args addip && run boot_dtb\0"		\
-	"args=run args_quiet\0"						\
+	"args=run args_verbose\0"						\
 	"args_common=console=ttymxc0,115200\0"		\
 	"args_quiet=setenv bootargs ${args_common} ${ubirfs}"		\
 	" quiet=quiet\0"						\
