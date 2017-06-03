@@ -146,8 +146,8 @@ unsigned char spi_bitbang_read(void);
 	"bootcmd=run reliableboot\0"					\
 	"reliableboot=run nandboot\0"					\
 	"netboot=tftp ${image} && run args addip && run boot_dtb\0"	\
-	"nandboot=nand read ${loadaddr} ${uImage_offset}"		\
-	" ${flashsize} && run args addip && run boot_dtb\0"		\
+	"nandboot=nboot ${loadaddr} 0 ${uImage_offset}"			\
+	" && run args addip && run boot_dtb\0"		\
 	"args=run args_quiet\0"						\
 	"args_common=console=ttymxc0,115200 lpj=1646592 \0"		\
 	"args_quiet=setenv bootargs ${args_common} ${ubirfs}"		\
@@ -169,8 +169,7 @@ unsigned char spi_bitbang_read(void);
 	"${splash_offset} ${filesize}\0"				\
 	"update=tftp ${image} && nand erase.spread "			\
 	"${uImage_offset} ${filesize} && nand write ${loadaddr} "	\
-	"${uImage_offset} ${filesize} "					\
-	"&& setenv flashsize ${filesize}  && saveenv\0"			\
+	"${uImage_offset} ${filesize}\0"				\
 	"rootfsimage=rootfs.ubi\0"					\
 	"rootfsupdate=tftp ${rootfsimage} && nand erase.spread "	\
 	"${rootfs_offset} " stringify(ROOTFS_PART_SIZE)			\
