@@ -511,6 +511,11 @@ void setup_iomux_dcu(void)
 		CONFIG_DCU_POWERDOWN_GPIO_ADDR_SET);
 	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_056);
 
+	/* PTB2 -- LCD nRST */
+	writel(1 << CONFIG_LCD_RESET_GPIO_NUM,
+		CONFIG_LCD_RESET_GPIO_ADDR_SET);
+	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_024);
+
 	/* PTB8 -- LCD EN signal */
 	__raw_writel(MVF600_DCU_PAD_CTRL, IOMUXC_PAD_030);
 
