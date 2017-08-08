@@ -563,7 +563,8 @@ static int fec_init(struct eth_device *dev, bd_t *bd)
 	writel(0x00000000, &fec->eth->gaddr2);
 
 	/* Do not access reserved register for i.MX6UL */
-	if (!is_mx6ul() && !is_mx6ull()) {
+#if 0
+	/*if (!is_mx6ul() && !is_mx6ull())*/ {
 		/* clear MIB RAM */
 		for (i = mib_ptr; i <= mib_ptr + 0xfc; i += 4)
 			writel(0, i);
@@ -571,7 +572,7 @@ static int fec_init(struct eth_device *dev, bd_t *bd)
 		/* FIFO receive start register */
 		writel(0x520, &fec->eth->r_fstart);
 	}
-
+#endif
 	/* size and address of each buffer */
 	writel(FEC_MAX_PKT_SIZE, &fec->eth->emrbr);
 	writel((uint32_t)fec->tbd_base, &fec->eth->etdsr);
@@ -1238,7 +1239,7 @@ static int fecmxc_probe(struct udevice *dev)
 	fec_reg_setup(priv);
 	priv->dev_id = (dev_id == -1) ? 0 : dev_id;
 
-	bus = fec_get_miibus(dev, dev_id);
+	bus = fec_get_miibus(priv->eth, dev_id);
 	if (!bus) {
 		ret = -ENOMEM;
 		goto err_mii;

@@ -1,0 +1,858 @@
+###############################################################################
+#
+# IAR ELF Linker V8.11.2.13589/W32 for ARM                09/Aug/2017  14:25:17
+# Copyright 2007-2017 IAR Systems AB.
+#
+#    Output file  =  
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\fat_tool.out
+#    Map file     =  
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\list\fat_tool.map
+#    Command line =  
+#        -f C:\Users\dk\AppData\Local\Temp\EWE69C.tmp
+#        (D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\board.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\clock_config.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fat_tool.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_clock.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_common.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_debug_console.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_enet.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_gpio.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_host.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_io.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_log.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_lpi2c.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_lpuart.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_phy.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_sai.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_sd.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_sdmmc.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_sdram.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_str.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_usdhc.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\fsl_wm8960.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\memtest.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\pin_mux.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\startup_MIMXRT1052.o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj\system_MIMXRT1052.o
+#        --redirect _Printf=_PrintfSmallNoMb --redirect _Scanf=_ScanfSmallNoMb
+#        -o
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\fat_tool.out
+#        --map
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\list\fat_tool.map
+#        --config
+#        D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar/MIMXRT1052xxx6A_sd.icf
+#        --semihosting --entry __iar_program_start --vfe --text_out locale)
+#
+###############################################################################
+
+*******************************************************************************
+*** RUNTIME MODEL ATTRIBUTES
+***
+
+CppFlavor       = *
+__Heap_Handler  = DLMalloc
+__SystemLibrary = DLib
+__dlib_version  = 6
+
+
+*******************************************************************************
+*** HEAP SELECTION
+***
+
+The advanced heap was selected because the application calls memory
+allocation functions outside of system library functions, and there
+are calls to deallocation functions in the application.
+
+
+*******************************************************************************
+*** PLACEMENT SUMMARY
+***
+
+"A0":  place at 0x00002000 { ro section .intvec };
+"P1":  place in [from 0x00002000 to 0x000023ff] |
+                [from 0x00002400 to 0x0001ffff] { ro };
+define block RW { rw };
+"P2":  place in [from 0x20000000 to 0x2001fbff] { block RW };
+define block ZI { zi };
+"P3":  place in [from 0x20000000 to 0x2001fbff] { block ZI };
+define block HEAP with size = 1K, alignment = 8 { };
+"P4":  place in [from 0x20000000 to 0x2001fbff] { last block HEAP };
+define block CSTACK with size = 1K, alignment = 8 { };
+"P5":  place in [from 0x2001fc00 to 0x2001ffff] { block CSTACK };
+initialize by copy { rw, section .textrw };
+
+  Section            Kind        Address     Size  Object
+  -------            ----        -------     ----  ------
+"A0":                                       0x400
+  .intvec            ro code  0x00002000    0x400  startup_MIMXRT1052.o [1]
+                            - 0x00002400    0x400
+
+"P1":                                     0x14424
+  .rodata            const    0x00002400   0xbba0  fat_tool.o [1]
+  .text              ro code  0x0000dfa0   0x14e8  dlmalloc.o [3]
+  .text              ro code  0x0000f488      0x6  abort.o [3]
+  .rodata            const    0x0000f48e      0x2  fsl_enet.o [1]
+  .text              ro code  0x0000f490     0x2c  xgetmemchunk.o [3]
+  .text              ro code  0x0000f4bc     0x14  exit.o [6]
+  .text              ro code  0x0000f4d0   0x10a4  fat_tool.o [1]
+  .text              ro code  0x00010574     0x1c  fsl_common.o [1]
+  .text              ro code  0x00010590    0x1c8  fsl_gpio.o [1]
+  .text              ro code  0x00010758    0x930  fsl_lpi2c.o [1]
+  .text              ro code  0x00011088    0x2e0  fsl_sai.o [1]
+  .text              ro code  0x00011368     0xb6  fsl_debug_console.o [1]
+  .rodata            const    0x0001141e      0x2  fsl_enet.o [1]
+  .text              ro code  0x00011420    0x26c  fsl_sdram.o [1]
+  .text              ro code  0x0001168c     0xa6  ABImemcpy.o [5]
+  .rodata            const    0x00011732      0x2  fsl_enet.o [1]
+  .text              ro code  0x00011734    0x608  pin_mux.o [1]
+  .text              ro code  0x00011d3c    0x2c4  clock_config.o [1]
+  .text              ro code  0x00012000    0x160  board.o [1]
+  .text              ro code  0x00012160    0x680  fsl_clock.o [1]
+  .text              ro code  0x000127e0    0xe4c  fsl_enet.o [1]
+  .text              ro code  0x0001362c    0x2fc  fsl_phy.o [1]
+  .text              ro code  0x00013928      0x4  heaptramp0.o [3]
+  .text              ro code  0x0001392c      0x6  ABImemclr4.o [5]
+  .text              ro code  0x00013932      0x2  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00013934    0x6ae  fsl_wm8960.o [1]
+  .text              ro code  0x00013fe2      0x2  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00013fe4     0x66  ABImemset.o [5]
+  .text              ro code  0x0001404a      0x2  startup_MIMXRT1052.o [1]
+  .text              ro code  0x0001404c    0x136  fsl_log.o [1]
+  .text              ro code  0x00014182    0x766  fsl_str.o [1]
+  .text              ro code  0x000148e8    0x240  system_MIMXRT1052.o [1]
+  .text              ro code  0x00014b28     0xee  I64DivMod.o [5]
+  .text              ro code  0x00014c16      0x2  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00014c18     0x32  ABImemset48.o [5]
+  .text              ro code  0x00014c4a      0x2  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00014c4c     0xdc  fsl_io.o [1]
+  .text              ro code  0x00014d28     0x36  strlen.o [5]
+  .text              ro code  0x00014d5e      0x2  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00014d60      0x2  I64DivZer.o [5]
+  .text              ro code  0x00014d62      0x2  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00014d64    0x57c  fsl_lpuart.o [1]
+  .rodata            const    0x000152e0     0x78  fat_tool.o [1]
+  .rodata            const    0x00015358     0x70  fsl_wm8960.o [1]
+  .rodata            const    0x000153c8     0x54  fat_tool.o [1]
+  .rodata            const    0x0001541c     0x48  fat_tool.o [1]
+  .rodata            const    0x00015464     0x48  fsl_debug_console.o [1]
+  .rodata            const    0x000154ac     0x48  fsl_phy.o [1]
+  .rodata            const    0x000154f4     0x44  fat_tool.o [1]
+  .rodata            const    0x00015538     0x40  fat_tool.o [1]
+  .rodata            const    0x00015578     0x40  fat_tool.o [1]
+  .rodata            const    0x000155b8     0x40  fat_tool.o [1]
+  .rodata            const    0x000155f8     0x40  fat_tool.o [1]
+  .rodata            const    0x00015638     0x40  fat_tool.o [1]
+  .rodata            const    0x00015678     0x40  fat_tool.o [1]
+  .rodata            const    0x000156b8     0x40  fsl_io.o [1]
+  .rodata            const    0x000156f8     0x40  fsl_log.o [1]
+  .rodata            const    0x00015738     0x40  fsl_lpuart.o [1]
+  .text              ro code  0x00015778     0x40  zero_init3.o [5]
+  .rodata            const    0x000157b8     0x3c  board.o [1]
+  .rodata            const    0x000157f4     0x3c  clock_config.o [1]
+  .rodata            const    0x00015830     0x3c  fat_tool.o [1]
+  .rodata            const    0x0001586c     0x3c  fat_tool.o [1]
+  .rodata            const    0x000158a8     0x3c  fat_tool.o [1]
+  .rodata            const    0x000158e4     0x3c  fat_tool.o [1]
+  .rodata            const    0x00015920     0x3c  fat_tool.o [1]
+  .rodata            const    0x0001595c     0x3c  fsl_enet.o [1]
+  .rodata            const    0x00015998     0x3c  fsl_enet.o [1]
+  .rodata            const    0x000159d4     0x3c  fsl_gpio.o [1]
+  .rodata            const    0x00015a10     0x3c  fsl_gpio.o [1]
+  .rodata            const    0x00015a4c     0x3c  fsl_lpi2c.o [1]
+  .rodata            const    0x00015a88     0x3c  fsl_lpi2c.o [1]
+  .rodata            const    0x00015ac4     0x3c  fsl_lpuart.o [1]
+  .rodata            const    0x00015b00     0x3c  fsl_phy.o [1]
+  .rodata            const    0x00015b3c     0x3c  fsl_sai.o [1]
+  .rodata            const    0x00015b78     0x3c  fsl_sai.o [1]
+  .rodata            const    0x00015bb4     0x3c  fsl_sdram.o [1]
+  .rodata            const    0x00015bf0     0x3c  pin_mux.o [1]
+  .rodata            const    0x00015c2c     0x38  fat_tool.o [1]
+  .rodata            const    0x00015c64     0x38  fat_tool.o [1]
+  .rodata            const    0x00015c9c     0x38  fat_tool.o [1]
+  .rodata            const    0x00015cd4     0x38  fat_tool.o [1]
+  .rodata            const    0x00015d0c     0x38  fat_tool.o [1]
+  .rodata            const    0x00015d44     0x38  fat_tool.o [1]
+  .rodata            const    0x00015d7c     0x38  fat_tool.o [1]
+  .rodata            const    0x00015db4     0x34  fat_tool.o [1]
+  .rodata            const    0x00015de8     0x34  fat_tool.o [1]
+  .rodata            const    0x00015e1c     0x34  fat_tool.o [1]
+  .rodata            const    0x00015e50     0x34  fat_tool.o [1]
+  .rodata            const    0x00015e84     0x34  fat_tool.o [1]
+  .rodata            const    0x00015eb8     0x34  fat_tool.o [1]
+  .rodata            const    0x00015eec     0x34  fat_tool.o [1]
+  .rodata            const    0x00015f20     0x34  fat_tool.o [1]
+  .rodata            const    0x00015f54     0x34  fat_tool.o [1]
+  .rodata            const    0x00015f88     0x34  fat_tool.o [1]
+  .rodata            const    0x00015fbc     0x34  fat_tool.o [1]
+  .rodata            const    0x00015ff0     0x34  fat_tool.o [1]
+  .rodata            const    0x00016024     0x34  fat_tool.o [1]
+  .rodata            const    0x00016058     0x34  fat_tool.o [1]
+  .rodata            const    0x0001608c     0x34  fat_tool.o [1]
+  .text              ro code  0x000160c0     0x34  fsl_usdhc.o [1]
+  .rodata            const    0x000160f4     0x30  fat_tool.o [1]
+  .rodata            const    0x00016124     0x30  fat_tool.o [1]
+  .rodata            const    0x00016154     0x30  fat_tool.o [1]
+  .rodata            const    0x00016184     0x30  fat_tool.o [1]
+  .rodata            const    0x000161b4     0x2c  fat_tool.o [1]
+  .rodata            const    0x000161e0     0x2c  fat_tool.o [1]
+  .rodata            const    0x0001620c     0x2c  fat_tool.o [1]
+  .rodata            const    0x00016238     0x2c  fsl_common.o [1]
+  .text              ro code  0x00016264     0x2c  copy_init3.o [5]
+  .rodata            const    0x00016290     0x28  fat_tool.o [1]
+  .rodata            const    0x000162b8     0x28  fat_tool.o [1]
+  .text              ro code  0x000162e0     0x28  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016308     0x28  data_init.o [5]
+  .rodata            const    0x00016330     0x24  fat_tool.o [1]
+  .rodata            const    0x00016354     0x24  fat_tool.o [1]
+  .rodata            const    0x00016378     0x24  fsl_lpuart.o [1]
+  .text              ro code  0x0001639c     0x22  fpinit_M.o [4]
+  .iar.init_table    const    0x000163c0     0x24  - Linker created -
+  .text              ro code  0x000163e4      0x2  startup_MIMXRT1052.o [1]
+  .rodata            const    0x000163e8     0x20  fat_tool.o [1]
+  .rodata            const    0x00016408     0x20  fat_tool.o [1]
+  .rodata            const    0x00016428     0x20  fat_tool.o [1]
+  .rodata            const    0x00016448     0x1c  fat_tool.o [1]
+  .rodata            const    0x00016464     0x1c  fat_tool.o [1]
+  .rodata            const    0x00016480     0x1c  fat_tool.o [1]
+  .rodata            const    0x0001649c     0x1c  fat_tool.o [1]
+  .text              ro code  0x000164b8     0x1a  cmain.o [5]
+  .text              ro code  0x000164d2      0x4  low_level_init.o [3]
+  .text              ro code  0x000164d6      0x4  exit.o [3]
+  .text              ro code  0x000164da      0x2  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000164dc      0xa  cexit.o [5]
+  .rodata            const    0x000164e6      0x1  clock_config.o [1]
+  .rodata            const    0x000164e7      0x1  fat_tool.o [1]
+  .rodata            const    0x000164e8     0x18  fat_tool.o [1]
+  .rodata            const    0x00016500     0x18  fat_tool.o [1]
+  .rodata            const    0x00016518     0x18  fat_tool.o [1]
+  .rodata            const    0x00016530     0x18  fat_tool.o [1]
+  .rodata            const    0x00016548     0x18  fat_tool.o [1]
+  .rodata            const    0x00016560     0x18  fat_tool.o [1]
+  .rodata            const    0x00016578     0x18  fsl_gpio.o [1]
+  .rodata            const    0x00016590     0x14  fat_tool.o [1]
+  .rodata            const    0x000165a4     0x14  fsl_lpi2c.o [1]
+  .rodata            const    0x000165b8     0x14  fsl_lpuart.o [1]
+  .rodata            const    0x000165cc     0x10  fat_tool.o [1]
+  .rodata            const    0x000165dc     0x10  fat_tool.o [1]
+  .rodata            const    0x000165ec     0x10  fat_tool.o [1]
+  .rodata            const    0x000165fc     0x10  fat_tool.o [1]
+  .rodata            const    0x0001660c     0x10  fat_tool.o [1]
+  .rodata            const    0x0001661c     0x10  fat_tool.o [1]
+  .rodata            const    0x0001662c     0x10  fat_tool.o [1]
+  .rodata            const    0x0001663c     0x10  fat_tool.o [1]
+  .rodata            const    0x0001664c     0x10  fsl_clock.o [1]
+  .rodata            const    0x0001665c     0x10  fsl_sai.o [1]
+  .rodata            const    0x0001666c      0xc  fat_tool.o [1]
+  .rodata            const    0x00016678      0xc  fat_tool.o [1]
+  .rodata            const    0x00016684      0xc  fsl_gpio.o [1]
+  .rodata            const    0x00016690      0xc  fsl_lpi2c.o [1]
+  .rodata            const    0x0001669c      0xc  fsl_lpi2c.o [1]
+  .rodata            const    0x000166a8      0xc  fsl_usdhc.o [1]
+  .text              ro code  0x000166b4      0xc  cstartup_M.o [5]
+  .rodata            const    0x000166c0      0x8  board.o [1]
+  .rodata            const    0x000166c8      0x8  clock_config.o [1]
+  .rodata            const    0x000166d0      0x8  fat_tool.o [1]
+  .rodata            const    0x000166d8      0x8  fat_tool.o [1]
+  .rodata            const    0x000166e0      0x8  fsl_debug_console.o [1]
+  .rodata            const    0x000166e8      0x8  fsl_enet.o [1]
+  .rodata            const    0x000166f0      0x8  fsl_gpio.o [1]
+  .rodata            const    0x000166f8      0x8  fsl_io.o [1]
+  .rodata            const    0x00016700      0x8  fsl_log.o [1]
+  .rodata            const    0x00016708      0x8  fsl_lpi2c.o [1]
+  .rodata            const    0x00016710      0x8  fsl_lpuart.o [1]
+  .rodata            const    0x00016718      0x8  fsl_phy.o [1]
+  .rodata            const    0x00016720      0x8  fsl_sai.o [1]
+  .rodata            const    0x00016728      0x8  fsl_sai.o [1]
+  .rodata            const    0x00016730      0x8  fsl_sdram.o [1]
+  .rodata            const    0x00016738      0x8  pin_mux.o [1]
+  .text              ro code  0x00016740      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016748      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016750      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016758      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016760      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016768      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016770      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016778      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016780      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016788      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016790      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016798      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167a0      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167a8      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167b0      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167b8      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167c0      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167c8      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167d0      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167d8      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167e0      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167e8      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167f0      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x000167f8      0x8  startup_MIMXRT1052.o [1]
+  .text              ro code  0x00016800      0x8  startup_MIMXRT1052.o [1]
+  Initializer bytes  const    0x00016808      0x8  <for RW-1>
+  .rodata            const    0x00016810      0x4  clock_config.o [1]
+  .rodata            const    0x00016814      0x4  fat_tool.o [1]
+  .rodata            const    0x00016818      0x4  fat_tool.o [1]
+  .rodata            const    0x0001681c      0x4  fsl_enet.o [1]
+  .text              ro code  0x00016820      0x4  startup_MIMXRT1052.o [1]
+  .rodata            const    0x00016824      0x0  zero_init3.o [5]
+  .rodata            const    0x00016824      0x0  copy_init3.o [5]
+                            - 0x00016824  0x14424
+
+"P2-P3", part 1 of 2:                         0x8
+  RW                          0x20000000      0x8  <Block>
+    RW-1                      0x20000000      0x8  <Init block>
+      .data          inited   0x20000000      0x8  fat_tool.o [1]
+                            - 0x20000008      0x8
+
+"P2-P3", part 2 of 2:                      0x37c8
+  ZI                          0x20000040   0x37c8  <Block>
+    .bss             zero     0x20000040   0x1800  fat_tool.o [1]
+    .bss             zero     0x20001840   0x1800  fat_tool.o [1]
+    NonCacheable     zero     0x20003040     0x20  fat_tool.o [1]
+    NonCacheable     zero     0x20003080     0x20  fat_tool.o [1]
+    .bss             zero     0x200030a0     0x24  fat_tool.o [1]
+    .bss             zero     0x200030c4    0x3f8  fat_tool.o [1]
+    .bss             zero     0x200034bc      0x4  fat_tool.o [1]
+    .bss             zero     0x200034c0      0x4  fat_tool.o [1]
+    .bss             zero     0x200034c4     0x20  fat_tool.o [1]
+    .bss             zero     0x200034e4      0x4  fsl_clock.o [1]
+    .bss             zero     0x200034e8      0x4  fsl_clock.o [1]
+    .bss             zero     0x200034ec      0x4  fsl_enet.o [1]
+    .bss             zero     0x200034f0      0x4  fsl_enet.o [1]
+    .bss             zero     0x200034f4      0x4  fsl_enet.o [1]
+    .bss             zero     0x200034f8      0x4  fsl_enet.o [1]
+    .bss             zero     0x200034fc      0x4  fsl_enet.o [1]
+    .bss             zero     0x20003500      0x8  fsl_io.o [1]
+    .bss             zero     0x20003508      0x4  fsl_lpi2c.o [1]
+    .bss             zero     0x2000350c     0x10  fsl_lpi2c.o [1]
+    .bss             zero     0x2000351c      0x4  fsl_lpi2c.o [1]
+    .bss             zero     0x20003520     0x10  fsl_lpi2c.o [1]
+    .bss             zero     0x20003530     0x24  fsl_lpuart.o [1]
+    .bss             zero     0x20003554      0x4  fsl_lpuart.o [1]
+    .bss             zero     0x20003558      0xc  fsl_usdhc.o [1]
+    .bss             zero     0x20003564      0x4  fsl_usdhc.o [1]
+    .bss             zero     0x20003568     0x70  fsl_wm8960.o [1]
+    .bss             zero     0x200035d8     0x18  dlmalloc.o [3]
+    .bss             zero     0x200035f0    0x1d8  dlmalloc.o [3]
+    .bss             zero     0x200037c8      0x4  xgetmemchunk.o [3]
+    .bss             zero     0x200037cc      0x1  fat_tool.o [1]
+    .bss             zero     0x200037cd      0x1  fat_tool.o [1]
+                            - 0x200037d0   0x37c8
+
+"P4":                                       0x400
+  HEAP                        0x200037d0    0x400  <Block>
+    HEAP             uninit   0x200037d0    0x400  <Block tail>
+                            - 0x20003bd0    0x400
+
+"P5":                                       0x400
+  CSTACK                      0x2001fc00    0x400  <Block>
+    CSTACK           uninit   0x2001fc00    0x400  <Block tail>
+                            - 0x20020000    0x400
+
+
+*******************************************************************************
+*** INIT TABLE
+***
+
+          Address     Size
+          -------     ----
+Zero (__iar_zero_init3)
+    1 destination range, total size 0x378e:
+          0x20000040  0x378e
+
+Copy (__iar_copy_init3)
+    1 source range, total size 0x8:
+          0x00016808     0x8
+    1 destination range, total size 0x8:
+          0x20000000     0x8
+
+
+
+*******************************************************************************
+*** MODULE SUMMARY
+***
+
+    Module                ro code  ro data  rw data
+    ------                -------  -------  -------
+D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj: [1]
+    board.o                   352       68
+    clock_config.o            708       73
+    fat_tool.o              4 260   51 265   13 454
+    fsl_clock.o             1 664       16        8
+    fsl_common.o               28       44
+    fsl_debug_console.o       182       80
+    fsl_enet.o              3 660      138       20
+    fsl_gpio.o                456      164
+    fsl_io.o                  220       72        8
+    fsl_log.o                 310       72
+    fsl_lpi2c.o             2 352      172       40
+    fsl_lpuart.o            1 404      188       40
+    fsl_phy.o                 764      140
+    fsl_sai.o                 736      152
+    fsl_sdram.o               620       68
+    fsl_str.o               1 894
+    fsl_usdhc.o                52       12       16
+    fsl_wm8960.o            1 710      112      112
+    pin_mux.o               1 544       68
+    startup_MIMXRT1052.o    1 286
+    system_MIMXRT1052.o       576
+    -----------------------------------------------
+    Total:                 24 778   52 904   13 698
+
+command line: [2]
+    -----------------------------------------------
+    Total:
+
+dl7M_tln.a: [3]
+    abort.o                     6
+    dlmalloc.o              5 352               496
+    exit.o                      4
+    heaptramp0.o                4
+    low_level_init.o            4
+    xgetmemchunk.o             44                 4
+    -----------------------------------------------
+    Total:                  5 414               500
+
+m7M_tlv.a: [4]
+    fpinit_M.o                 34
+    -----------------------------------------------
+    Total:                     34
+
+rt7M_tl.a: [5]
+    ABImemclr4.o                6
+    ABImemcpy.o               166
+    ABImemset.o               102
+    ABImemset48.o              50
+    I64DivMod.o               238
+    I64DivZer.o                 2
+    cexit.o                    10
+    cmain.o                    26
+    copy_init3.o               44
+    cstartup_M.o               12
+    data_init.o                40
+    strlen.o                   54
+    zero_init3.o               64
+    -----------------------------------------------
+    Total:                    814
+
+shb_l.a: [6]
+    exit.o                     20
+    -----------------------------------------------
+    Total:                     20
+
+    Gaps                                 4       32
+    Linker created                      36    2 048
+---------------------------------------------------
+    Grand Total:           31 060   52 944   16 278
+
+
+*******************************************************************************
+*** ENTRY LIST
+***
+
+Entry                      Address    Size  Type      Object
+-----                      -------    ----  ----      ------
+.iar.init_table$$Base   0x000163c0           --   Gb  - Linker created -
+.iar.init_table$$Limit  0x000163e4           --   Gb  - Linker created -
+?main                   0x000164b9          Code  Gb  cmain.o [5]
+BOARD_BootClockGate     0x00011e11    0x30  Code  Lc  clock_config.o [1]
+BOARD_BootClockRUN      0x00011ea3    0xe8  Code  Gb  clock_config.o [1]
+BOARD_DebugConsoleSrcFreq
+                        0x000120e1    0x42  Code  Gb  board.o [1]
+BOARD_EnableSaiMclkOutput
+                        0x0000f78f    0x2a  Code  Lc  fat_tool.o [1]
+BOARD_Ethernet_InitPins
+                        0x00011a27   0x210  Code  Gb  pin_mux.o [1]
+BOARD_I2C_ConfigurePins
+                        0x000119cd    0x5a  Code  Gb  pin_mux.o [1]
+BOARD_I2C_ReleaseBus    0x0000f7c9    0xc0  Code  Lc  fat_tool.o [1]
+BOARD_InitDebugConsole  0x00012123    0x18  Code  Gb  board.o [1]
+BOARD_InitPins          0x000117b7   0x216  Code  Gb  pin_mux.o [1]
+CLOCK_ControlGate       0x00011db5    0x40  Code  Lc  clock_config.o [1]
+CLOCK_ControlGate       0x000127ff    0x46  Code  Lc  fsl_enet.o [1]
+CLOCK_ControlGate       0x00010591    0x40  Code  Lc  fsl_gpio.o [1]
+CLOCK_ControlGate       0x00010777    0x46  Code  Lc  fsl_lpi2c.o [1]
+CLOCK_ControlGate       0x00014d65    0x46  Code  Lc  fsl_lpuart.o [1]
+CLOCK_ControlGate       0x0001362d    0x46  Code  Lc  fsl_phy.o [1]
+CLOCK_ControlGate       0x00011089    0x46  Code  Lc  fsl_sai.o [1]
+CLOCK_ControlGate       0x00011421    0x40  Code  Lc  fsl_sdram.o [1]
+CLOCK_ControlGate       0x00011735    0x46  Code  Lc  pin_mux.o [1]
+CLOCK_DeinitAudioPll    0x00012449     0xc  Code  Gb  fsl_clock.o [1]
+CLOCK_DeinitEnetPll     0x000124a1     0xc  Code  Gb  fsl_clock.o [1]
+CLOCK_DeinitUsb2Pll     0x000123b5     0xa  Code  Gb  fsl_clock.o [1]
+CLOCK_DeinitVideoPll    0x00012455     0xc  Code  Gb  fsl_clock.o [1]
+CLOCK_EnableClock       0x00011df5    0x10  Code  Lc  clock_config.o [1]
+CLOCK_EnableClock       0x00012845    0x10  Code  Lc  fsl_enet.o [1]
+CLOCK_EnableClock       0x000105d1    0x10  Code  Lc  fsl_gpio.o [1]
+CLOCK_EnableClock       0x000107bd    0x10  Code  Lc  fsl_lpi2c.o [1]
+CLOCK_EnableClock       0x00014dab    0x10  Code  Lc  fsl_lpuart.o [1]
+CLOCK_EnableClock       0x00013673    0x10  Code  Lc  fsl_phy.o [1]
+CLOCK_EnableClock       0x000110cf    0x10  Code  Lc  fsl_sai.o [1]
+CLOCK_EnableClock       0x00011461    0x10  Code  Lc  fsl_sdram.o [1]
+CLOCK_EnableClock       0x0001177b    0x10  Code  Lc  pin_mux.o [1]
+CLOCK_GetDiv            0x000120a3    0x2c  Code  Lc  board.o [1]
+CLOCK_GetDiv            0x0000f6ab    0x2c  Code  Lc  fat_tool.o [1]
+CLOCK_GetFreq           0x00012219   0x164  Code  Gb  fsl_clock.o [1]
+CLOCK_GetMux            0x00012079    0x2a  Code  Lc  board.o [1]
+CLOCK_GetOscFreq        0x000120cf    0x12  Code  Lc  board.o [1]
+CLOCK_GetOscFreq        0x00012161    0x18  Code  Lc  fsl_clock.o [1]
+CLOCK_GetPeriphClkFreq  0x0001217f    0x9a  Code  Lc  fsl_clock.o [1]
+CLOCK_GetPllFreq        0x000124ad   0x1d0  Code  Gb  fsl_clock.o [1]
+CLOCK_GetRtcFreq        0x00012179     0x6  Code  Lc  fsl_clock.o [1]
+CLOCK_GetSysPfdFreq     0x000126bd    0x5e  Code  Gb  fsl_clock.o [1]
+CLOCK_GetUsb1PfdFreq    0x0001271b    0x5e  Code  Gb  fsl_clock.o [1]
+CLOCK_InitArmPll        0x0001237d    0x1c  Code  Gb  fsl_clock.o [1]
+CLOCK_InitAudioPll      0x000123bf    0x8a  Code  Gb  fsl_clock.o [1]
+CLOCK_InitEnetPll       0x00012461    0x40  Code  Gb  fsl_clock.o [1]
+CLOCK_InitUsb1Pfd       0x0001267d    0x40  Code  Gb  fsl_clock.o [1]
+CLOCK_InitUsb1Pll       0x00012399    0x1c  Code  Gb  fsl_clock.o [1]
+CLOCK_SetDiv            0x0000f62d    0x7e  Code  Lc  fat_tool.o [1]
+CLOCK_SetMux            0x00012001    0x78  Code  Lc  board.o [1]
+CLOCK_SetMux            0x00011d3d    0x78  Code  Lc  clock_config.o [1]
+CLOCK_SetMux            0x0000f5af    0x7e  Code  Lc  fat_tool.o [1]
+CLOCK_SetRtcXtalFreq    0x00011e0b     0x6  Code  Lc  clock_config.o [1]
+CLOCK_SetXtalFreq       0x00011e05     0x6  Code  Lc  clock_config.o [1]
+CSTACK$$Base            0x2001fc00           --   Gb  - Linker created -
+CSTACK$$Limit           0x20020000           --   Gb  - Linker created -
+ConvertRadixNumToString
+                        0x000141df    0xbe  Code  Lc  fsl_str.o [1]
+DbgConsole_Getchar      0x00011411     0xe  Code  Gb  fsl_debug_console.o [1]
+DbgConsole_Init         0x00011369    0x2e  Code  Gb  fsl_debug_console.o [1]
+DbgConsole_Printf       0x000113a1    0x38  Code  Gb  fsl_debug_console.o [1]
+DbgConsole_Putchar      0x000113d9     0xc  Code  Gb  fsl_debug_console.o [1]
+DbgConsole_Scanf        0x000113e5    0x2c  Code  Gb  fsl_debug_console.o [1]
+Delay                   0x00011471     0xc  Code  Gb  fsl_sdram.o [1]
+ENET_1588_Timer_IRQHandler
+                        0x000135dd    0x10  Code  Gb  fsl_enet.o [1]
+ENET_ActiveRead         0x0000f787     0x8  Code  Lc  fat_tool.o [1]
+ENET_ActiveSend         0x00012ee9    0x32  Code  Lc  fsl_enet.o [1]
+ENET_BuildBroadCastFrame
+                        0x0000fb23    0x60  Code  Lc  fat_tool.o [1]
+ENET_ClearInterruptStatus
+                        0x0001368d     0x4  Code  Lc  fsl_phy.o [1]
+ENET_CommonFrame0IRQHandler
+                        0x0001357d    0x60  Code  Gb  fsl_enet.o [1]
+ENET_DriverIRQHandler   0x000135ed     0xa  Code  Gb  fsl_enet.o [1]
+ENET_EnableInterrupts   0x000128a7     0x8  Code  Lc  fsl_enet.o [1]
+ENET_EnableSleepMode    0x0001288d    0x1a  Code  Lc  fsl_enet.o [1]
+ENET_ErrorIRQHandler    0x00013519    0x5e  Code  Gb  fsl_enet.o [1]
+ENET_GetDefaultConfig   0x000128e5    0x42  Code  Gb  fsl_enet.o [1]
+ENET_GetInstance        0x000128af    0x36  Code  Gb  fsl_enet.o [1]
+ENET_GetInterruptStatus
+                        0x00013689     0x4  Code  Lc  fsl_phy.o [1]
+ENET_GetRxErrBeforeReadFrame
+                        0x00013005    0xa2  Code  Gb  fsl_enet.o [1]
+ENET_GetRxFrameSize     0x000130a7    0xae  Code  Gb  fsl_enet.o [1]
+ENET_GetSMI             0x0001287b    0x12  Code  Lc  fsl_enet.o [1]
+ENET_Init               0x00012927   0x12e  Code  Gb  fsl_enet.o [1]
+ENET_ReadFrame          0x00013155   0x114  Code  Gb  fsl_enet.o [1]
+ENET_ReadSMIData        0x00013683     0x6  Code  Lc  fsl_phy.o [1]
+ENET_ReceiveIRQHandler  0x000134c5    0x3c  Code  Gb  fsl_enet.o [1]
+ENET_Reset              0x00012871     0xa  Code  Lc  fsl_enet.o [1]
+ENET_SendFrame          0x0001331d   0x15e  Code  Gb  fsl_enet.o [1]
+ENET_SetHandler         0x00012a55   0x10c  Code  Lc  fsl_enet.o [1]
+ENET_SetMacAddr         0x00012f1b    0x2c  Code  Gb  fsl_enet.o [1]
+ENET_SetMacController   0x00012b61   0x200  Code  Lc  fsl_enet.o [1]
+ENET_SetRxBufferDescriptors
+                        0x00012e19    0xd0  Code  Lc  fsl_enet.o [1]
+ENET_SetSMI             0x00012f47    0x68  Code  Gb  fsl_enet.o [1]
+ENET_SetTxBufferDescriptors
+                        0x00012d61    0xb8  Code  Lc  fsl_enet.o [1]
+ENET_StartSMIRead       0x00012fdd    0x28  Code  Gb  fsl_enet.o [1]
+ENET_StartSMIWrite      0x00012faf    0x2e  Code  Gb  fsl_enet.o [1]
+ENET_TransmitIRQHandler
+                        0x0001347d    0x3c  Code  Gb  fsl_enet.o [1]
+ENET_UpdateReadBuffers  0x00013275    0x96  Code  Lc  fsl_enet.o [1]
+EnableIRQ               0x0000f6d7    0x1c  Code  Lc  fat_tool.o [1]
+EnableIRQ               0x00012855    0x1c  Code  Lc  fsl_enet.o [1]
+EnableIRQ               0x000107cd    0x1c  Code  Lc  fsl_lpi2c.o [1]
+FAT_Test_Menu           0x00016184    0x30  Data  Gb  fat_tool.o [1]
+GPIO1_Combined_16_31_IRQHandler
+                        0x0000fe63    0x30  Code  Gb  fat_tool.o [1]
+GPIO_ClearPinsInterruptFlags
+                        0x0000f783     0x4  Code  Lc  fat_tool.o [1]
+GPIO_EnableInterrupts   0x0000f77b     0x8  Code  Lc  fat_tool.o [1]
+GPIO_GetInstance        0x000105e1    0x2e  Code  Lc  fsl_gpio.o [1]
+GPIO_PinInit            0x0001060f    0x54  Code  Gb  fsl_gpio.o [1]
+GPIO_ReadPinInput       0x0000f755    0x26  Code  Lc  fat_tool.o [1]
+GPIO_SetPinInterruptConfig
+                        0x000106b5    0xa4  Code  Gb  fsl_gpio.o [1]
+GPIO_WritePinOutput     0x00010663    0x38  Code  Gb  fsl_gpio.o [1]
+HEAP$$Base              0x200037d0           --   Gb  - Linker created -
+HEAP$$Limit             0x20003bd0           --   Gb  - Linker created -
+IOMUXC_SetPinConfig     0x0000f70f    0x10  Code  Lc  fat_tool.o [1]
+IOMUXC_SetPinConfig     0x000117a7    0x10  Code  Lc  pin_mux.o [1]
+IOMUXC_SetPinMux        0x0000f6f3    0x1c  Code  Lc  fat_tool.o [1]
+IOMUXC_SetPinMux        0x0001178b    0x1c  Code  Lc  pin_mux.o [1]
+IO_Init                 0x00014c81    0x5e  Code  Gb  fsl_io.o [1]
+IO_Transfer             0x00014cdf    0x3e  Code  Gb  fsl_io.o [1]
+LOG_Init                0x0001404d    0x22  Code  Gb  fsl_log.o [1]
+LOG_Pop                 0x00014093    0x30  Code  Gb  fsl_log.o [1]
+LOG_Push                0x0001406f    0x24  Code  Gb  fsl_log.o [1]
+LOG_ReadCharacter       0x0001412f    0x2e  Code  Gb  fsl_log.o [1]
+LOG_ReadLine            0x000140c3    0x6c  Code  Gb  fsl_log.o [1]
+LOG_ReadOneCharacter    0x00014169    0x1a  Code  Lc  fsl_log.o [1]
+LPI2C1_DriverIRQHandler
+                        0x0001103f     0xc  Code  Gb  fsl_lpi2c.o [1]
+LPI2C2_DriverIRQHandler
+                        0x0001104b     0xc  Code  Gb  fsl_lpi2c.o [1]
+LPI2C3_DriverIRQHandler
+                        0x00011057     0xc  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_CheckForBusyBus   0x00010953    0x20  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_CommonIRQHandler  0x00010ffd    0x42  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_GetCyclesForWidth
+                        0x00010873    0x42  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_GetInstance       0x0001083f    0x34  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterCheckAndClearError
+                        0x000108b5    0x68  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterClearStatusFlags
+                        0x00010805     0x4  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_MasterDisableInterrupts
+                        0x00010809     0x8  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_MasterEnable      0x000107f3     0xe  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_MasterGetDefaultConfig
+                        0x00010973    0x38  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterGetFifoCounts
+                        0x00010825    0x1a  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_MasterGetStatusFlags
+                        0x0000f71f     0x4  Code  Lc  fat_tool.o [1]
+LPI2C_MasterGetStatusFlags
+                        0x00010801     0x4  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_MasterInit        0x000109ab   0x146  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterReceive     0x00010cad    0x82  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterReset       0x000107e9     0xa  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_MasterSend        0x00010d2f    0x40  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterSetBaudRate
+                        0x00010af1   0x12e  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterSetWatermarks
+                        0x00010811    0x14  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_MasterStart       0x00010c1f    0x4c  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterStop        0x00010c6b    0x42  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterTransferCreateHandle
+                        0x00010d6f    0x6e  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterTransferHandleIRQ
+                        0x00010f89    0x48  Code  Gb  fsl_lpi2c.o [1]
+LPI2C_MasterWaitForTxReady
+                        0x0001091d    0x36  Code  Lc  fsl_lpi2c.o [1]
+LPI2C_RunTransferStateMachine
+                        0x00010ddd   0x1aa  Code  Lc  fsl_lpi2c.o [1]
+LPUART1_DriverIRQHandler
+                        0x00015221    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART2_DriverIRQHandler
+                        0x00015231    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART3_DriverIRQHandler
+                        0x00015241    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART4_DriverIRQHandler
+                        0x00015251    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART5_DriverIRQHandler
+                        0x00015269    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART6_DriverIRQHandler
+                        0x00015279    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART7_DriverIRQHandler
+                        0x0001528d    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART8_DriverIRQHandler
+                        0x0001529d    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART_ClearStatusFlags
+                        0x000150b1    0x50  Code  Gb  fsl_lpuart.o [1]
+LPUART_EnableRx         0x00014c67    0x1a  Code  Lc  fsl_io.o [1]
+LPUART_EnableTx         0x00014c4d    0x1a  Code  Lc  fsl_io.o [1]
+LPUART_GetDefaultConfig
+                        0x00015045    0x5c  Code  Gb  fsl_lpuart.o [1]
+LPUART_GetInstance      0x00014dcd    0x34  Code  Gb  fsl_lpuart.o [1]
+LPUART_GetStatusFlags   0x000150a1    0x10  Code  Gb  fsl_lpuart.o [1]
+LPUART_Init             0x00014e01   0x244  Code  Gb  fsl_lpuart.o [1]
+LPUART_ReadBlocking     0x00015139    0xd2  Code  Gb  fsl_lpuart.o [1]
+LPUART_SoftwareReset    0x00014dbb    0x12  Code  Lc  fsl_lpuart.o [1]
+LPUART_WriteBlocking    0x00015101    0x38  Code  Gb  fsl_lpuart.o [1]
+PHY_GetLinkSpeedDuplex  0x000138a9    0x6e  Code  Gb  fsl_phy.o [1]
+PHY_GetLinkStatus       0x00013867    0x42  Code  Gb  fsl_phy.o [1]
+PHY_Init                0x00013691   0x110  Code  Gb  fsl_phy.o [1]
+PHY_Read                0x000137f9    0x6e  Code  Gb  fsl_phy.o [1]
+PHY_Write               0x000137a1    0x58  Code  Gb  fsl_phy.o [1]
+PrintfPaddingCharacter  0x000141c3    0x1c  Code  Lc  fsl_str.o [1]
+RW$$Base                0x20000000           --   Gb  - Linker created -
+RW$$Limit               0x20000008           --   Gb  - Linker created -
+Region$$Table$$Base     0x000163c0           --   Gb  - Linker created -
+Region$$Table$$Limit    0x000163e4           --   Gb  - Linker created -
+SAI1_IRQHandler         0x0000f8e7    0xae  Code  Gb  fat_tool.o [1]
+SAI_GetInstance         0x000110eb    0x34  Code  Gb  fsl_sai.o [1]
+SAI_TxClearStatusFlags  0x0000f727     0xc  Code  Lc  fat_tool.o [1]
+SAI_TxClearStatusFlags  0x000110df     0xc  Code  Lc  fsl_sai.o [1]
+SAI_TxDisableInterrupts
+                        0x0000f73f     0xe  Code  Lc  fat_tool.o [1]
+SAI_TxEnable            0x00011273    0x52  Code  Gb  fsl_sai.o [1]
+SAI_TxEnableInterrupts  0x0000f733     0xc  Code  Lc  fat_tool.o [1]
+SAI_TxGetDefaultConfig  0x0001125d    0x16  Code  Gb  fsl_sai.o [1]
+SAI_TxGetStatusFlag     0x0000f723     0x4  Code  Lc  fat_tool.o [1]
+SAI_TxInit              0x0001111f   0x13e  Code  Gb  fsl_sai.o [1]
+SAI_TxSetFormat         0x000112c5    0x6e  Code  Gb  fsl_sai.o [1]
+SAI_WriteData           0x0000f74d     0x8  Code  Lc  fat_tool.o [1]
+SCB_DisableDCache       0x0000f54f    0x60  Code  Lc  fat_tool.o [1]
+SCB_EnableDCache        0x0000f4ef    0x60  Code  Lc  fat_tool.o [1]
+SCB_EnableDCache        0x00014915    0x56  Code  Lc  system_MIMXRT1052.o [1]
+SCB_EnableICache        0x000148e9    0x2c  Code  Lc  system_MIMXRT1052.o [1]
+SDRAM_Init              0x00011557    0xb2  Code  Gb  fsl_sdram.o [1]
+SDRAM_InitSequence      0x000114db    0x7c  Code  Gb  fsl_sdram.o [1]
+SDRAM_IpCmd             0x000114a1    0x3a  Code  Gb  fsl_sdram.o [1]
+SDRAM_WaitIpCmdDone     0x0001147d    0x24  Code  Gb  fsl_sdram.o [1]
+SEMC_ClockConfig        0x00011e41    0x62  Code  Gb  clock_config.o [1]
+ScanIgnoreWhiteSpace    0x00014183    0x40  Code  Lc  fsl_str.o [1]
+StrFormatPrintf         0x0001429d   0x25e  Code  Gb  fsl_str.o [1]
+StrFormatScanf          0x000144fb   0x3ee  Code  Gb  fsl_str.o [1]
+SystemCoreClockUpdate   0x000149e1    0xec  Code  Gb  system_MIMXRT1052.o [1]
+SystemInit              0x0001496b    0x76  Code  Gb  system_MIMXRT1052.o [1]
+USDHC1_DriverIRQHandler
+                        0x000160c1    0x12  Code  Gb  fsl_usdhc.o [1]
+USDHC2_DriverIRQHandler
+                        0x000160d3    0x12  Code  Gb  fsl_usdhc.o [1]
+WM8960_ConfigDataFormat
+                        0x00013dd9   0x130  Code  Gb  fsl_wm8960.o [1]
+WM8960_Init             0x00013935   0x17a  Code  Gb  fsl_wm8960.o [1]
+WM8960_ModifyReg        0x00013f81    0x62  Code  Gb  fsl_wm8960.o [1]
+WM8960_ReadReg          0x00013f5f    0x1a  Code  Gb  fsl_wm8960.o [1]
+WM8960_SetDataRoute     0x00013bd1    0xa0  Code  Gb  fsl_wm8960.o [1]
+WM8960_SetMasterSlave   0x00013aaf    0x28  Code  Gb  fsl_wm8960.o [1]
+WM8960_SetModule        0x00013ad7    0xfa  Code  Gb  fsl_wm8960.o [1]
+WM8960_SetProtocol      0x00013c71    0x8e  Code  Gb  fsl_wm8960.o [1]
+WM8960_SetVolume        0x00013cff    0xda  Code  Gb  fsl_wm8960.o [1]
+WM8960_WriteReg         0x00013f09    0x56  Code  Gb  fsl_wm8960.o [1]
+ZI$$Base                0x20000040           --   Gb  - Linker created -
+ZI$$Limit               0x200037d0           --   Gb  - Linker created -
+__NVIC_EnableIRQ        0x0000f4d1    0x1e  Code  Lc  fat_tool.o [1]
+__NVIC_EnableIRQ        0x000127e1    0x1e  Code  Lc  fsl_enet.o [1]
+__NVIC_EnableIRQ        0x00010759    0x1e  Code  Lc  fsl_lpi2c.o [1]
+__RAM_VECTOR_TABLE_SIZE {Abs}
+                        0x00000000          Data  Gb  command line/config [2]
+__VECTOR_RAM {Abs}      0x00002000          Data  Gb  command line/config [2]
+__VECTOR_TABLE {Abs}    0x00002000          Data  Gb  command line/config [2]
+__Vectors               0x00002000           --   Gb  startup_MIMXRT1052.o [1]
+__Vectors_End           0x00002400          Data  Gb  startup_MIMXRT1052.o [1]
+__Vectors_Size {Abs}    0x00000400           --   Gb  startup_MIMXRT1052.o [1]
+__aeabi_assert          0x00010575    0x18  Code  Gb  fsl_common.o [1]
+__aeabi_ldiv0           0x00014d61          Code  Gb  I64DivZer.o [5]
+__aeabi_memclr4         0x0001392d          Code  Gb  ABImemclr4.o [5]
+__aeabi_memcpy          0x0001168d          Code  Gb  ABImemcpy.o [5]
+__aeabi_memcpy4         0x000116ad          Code  Gb  ABImemcpy.o [5]
+__aeabi_memcpy8         0x000116ad          Code  Gb  ABImemcpy.o [5]
+__aeabi_memset          0x00013fe5          Code  Gb  ABImemset.o [5]
+__aeabi_uldivmod        0x00014b29          Code  Gb  I64DivMod.o [5]
+__cmain                 0x000164b9          Code  Gb  cmain.o [5]
+__data_GetMemChunk      0x0000f491    0x2c  Code  Gb  xgetmemchunk.o [3]
+__data_GetMemChunk::start
+                        0x200037c8     0x4  Data  Lc  xgetmemchunk.o [3]
+__exit                  0x0000f4bd    0x14  Code  Gb  exit.o [6]
+__iar_Memset            0x00013fe5          Code  Gb  ABImemset.o [5]
+__iar_Memset4_word      0x00014c19          Code  Gb  ABImemset48.o [5]
+__iar_Memset8_word      0x00014c19          Code  Gb  ABImemset48.o [5]
+__iar_Memset_word       0x00013fed          Code  Gb  ABImemset.o [5]
+__iar_copy_init3        0x00016265    0x2c  Code  Gb  copy_init3.o [5]
+__iar_data_init3        0x00016309    0x28  Code  Gb  data_init.o [5]
+__iar_dlfree            0x0000ef91   0x4f2  Code  Gb  dlmalloc.o [3]
+__iar_dlmalloc          0x0000ecd9   0x2b8  Code  Gb  dlmalloc.o [3]
+__iar_init_vfp          0x0001639d          Code  Gb  fpinit_M.o [4]
+__iar_program_start     0x000166b5          Code  Gb  cstartup_M.o [5]
+__iar_systems$$module {Abs}
+                        0x00000001          Data  Gb  command line/config [2]
+__iar_zero_init3        0x00015779    0x40  Code  Gb  zero_init3.o [5]
+__low_level_init        0x000164d3     0x4  Code  Gb  low_level_init.o [3]
+__vector_table          0x00002000          Data  Gb  startup_MIMXRT1052.o [1]
+__vector_table_0x1c     0x0000201c          Data  Gb  startup_MIMXRT1052.o [1]
+_call_main              0x000164c5          Code  Gb  cmain.o [5]
+_exit                   0x000164dd          Code  Gb  cexit.o [5]
+_gm_                    0x200035f0   0x1d8  Data  Lc  dlmalloc.o [3]
+_main                   0x000164cf          Code  Gb  cmain.o [5]
+abort                   0x0000f489     0x6  Code  Gb  abort.o [3]
+add_segment             0x0000e365   0x202  Code  Lc  dlmalloc.o [3]
+armPllConfig            0x00016810     0x4  Data  Gb  clock_config.o [1]
+codecHandle             0x200034c4    0x20  Data  Gb  fat_tool.o [1]
+delay                   0x0000fb85    0x22  Code  Gb  fat_tool.o [1]
+exit                    0x000164d7     0x4  Code  Gb  exit.o [3]
+fat_do_all_test         0x0000f995    0xf0  Code  Lc  fat_tool.o [1]
+fat_do_audio_play_test  0x0000fead   0x370  Code  Lc  fat_tool.o [1]
+fat_do_eth_loopback_test
+                        0x0000fba7   0x2bc  Code  Lc  fat_tool.o [1]
+fat_do_motion_sensor_readid_test
+                        0x00010225    0x9c  Code  Lc  fat_tool.o [1]
+fat_do_sdram_rw_test    0x0000fac3    0x60  Code  Lc  fat_tool.o [1]
+fat_tool_do_test_func   0x000102c1    0x10  Code  Lc  fat_tool.o [1]
+fat_tool_get_menu_input
+                        0x000102d1    0x30  Code  Lc  fat_tool.o [1]
+fat_tool_show_menu      0x00010305    0x26  Code  Lc  fat_tool.o [1]
+free                    0x00013929     0x4  Code  Gb  heaptramp0.o [3]
+g_HeadSetInputSignal    0x200037cd     0x1  Data  Gb  fat_tool.o [1]
+g_ccmConfigAudioPll     0x00016678     0xc  Data  Gb  fat_tool.o [1]
+g_frame                 0x200030c4   0x3f8  Data  Gb  fat_tool.o [1]
+g_handle                0x200030a0    0x24  Data  Gb  fat_tool.o [1]
+g_index                 0x200034c0     0x4  Data  Lc  fat_tool.o [1]
+g_macAddr               0x20000000     0x8  Data  Gb  fat_tool.o [1]
+g_rtcXtalFreq           0x200034e8     0x4  Data  Gb  fsl_clock.o [1]
+g_rxBuffDescrip         0x20003040    0x20  Data  Gb  fat_tool.o [1]
+g_rxDataBuff            0x20000040  0x1800  Data  Gb  fat_tool.o [1]
+g_testTxNum             0x200034bc     0x4  Data  Gb  fat_tool.o [1]
+g_txBuffDescrip         0x20003080    0x20  Data  Gb  fat_tool.o [1]
+g_txDataBuff            0x20001840  0x1800  Data  Gb  fat_tool.o [1]
+g_xtalFreq              0x200034e4     0x4  Data  Gb  fsl_clock.o [1]
+i2c_read                0x0000f889    0x5e  Code  Lc  fat_tool.o [1]
+i2c_release_bus_delay   0x0000f7b9    0x10  Code  Lc  fat_tool.o [1]
+init_mparams            0x0000dfbf    0x32  Code  Lc  dlmalloc.o [3]
+init_top                0x0000dff1    0x32  Code  Lc  dlmalloc.o [3]
+isFinished              0x200037cc     0x1  Data  Lc  fat_tool.o [1]
+kLpi2cBases             0x000165a4    0x14  Data  Lc  fsl_lpi2c.o [1]
+kLpi2cClocks            0x0001669c     0xc  Data  Lc  fsl_lpi2c.o [1]
+kLpi2cIrqs              0x00016690     0xc  Data  Lc  fsl_lpi2c.o [1]
+main                    0x00010341    0xcc  Code  Gb  fat_tool.o [1]
+mparams                 0x200035d8    0x18  Data  Lc  dlmalloc.o [3]
+music                   0x00002400  0xbba0  Data  Gb  fat_tool.o [1]
+prepend_alloc           0x0000e023   0x342  Code  Lc  dlmalloc.o [3]
+reg_cache               0x20003568    0x70  Data  Lc  fsl_wm8960.o [1]
+s_ENETHandle            0x200034ec     0x4  Data  Lc  fsl_enet.o [1]
+s_debugConsoleIO        0x20003500     0x8  Data  Lc  fsl_io.o [1]
+s_enetBases             0x0001681c     0x4  Data  Lc  fsl_enet.o [1]
+s_enetErrIrqId          0x00011732     0x2  Data  Lc  fsl_enet.o [1]
+s_enetErrIsr            0x200034f8     0x4  Data  Lc  fsl_enet.o [1]
+s_enetRxIrqId           0x0001141e     0x2  Data  Lc  fsl_enet.o [1]
+s_enetRxIsr             0x200034f4     0x4  Data  Lc  fsl_enet.o [1]
+s_enetTsIsr             0x200034fc     0x4  Data  Lc  fsl_enet.o [1]
+s_enetTxIrqId           0x0000f48e     0x2  Data  Lc  fsl_enet.o [1]
+s_enetTxIsr             0x200034f0     0x4  Data  Lc  fsl_enet.o [1]
+s_gpioBases             0x00016578    0x18  Data  Lc  fsl_gpio.o [1]
+s_gpioClock             0x00016684     0xc  Data  Lc  fsl_gpio.o [1]
+s_lpi2cMasterHandle     0x2000350c    0x10  Data  Lc  fsl_lpi2c.o [1]
+s_lpi2cMasterIsr        0x20003508     0x4  Data  Lc  fsl_lpi2c.o [1]
+s_lpi2cSlaveHandle      0x20003520    0x10  Data  Lc  fsl_lpi2c.o [1]
+s_lpi2cSlaveIsr         0x2000351c     0x4  Data  Lc  fsl_lpi2c.o [1]
+s_lpuartBases           0x00016378    0x24  Data  Lc  fsl_lpuart.o [1]
+s_lpuartClock           0x000165b8    0x14  Data  Lc  fsl_lpuart.o [1]
+s_lpuartHandle          0x20003530    0x24  Data  Lc  fsl_lpuart.o [1]
+s_lpuartIsr             0x20003554     0x4  Data  Lc  fsl_lpuart.o [1]
+s_saiBases              0x0001665c    0x10  Data  Lc  fsl_sai.o [1]
+s_saiClock              0x00016728     0x8  Data  Lc  fsl_sai.o [1]
+s_usdhcBase             0x000166a8     0xc  Data  Lc  fsl_usdhc.o [1]
+s_usdhcHandle           0x20003558     0xc  Data  Lc  fsl_usdhc.o [1]
+s_usdhcIsr              0x20003564     0x4  Data  Lc  fsl_usdhc.o [1]
+sdram_mem_check         0x0000fa9f    0x24  Code  Gb  fat_tool.o [1]
+sdram_mem_write         0x0000fa85    0x1a  Code  Gb  fat_tool.o [1]
+segment_holding         0x0000dfa1    0x1e  Code  Lc  dlmalloc.o [3]
+strlen                  0x00014d29          Code  Gb  strlen.o [5]
+sys_alloc               0x0000e56d   0x160  Code  Lc  dlmalloc.o [3]
+sys_trim                0x0000e6cd    0x66  Code  Lc  dlmalloc.o [3]
+tmalloc_large           0x0000e741   0x38e  Code  Lc  dlmalloc.o [3]
+tmalloc_small           0x0000eacf   0x204  Code  Lc  dlmalloc.o [3]
+wm8960_reg              0x00015358    0x70  Data  Lc  fsl_wm8960.o [1]
+
+
+[1] = D:\Work\imxrt1050\sw\boards\evkmimxrt1050\demo_apps\fat_tool\iar\debug\obj
+[2] = command line
+[3] = dl7M_tln.a
+[4] = m7M_tlv.a
+[5] = rt7M_tl.a
+[6] = shb_l.a
+
+  31 060 bytes of readonly  code memory
+  52 944 bytes of readonly  data memory
+  16 278 bytes of readwrite data memory
+
+Errors: none
+Warnings: none

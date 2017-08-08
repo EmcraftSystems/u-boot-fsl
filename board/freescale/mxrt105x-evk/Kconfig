@@ -1,0 +1,19 @@
+if TARGET_MXRT105X_EVK
+
+config SYS_BOARD
+	string
+	default "mxrt105x-evk"
+
+config SYS_VENDOR
+	string
+	default "freescale"
+
+config SYS_SOC
+	string
+	default "imxrt105x"
+
+config SYS_CONFIG_NAME
+	string
+	default "mxrt105x-evk"
+
+endif

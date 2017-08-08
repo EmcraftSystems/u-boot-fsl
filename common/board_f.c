@@ -649,12 +649,13 @@ static int setup_reloc(void)
 	gd->reloc_off = gd->relocaddr - CONFIG_SYS_TEXT_BASE;
 #endif
 #endif
-	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t));
-
 	debug("Relocation Offset is: %08lx\n", gd->reloc_off);
 	debug("Relocating to %08lx, new gd at %08lx, sp at %08lx\n",
 	      gd->relocaddr, (ulong)map_to_sysmem(gd->new_gd),
 	      gd->start_addr_sp);
+
+	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t));
+	debug("done\n");
 
 	return 0;
 }

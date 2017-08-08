@@ -587,6 +587,12 @@ config ARCH_MESON
 	  targeted at media players and tablet computers. We currently
 	  support the S905 (GXBaby) 64-bit SoC.
 
+config ARCH_IMXRT105X
+	bool "NXP i.MX RT105X"
+	select CPU_V7M
+	select SYS_THUMB_BUILD
+	select BOARD_EARLY_INIT_F
+
 config ARCH_MX7ULP
         bool "NXP MX7ULP"
         select CPU_V7
@@ -1103,6 +1109,8 @@ source "arch/arm/mach-mvebu/Kconfig"
 
 source "arch/arm/cpu/armv7/ls102xa/Kconfig"
 
+source "arch/arm/mach-imxrt105x/Kconfig"
+
 source "arch/arm/mach-imx/mx7ulp/Kconfig"
 
 source "arch/arm/mach-imx/mx7/Kconfig"
@@ -1188,6 +1196,7 @@ source "board/freescale/mx31ads/Kconfig"
 source "board/freescale/mx31pdk/Kconfig"
 source "board/freescale/mx35pdk/Kconfig"
 source "board/freescale/s32v234evb/Kconfig"
+source "board/freescale/mxrt105x-evk/Kconfig"
 source "board/gdsys/a38x/Kconfig"
 source "board/grinn/chiliboard/Kconfig"
 source "board/gumstix/pepper/Kconfig"

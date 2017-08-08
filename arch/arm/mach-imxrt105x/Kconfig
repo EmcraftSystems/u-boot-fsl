@@ -1,0 +1,17 @@
+if ARCH_IMXRT105X
+
+config SYS_SOC
+	default "imxrt105x"
+
+choice
+	prompt "MXRT105X board select"
+	optional
+
+config TARGET_MXRT105X_EVK
+        bool "Support mxrt105x EVK board"
+
+endchoice
+
+source "board/freescale/mxrt105x-evk/Kconfig"
+
+endif

@@ -11,8 +11,8 @@
 #include <asm/io.h>
 #include <serial.h>
 #include <linux/compiler.h>
-#include <asm/arch/imx-regs.h>
-#include <asm/arch/clock.h>
+//#include <asm/arch/imx-regs.h>
+//#include <asm/arch/clock.h>
 
 #define US1_TDRE	(1 << 7)
 #define US1_RDRF	(1 << 5)

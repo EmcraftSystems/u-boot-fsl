@@ -306,8 +306,8 @@ ulong mmc_bread(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
 	do {
 		cur = (blocks_todo > mmc->cfg->b_max) ?
 			mmc->cfg->b_max : blocks_todo;
-		if (mmc_read_blocks(mmc, dst, start, cur) != cur) {
-			debug("%s: Failed to read blocks\n", __func__);
+		if ((err = mmc_read_blocks(mmc, dst, start, cur)) != cur) {
+			debug("%s: Failed to read blocks %i %i\n", __func__, err, cur);
 			return 0;
 		}
 		blocks_todo -= cur;

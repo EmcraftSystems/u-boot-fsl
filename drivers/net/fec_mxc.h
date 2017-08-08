@@ -265,7 +265,7 @@ void imx_get_mac_from_fuse(int dev_id, unsigned char *mac);
  * The number defines the stocked memory buffers for the receiving task.
  * Larger values makes no sense in this limited environment.
  */
-#define FEC_RBD_NUM		64
+#define FEC_RBD_NUM		16
 
 /**
  * @brief Define the ethernet packet size limit in memory
