@@ -52,7 +52,7 @@ static void BOARD_BootClockGate(void)
 {
     /* Disable all unused peripheral clock */
     CCM->CCGR0 = 0x00C0000FU;
-    CCM->CCGR1 = 0x30000000U;
+    CCM->CCGR1 = 0x30003000U;
     CCM->CCGR2 = 0x003F0030U;
     CCM->CCGR3 = 0xC0000300U;
     CCM->CCGR4 = 0x0000FF3CU;
