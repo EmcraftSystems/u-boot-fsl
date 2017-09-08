@@ -26,6 +26,11 @@
 #define PHYS_SDRAM			0x80000000
 #define PHYS_SDRAM_SIZE			(32 * 1024 * 1024)
 
+# define CONFIG_DMAMEM_SZ_ALL		(1 * 1024 * 1024)
+# define CONFIG_DMAMEM_BASE		(PHYS_SDRAM + \
+					 (PHYS_SDRAM_SIZE) - \
+					 CONFIG_DMAMEM_SZ_ALL)
+
 #define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START	PHYS_SDRAM
 #define CONFIG_SYS_MEMTEST_END      	(CONFIG_SYS_MEMTEST_START + PHYS_SDRAM_SIZE - (1024 * 1024))
@@ -100,7 +105,7 @@
 #define C1ONFIG_BOOTARGS							\
 	"console=ttyS0,115200 earlyprintk consoleblank=0 ignore_loglevel"
 #define CONFIG_BOOTARGS							\
-	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel lpj=1000"// initcall_debug"
+	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel"// initcall_debug"
 #define CONFIG_BOOTCOMMAND						\
 	""
 
