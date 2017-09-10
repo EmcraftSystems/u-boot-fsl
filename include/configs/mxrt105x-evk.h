@@ -47,10 +47,6 @@
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0x402c0000
 #define CONFIG_SYS_FSL_USDHC_NUM        1
 
-#define CONFIG_SYS_MMC_ENV_DEV          0	/* USDHC1 */
-#define CONFIG_SYS_MMC_ENV_PART         0	/* user area */
-#define CONFIG_MMCROOT                  "/dev/mmcblk0p2"  /* USDHC1 */
-#define CONFIG_SYS_MMC_IMG_LOAD_PART    1
 #define CONFIG_CMD_FAT			1
 #define CONFIG_SYS_FSL_ERRATUM_ESDHC135 1
 #define ESDHCI_QUIRK_BROKEN_TIMEOUT_VALUE
@@ -72,9 +68,6 @@
 
 #define CONFIG_CMD_MII
 
-/* allow to overwrite serial and ethaddr */
-#define CONFIG_ENV_OVERWRITE
-
 /*
  * Configuration of the external SDRAM memory
  */
@@ -84,11 +77,12 @@
 #define CONFIG_SYS_MAX_FLASH_SECT	8
 #define CONFIG_SYS_MAX_FLASH_BANKS	1
 
-#define CONFIG_ENV_IS_NOWHERE
+/* allow to overwrite serial and ethaddr */
+#define CONFIG_ENV_OVERWRITE
+
 #define CONFIG_ENV_SIZE			(8 << 10)
 
-#define CONFIG_SYS_CLK_FREQ		200000000 /* 200 MHz */
-#define CONFIG_SYS_HZ_CLOCK		1000000	/* Timer is clocked at 1MHz */
+#define CONFIG_SYS_CLK_FREQ		600000000 /* 600 MHz */
 
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
@@ -100,25 +94,28 @@
 					+ sizeof(CONFIG_SYS_PROMPT) + 16)
 
 #define CONFIG_SYS_MAXARGS		16
-#define CONFIG_SYS_MALLOC_LEN		(32 * 1024)
+#define CONFIG_SYS_MALLOC_LEN		(1 * 1024 * 1024)
 
-#define C1ONFIG_BOOTARGS							\
-	"console=ttyS0,115200 earlyprintk consoleblank=0 ignore_loglevel"
+#define CONFIG_BOOTARGS_SD							\
+	"console=root=/dev/mmcblk0p2 rw rootwait"
 #define CONFIG_BOOTARGS							\
-	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel"// initcall_debug"
+	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel " CONFIG_BOOTARGS_SD
 #define CONFIG_BOOTCOMMAND						\
 	""
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"bootargs_romfs=uclinux.physaddr=0x08180000 root=/dev/mtdblock0\0" \
-	"bootcmd_romfs=setenv bootargs ${bootargs} ${bootargs_romfs};" \
-	"bootm 0x08044000 - 0x08042000\0" \
+	"addip=setenv bootargs ${bootargs} ip=${ipaddr}:${serverip}:"	\
+	"${gatewayip}:${netmask}:${hostname}:${netdev}::off\0"		\
 	"ethaddr=aa:bb:cc:dd:ee:f0\0" \
 	"serverip=172.17.0.1\0" \
 	"ipaddr=172.17.44.111\0" \
+	"netmask=255.255.0.0\0" \
 	"image=dk/imxrt1050/uImage\0" \
 	"dtbimage=dk/imxrt1050/imxrt1050-evk.dtb\0" \
-	"t=tftp ${image}; tftp 81000000 ${dtbimage}; bootm ${loadaddr} - 81000000\0"
+	"dtb_addr=81000000\0" \
+	"mmcboot=fatload mmc 0 ${loadaddr} ${image};" \
+	" fatload mmc 0 ${dtb_addr} ${dtbimage}; run addip; bootm ${loadaddr} - ${dtb_addr}\0" \
+	"netboot=tftp ${image}; tftp ${dtb_addr} ${dtbimage}; run addip; bootm ${loadaddr} - ${dtb_addr}\0"
 
 
 /*
