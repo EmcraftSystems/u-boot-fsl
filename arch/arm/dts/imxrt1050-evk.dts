@@ -12,12 +12,16 @@
 	model = "NXP i.RT1050 EVK";
 	compatible = "nxp,imxrt1050-evk", "nxp,imxrt1050", "Generic DT based system";
 
+	#address-cells = <1>;
+	#size-cells = <1>;
+
 	chosen {
 		bootargs = "console=ttyLP0,115200 earlycon=lpuart32,0x402D0010,115200";
-		//stdout-path = &lpuart4;
+		stdout-path = "serial0:115200n8";
 	};
 
 	aliases {
+		serial0 = &lpuart1;
 		mmc0 = &usdhc0;
 		ethernet0 = &fec1;
 	};
@@ -38,29 +42,50 @@
 		reg = <0x80000000 0x02000000>;
 	};
 
-	ahbbridge0: ahb-bridge0@40000000 {
+	core_clk: core_clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <600000000>;
+	};
+
+	ipg_clk: ipg_clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <150000000>;
+	};
+
+	periph_clk: periph_clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <75000000>;
+	};
+
+	ahbbridge1: ahb-bridge0@40100000 {
 		compatible = "fsl,aips-bus", "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		reg = <0x40000000 0x800000>;
+		reg = <0x40100000 0x100000>;
 		ranges;
 
-		iomuxc1: iomuxc1@40ac0000 {
-			compatible = "fsl,imx7ulp-iomuxc-1";
-			reg = <0x40ac0000 0x1000>;
-			fsl,mux_mask = <0xf00>;
+		lpuart1: serial@40184000 {
+			compatible = "fsl,imx7ulp-lpuart";
+			reg = <0x40184010 0x1000>;
+			interrupts = <20>;
+			status = "disabled";
 		};
+	};
+
+	ahbbridge2: ahb-bridge0@40200000 {
+		compatible = "fsl,aips-bus", "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x40200000 0x100000>;
+		ranges;
 
 		usdhc0: usdhc@402C0000 {
 			compatible = "fsl,imx7ulp-usdhc";
 			reg = <0x402C0000 0x10000>;
-#if 0
-			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&clks IMX7ULP_CLK_NIC1_BUS_DIV>,
-				 <&clks IMX7ULP_CLK_NIC1_DIV>,
-				 <&clks IMX7ULP_CLK_USDHC0>;
-			clock-names ="ipg", "ahb", "per";
-#endif
+
 			bus-width = <4>;
 			fsl,tuning-start-tap = <20>;
 			fsl,tuning-step= <2>;
@@ -70,17 +95,7 @@
 		fec1: ethernet@402D8000 {
 			compatible = "fsl,imx6sx-fec", "fsl,imx6q-fec";
 			reg = <0x402D8000 0x4000>;
-#if 0
-			interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
-			<GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&clks IMX6SX_CLK_ENET>,
-			<&clks IMX6SX_CLK_ENET_AHB>,
-			<&clks IMX6SX_CLK_ENET_PTP>,
-			<&clks IMX6SX_CLK_ENET_REF>,
-			<&clks IMX6SX_CLK_ENET_PTP>;
-			clock-names = "ipg", "ahb", "ptp",
-			"enet_clk_ref", "enet_out";
-#endif
+
 			fsl,num-tx-queues=<3>;
 			fsl,num-rx-queues=<3>;
 			status = "disabled";
@@ -88,34 +103,15 @@
 	};
 };
 
-&iomuxc1 {
-	//pinctrl-names = "default";
-	//pinctrl-0 = <&pinctrl_hog_1>;
-
-	imxrt1050-evk {
-		pinctrl_usdhc0: usdhc0grp {
-			fsl,pins = <
-			>;
-		};
-	};
-};
-
 &usdhc0 {
-#if 0
-	pinctrl-names = "default", "state_100mhz", "state_200mhz", "sleep";
-	pinctrl-0 = <&pinctrl_usdhc0>;
-	pinctrl-1 = <&pinctrl_usdhc0>;
-	pinctrl-2 = <&pinctrl_usdhc0>;
-	pinctrl-3 = <&pinctrl_usdhc0>;
-	cd-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-	vmmc-supply = <&reg_vsd_3v3>;
-	vqmmc-supply = <&vldo2_reg>;
-#endif
 	status = "okay";
 };
-#if 1
+
 &fec1 {
 	status = "okay";
 	phy-mode = "rmii";
 };
-#endif
+
+&lpuart1 {
+	status = "okay";
+};

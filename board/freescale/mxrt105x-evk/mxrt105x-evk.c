@@ -25,18 +25,12 @@ status_t PHY_Init(ENET_Type *base, uint32_t phyAddr, uint32_t srcClock_Hz);
 
 int board_early_init_f(void)
 {
-	lpuart_config_t lpuart_config;
-
 	/* Init board hardware. */
 	BOARD_InitPins();
 	BOARD_BootClockRUN();
 
-	LPUART_GetDefaultConfig(&lpuart_config);
-	lpuart_config.baudRate_Bps = 115200;
-	lpuart_config.enableTx = lpuart_config.enableRx = 1;
-	/* Enable clock and initial UART module follow user configure structure. */
 	CLOCK_SetMux(kCLOCK_UartMux,1);
-	LPUART_Init(LPUART1, &lpuart_config, 6000000);
+	CLOCK_EnableClock(kCLOCK_Lpuart1);
 
 	return 0;
 }
@@ -140,7 +134,6 @@ int arch_cpu_init(void)
 int dram_init(void)
 {
 	arch_cpu_init();
-//	disable_mpu();
 	SDRAM_Init(3, 3);
 	gd->ram_top = PHYS_SDRAM;
 	gd->ram_size = PHYS_SDRAM_SIZE;
@@ -158,55 +151,9 @@ int board_late_init(void)
 	return 0;
 }
 
-static int lpuart_serial_init(void)
+u32 get_lpuart_clk(void)
 {
-	return 0;
-}
-
-static void lpuart_serial_putc(const char c)
-{
-	if (c == 0xa) {
-		const unsigned char d = 0xd;
-		LPUART_WriteBlocking(LPUART1, &d, 1);
-	}
-	LPUART_WriteBlocking(LPUART1, &c, 1);
-}
-
-static int lpuart_serial_getc(void)
-{
-	unsigned char c;
-	LPUART_ReadBlocking(LPUART1, &c, 1);
-	return c;
-}
-
-static void lpuart_serial_setbrg(void)
-{
-}
-
-static int lpuart_serial_tstc(void)
-{
-	return 0;
-}
-
-static struct serial_device lpuart_serial_drv = {
-	.name	= "lpuart_serial",
-	.start	= lpuart_serial_init,
-	.stop	= NULL,
-	.setbrg	= lpuart_serial_setbrg,
-	.putc	= lpuart_serial_putc,
-	.puts	= default_serial_puts,
-	.getc	= lpuart_serial_getc,
-	.tstc	= lpuart_serial_tstc,
-};
-
-void lpuart_serial_initialize(void)
-{
-	serial_register(&lpuart_serial_drv);
-}
-
-__weak struct serial_device *default_serial_console(void)
-{
-	return &lpuart_serial_drv;
+	return 6000000;
 }
 
 #ifdef CONFIG_FSL_ESDHC

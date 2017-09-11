@@ -96,6 +96,9 @@
 #define CONFIG_SYS_MAXARGS		16
 #define CONFIG_SYS_MALLOC_LEN		(1 * 1024 * 1024)
 
+#define CONFIG_SYS_MALLOC_F
+#define CONFIG_SYS_MALLOC_F_LEN		(32 * 1024)
+
 #define CONFIG_BOOTARGS_SD							\
 	"console=root=/dev/mmcblk0p2 rw rootwait"
 #define CONFIG_BOOTARGS							\
