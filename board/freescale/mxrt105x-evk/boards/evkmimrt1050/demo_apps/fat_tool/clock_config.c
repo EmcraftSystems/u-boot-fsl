@@ -51,10 +51,10 @@ extern uint32_t SystemCoreClock;
 static void BOARD_BootClockGate(void)
 {
     /* Disable all unused peripheral clock */
-    CCM->CCGR0 = 0x00C0000FU;
-    CCM->CCGR1 = 0x30003000U;
-    CCM->CCGR2 = 0x003F0030U;
-    CCM->CCGR3 = 0xC0000300U;
+    CCM->CCGR0 = 0xC0C0000FU;
+    CCM->CCGR1 = 0xfc003000U;
+    CCM->CCGR2 = 0x0c3F0030U;
+    CCM->CCGR3 = 0xC0003300U;
     CCM->CCGR4 = 0x0000FF3CU;
     CCM->CCGR5 = 0xF00033CFU;
     CCM->CCGR6 = 0x00FC0F00U;
