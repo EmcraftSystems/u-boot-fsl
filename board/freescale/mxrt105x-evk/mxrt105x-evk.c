@@ -126,9 +126,9 @@ int arch_cpu_init(void)
 		  STRONG_ORDER, REGION_4GB },
 		{ PHYS_SDRAM, REGION_1, XN_DIS, PRIV_RW_USR_RW,
 		  O_I_WB_RD_WR_ALLOC, (ffs(PHYS_SDRAM_SIZE) - 2) },
-		{ CONFIG_DMAMEM_BASE,
+		{ DMAMEM_BASE,
 		  REGION_2, XN_DIS, PRIV_RW_USR_RW,
-		  STRONG_ORDER, (ffs(CONFIG_DMAMEM_SZ_ALL) - 2) },
+		  STRONG_ORDER, (ffs(DMAMEM_SZ_ALL) - 2) },
 	};
 	int i;
 

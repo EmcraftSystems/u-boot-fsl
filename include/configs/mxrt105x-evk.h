@@ -26,10 +26,10 @@
 #define PHYS_SDRAM			0x80000000
 #define PHYS_SDRAM_SIZE			(32 * 1024 * 1024)
 
-# define CONFIG_DMAMEM_SZ_ALL		(1 * 1024 * 1024)
-# define CONFIG_DMAMEM_BASE		(PHYS_SDRAM + \
+#define DMAMEM_SZ_ALL			(1 * 1024 * 1024)
+#define DMAMEM_BASE			(PHYS_SDRAM + \
 					 (PHYS_SDRAM_SIZE) - \
-					 CONFIG_DMAMEM_SZ_ALL)
+					  DMAMEM_SZ_ALL)
 
 #define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START	PHYS_SDRAM
@@ -99,10 +99,10 @@
 #define CONFIG_SYS_MALLOC_F
 #define CONFIG_SYS_MALLOC_F_LEN		(32 * 1024)
 
-#define CONFIG_BOOTARGS_SD							\
+#define BOOTARGS_SD							\
 	"console=root=/dev/mmcblk0p2 rw rootwait"
 #define CONFIG_BOOTARGS							\
-	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel " CONFIG_BOOTARGS_SD
+	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel " BOOTARGS_SD
 #define CONFIG_BOOTCOMMAND						\
 	""
 
