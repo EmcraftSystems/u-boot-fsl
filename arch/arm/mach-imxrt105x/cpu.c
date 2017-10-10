@@ -32,3 +32,8 @@ int arch_cpu_init(void)
 
 	return 0;
 }
+
+int mxs_reset_block(struct mxs_register_32 *reg)
+{
+	return 0;
+}

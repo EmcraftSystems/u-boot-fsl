@@ -63,7 +63,11 @@ static void mxs_lcd_init(GraphicDevice *panel,
 	switch (bpp) {
 	case 24:
 		word_len = LCDIF_CTRL_WORD_LENGTH_24BIT;
+#if defined(CONFIG_ARCH_IMXRT105X)
+		bus_width = LCDIF_CTRL_LCD_DATABUS_WIDTH_16BIT;
+#else
 		bus_width = LCDIF_CTRL_LCD_DATABUS_WIDTH_24BIT;
+#endif
 		valid_data = 0x7;
 		break;
 	case 18:
@@ -83,6 +87,15 @@ static void mxs_lcd_init(GraphicDevice *panel,
 		break;
 	}
 
+#if defined(CONFIG_ARCH_IMXRT105X)
+	/*
+	 * Clear SFTRST before continue
+	 */
+	writel(0, &regs->hw_lcdif_ctrl);
+	while (readl(&regs->hw_lcdif_ctrl) &
+		(LCDIF_CTRL_SFTRST | LCDIF_CTRL_CLKGATE));
+#endif
+
 	writel(bus_width | word_len | LCDIF_CTRL_DOTCLK_MODE |
 		LCDIF_CTRL_BYPASS_COUNT | LCDIF_CTRL_LCDIF_MASTER,
 		&regs->hw_lcdif_ctrl);
@@ -98,6 +111,9 @@ static void mxs_lcd_init(GraphicDevice *panel,
 	writel(LCDIF_VDCTRL0_ENABLE_PRESENT | LCDIF_VDCTRL0_ENABLE_POL |
 		LCDIF_VDCTRL0_VSYNC_PERIOD_UNIT |
 		LCDIF_VDCTRL0_VSYNC_PULSE_WIDTH_UNIT |
+#if defined(CONFIG_ARCH_IMXRT105X)
+		LCDIF_VDCTRL0_DOTCLK_POL |
+#endif
 		mode->vsync_len, &regs->hw_lcdif_vdctrl0);
 	writel(mode->upper_margin + mode->lower_margin +
 		mode->vsync_len + mode->yres,

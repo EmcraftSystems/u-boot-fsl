@@ -7,4 +7,6 @@
 #ifndef _ASM_ARCH_IMX_REGS_H
 #define _ASM_ARCH_IMX_REGS_H
 
+#include <asm/mach-imx/regs-lcdif.h>
+
 #endif

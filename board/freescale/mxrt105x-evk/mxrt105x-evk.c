@@ -107,6 +107,50 @@ u32 imx_get_fecclk(void)
 }
 #endif
 
+#ifdef CONFIG_VIDEO_MXS
+static void setup_lcd(void)
+{
+	struct {
+		u32	mux_reg;
+		u32	conf_reg;
+		u32	mux_mode;
+		u32	conf_val;
+	} pin[] = {
+		{ 0x013c, 0x032c, 0x0, 0x1b0b0 }, /* PAD_B0_00_LCD_CLK */
+		{ 0x0140, 0x0330, 0x0, 0x1b0b0 }, /* PAD_B0_01_LCD_ENABLE */
+		{ 0x0144, 0x0334, 0x0, 0x1b0b0 }, /* PAD_B0_02_LCD_HSYNC */
+		{ 0x0148, 0x0338, 0x0, 0x1b0b0 }, /* PAD_B0_03_LCD_VSYNC */
+		{ 0x014c, 0x033c, 0x0, 0x1b0b0 }, /* PAD_B0_04_LCD_DATA00 */
+		{ 0x0150, 0x0340, 0x0, 0x1b0b0 }, /* PAD_B0_05_LCD_DATA01 */
+		{ 0x0154, 0x0344, 0x0, 0x1b0b0 }, /* PAD_B0_06_LCD_DATA02 */
+		{ 0x0158, 0x0348, 0x0, 0x1b0b0 }, /* PAD_B0_07_LCD_DATA03 */
+		{ 0x015c, 0x034c, 0x0, 0x1b0b0 }, /* PAD_B0_08_LCD_DATA04 */
+		{ 0x0160, 0x0350, 0x0, 0x1b0b0 }, /* PAD_B0_09_LCD_DATA05 */
+		{ 0x0164, 0x0354, 0x0, 0x1b0b0 }, /* PAD_B0_10_LCD_DATA06 */
+		{ 0x0168, 0x0358, 0x0, 0x1b0b0 }, /* PAD_B0_11_LCD_DATA07 */
+		{ 0x016c, 0x035c, 0x0, 0x1b0b0 }, /* PAD_B0_12_LCD_DATA08 */
+		{ 0x0170, 0x0360, 0x0, 0x1b0b0 }, /* PAD_B0_13_LCD_DATA09 */
+		{ 0x0174, 0x0364, 0x0, 0x1b0b0 }, /* PAD_B0_14_LCD_DATA10 */
+		{ 0x0178, 0x0368, 0x0, 0x1b0b0 }, /* PAD_B0_15_LCD_DATA11 */
+		{ 0x017c, 0x036c, 0x0, 0x1b0b0 }, /* PAD_B1_00_LCD_DATA12 */
+		{ 0x0180, 0x0370, 0x0, 0x1b0b0 }, /* PAD_B1_01_LCD_DATA13 */
+		{ 0x0184, 0x0374, 0x0, 0x1b0b0 }, /* PAD_B1_02_LCD_DATA14 */
+		{ 0x0188, 0x0378, 0x0, 0x1b0b0 }, /* PAD_B1_03_LCD_DATA15 */
+
+		{ 0x01b8, 0x03a8, 0x5, 0x0b069 }, /* PAD_B1_15_GPIO2_IO31 */
+		{ 0x00c4, 0x02b4, 0x5, 0x0b069 }, /* PAD_AD_B0_02_GPIO1_IO02 */
+	};
+
+	int i;
+
+	/* Configure IOMUX */
+	for (i = 0; i < ARRAY_SIZE(pin); i++) {
+		writel(pin[i].mux_mode, IOMUXC_BASE + pin[i].mux_reg);
+		writel(pin[i].conf_val, IOMUXC_BASE + pin[i].conf_reg);
+	}
+}
+#endif /* CONFIG_VIDEO_MXS */
+
 int get_board_rev(void)
 {
 	return 2;
@@ -130,6 +174,10 @@ int dram_init(void)
 
 int board_init(void)
 {
+#ifdef CONFIG_VIDEO_MXS
+	setup_lcd();
+#endif
+
 	return 0;
 }
 
