@@ -68,6 +68,17 @@
 
 #define CONFIG_CMD_MII
 
+/* LCD */
+#ifdef CONFIG_VIDEO
+#define MXS_LCDIF_BASE			0x402B8000
+#define CONFIG_VIDEO_MXS
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+#define CONFIG_SPLASH_SCREEN
+#define CONFIG_SPLASH_SCREEN_ALIGN
+#define CONFIG_CMD_BMP
+#define CONFIG_BMP_16BPP
+#endif
+
 /*
  * Configuration of the external SDRAM memory
  */
@@ -103,22 +114,31 @@
 	"console=root=/dev/mmcblk0p2 rw rootwait"
 #define CONFIG_BOOTARGS							\
 	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel " BOOTARGS_SD
+
 #define CONFIG_BOOTCOMMAND						\
-	""
+	"run mmcboot"
+
+#define CONFIG_PREBOOT \
+	"fatload mmc 0 ${loadaddr} ${bmp} && bmp display ${loadaddr}"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	"videomode=video=ctfb:x:480,y:272,depth:24,pclk:9300000,le:4,"	\
+		"ri:8,up:4,lo:8,hs:41,vs:10,sync:0,vmode:0\0"		\
 	"addip=setenv bootargs ${bootargs} ip=${ipaddr}:${serverip}:"	\
 	"${gatewayip}:${netmask}:${hostname}:${netdev}::off\0"		\
 	"ethaddr=aa:bb:cc:dd:ee:f0\0" \
 	"serverip=172.17.0.1\0" \
 	"ipaddr=172.17.44.111\0" \
 	"netmask=255.255.0.0\0" \
-	"image=dk/imxrt1050/uImage\0" \
-	"dtbimage=dk/imxrt1050/imxrt1050-evk.dtb\0" \
+	"image=uimage\0" \
+	"dtb=dtb\0" \
+	"bmp=bmp\0" \
 	"dtb_addr=81000000\0" \
-	"mmcboot=fatload mmc 0 ${loadaddr} ${image};" \
-	" fatload mmc 0 ${dtb_addr} ${dtbimage}; run addip; bootm ${loadaddr} - ${dtb_addr}\0" \
-	"netboot=tftp ${image}; tftp ${dtb_addr} ${dtbimage}; run addip; bootm ${loadaddr} - ${dtb_addr}\0"
+	"mmcboot=fatload mmc 0 ${loadaddr} ${image} && " \
+	" fatload mmc 0 ${dtb_addr} ${dtb} && run addip && "\
+	" bootm ${loadaddr} - ${dtb_addr}\0" \
+	"netboot=tftp ${image} && tftp ${dtb_addr} ${dtb} && " \
+	" run addip; bootm ${loadaddr} - ${dtb_addr}\0"
 
 
 /*
