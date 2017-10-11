@@ -20,6 +20,16 @@
 #define CONFIG_SYS_ARCH_TIMER
 
 #define CONFIG_SYS_TEXT_BASE		0x00001000
+
+/*
+ * To get Image data right at the 'Load Address' (0x80008000), and thus avoid
+ * additional uImage relocation:
+ * - 0x80007fc0 reserve place for uImage header; two separate image/dtb files
+ * - 0x80007fb4 reserve place for 2-files multi-image header; one image+dtb file
+ *
+ * Note, that unaligned address can't be used when load from FAT as this results
+ * to the slow copy path (and 'FAT: Misaligned buffer address') in fs/fat/fat.c.
+ */
 #define CONFIG_SYS_LOAD_ADDR		0x80007fc0
 #define CONFIG_LOADADDR			0x80007fc0
 
@@ -131,14 +141,10 @@
 	"ipaddr=172.17.44.111\0" \
 	"netmask=255.255.0.0\0" \
 	"image=uimage\0" \
-	"dtb=dtb\0" \
 	"bmp=bmp\0" \
-	"dtb_addr=81000000\0" \
-	"mmcboot=fatload mmc 0 ${loadaddr} ${image} && " \
-	" fatload mmc 0 ${dtb_addr} ${dtb} && run addip && "\
-	" bootm ${loadaddr} - ${dtb_addr}\0" \
-	"netboot=tftp ${image} && tftp ${dtb_addr} ${dtb} && " \
-	" run addip; bootm ${loadaddr} - ${dtb_addr}\0"
+	"mmcboot=fatload mmc 0 ${loadaddr} ${image} && run addip &&"	\
+	" bootm ${loadaddr}\0" \
+	"netboot=tftp ${image} && run addip; bootm ${loadaddr}\0"
 
 
 /*
