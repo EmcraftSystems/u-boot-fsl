@@ -43,6 +43,12 @@ config OF_LIVE
 	  enables a live tree which is available after relocation,
 	  and can be adjusted as needed.
 
+config OF_FORCE_RELOCATE
+	bool "Force dtb relocation"
+	help
+	  Move dtb to the end of bootmap before passing control to OS. You may
+	  set `fdt_no_force_reloc` environment variable to avoid relocation
+
 choice
 	prompt "Provider of DTB for DT control"
 	depends on OF_CONTROL

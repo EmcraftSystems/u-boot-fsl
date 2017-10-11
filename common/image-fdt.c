@@ -165,6 +165,16 @@ int boot_relocate_fdt(struct lmb *lmb, char **of_flat_tree, ulong *of_size)
 		goto error;
 	}
 
+#if defined(CONFIG_OF_FORCE_RELOCATE)
+	/*
+	 * If force dtb relocation is requested, then move dtb to the bootmap
+	 * end. You may want to avoid such force relocation if booting dtb
+	 * separately (i.e. not as a part of multi-image)
+	 */
+	if (!getenv ("fdt_no_force_reloc"))
+		disable_relocation = 0;
+#endif
+
 	if (disable_relocation) {
 		/*
 		 * We assume there is space after the existing fdt to use
@@ -389,16 +399,17 @@ int boot_get_fdt(int flag, int argc, char * const argv[], uint8_t arch,
 	} else if (images->legacy_hdr_valid &&
 			image_check_type(&images->legacy_hdr_os_copy,
 					 IH_TYPE_MULTI)) {
-		ulong fdt_data, fdt_len;
+		ulong fdt_data, fdt_len, idx;
 
 		/*
 		 * Now check if we have a legacy multi-component image,
-		 * get second entry data start address and len.
+		 * get the appropriate entry data start address and len.
 		 */
 		printf("## Flattened Device Tree from multi component Image at %08lX\n",
 		       (ulong)images->legacy_hdr_os);
 
-		image_multi_getimg(images->legacy_hdr_os, 2, &fdt_data,
+		idx = (image_multi_count (images->legacy_hdr_os) == 2) ? 1 : 2;
+		image_multi_getimg(images->legacy_hdr_os, idx, &fdt_data,
 				   &fdt_len);
 		if (fdt_len) {
 			fdt_blob = (char *)fdt_data;

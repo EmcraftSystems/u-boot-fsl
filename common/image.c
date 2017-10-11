@@ -1041,10 +1041,13 @@ int boot_get_ramdisk(int argc, char * const argv[], bootm_headers_t *images,
 		select = argv[1];
 
 	/*
-	 * Look for a '-' which indicates to ignore the
-	 * ramdisk argument
+	 * Look for a '-' which indicates to ignore the ramdisk argument.
+	 * Also skip ramdisk if multi-image consists of 2 files (image+dtb).
 	 */
-	if (select && strcmp(select, "-") ==  0) {
+	if ((select && strcmp(select, "-") ==  0) ||
+	    (images->legacy_hdr_valid &&
+	     image_check_type(&images->legacy_hdr_os_copy, IH_TYPE_MULTI) &&
+	     image_multi_count(images->legacy_hdr_os) == 2)) {
 		debug("## Skipping init Ramdisk\n");
 		rd_len = rd_data = 0;
 	} else if (select || genimg_has_config(images)) {

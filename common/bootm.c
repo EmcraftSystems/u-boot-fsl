@@ -454,7 +454,9 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 
 	no_overlap = (os.comp == IH_COMP_NONE && load == image_start);
 
-	if (!no_overlap && (load < blob_end) && (*load_end > blob_start)) {
+	/* Warn about overlap only if we could really corrupt adjacing imgs */
+	if (!no_overlap && (load < blob_end) && (*load_end > blob_start) &&
+	    (load > image_start || *load_end > os.image_start + os.image_len)) {
 		debug("images.os.start = 0x%lX, images.os.end = 0x%lx\n",
 		      blob_start, blob_end);
 		debug("images.os.load = 0x%lx, load_end = 0x%lx\n", load,
