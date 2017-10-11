@@ -120,10 +120,8 @@
 #define CONFIG_SYS_MALLOC_F
 #define CONFIG_SYS_MALLOC_F_LEN		(32 * 1024)
 
-#define BOOTARGS_SD							\
-	"console=root=/dev/mmcblk0p2 rw rootwait"
 #define CONFIG_BOOTARGS							\
-	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel " BOOTARGS_SD
+	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel "
 
 #define CONFIG_BOOTCOMMAND						\
 	"run mmcboot"
@@ -135,7 +133,7 @@
 	"videomode=video=ctfb:x:480,y:272,depth:24,pclk:9300000,le:4,"	\
 		"ri:8,up:4,lo:8,hs:41,vs:10,sync:0,vmode:0\0"		\
 	"addip=setenv bootargs ${bootargs} ip=${ipaddr}:${serverip}:"	\
-	"${gatewayip}:${netmask}:${hostname}:${netdev}::off\0"		\
+	"${gatewayip}:${netmask}:${hostname}:eth0:off\0"		\
 	"ethaddr=aa:bb:cc:dd:ee:f0\0" \
 	"serverip=172.17.0.1\0" \
 	"ipaddr=172.17.44.111\0" \
