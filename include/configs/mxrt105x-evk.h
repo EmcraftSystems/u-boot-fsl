@@ -127,23 +127,31 @@
 	"run mmcboot"
 
 #define CONFIG_PREBOOT \
-	"fatload mmc 0 ${loadaddr} ${bmp} && bmp display ${loadaddr}"
+	"fatload mmc 0 ${loadaddr} ${splash} && bmp display ${loadaddr}"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"videomode=video=ctfb:x:480,y:272,depth:24,pclk:9300000,le:4,"	\
 		"ri:8,up:4,lo:8,hs:41,vs:10,sync:0,vmode:0\0"		\
 	"addip=setenv bootargs ${bootargs} ip=${ipaddr}:${serverip}:"	\
-	"${gatewayip}:${netmask}:${hostname}:eth0:off\0"		\
+		"${gatewayip}:${netmask}:${hostname}:eth0:off\0"	\
 	"ethaddr=aa:bb:cc:dd:ee:f0\0" \
 	"serverip=172.17.0.1\0" \
 	"ipaddr=172.17.44.111\0" \
 	"netmask=255.255.0.0\0" \
-	"image=uimage\0" \
-	"bmp=bmp\0" \
+	"image=rootfs.uImage\0" \
+	"splash=splash-rt1050-series_24.bmp\0" \
+	"uboot=u-boot-dtb.imx\0" \
+	"tftpdir=imxrt105x/\0" \
 	"mmcboot=fatload mmc 0 ${loadaddr} ${image} && run addip &&"	\
-	" bootm ${loadaddr}\0" \
-	"netboot=tftp ${image} && run addip; bootm ${loadaddr}\0"
-
+		" bootm ${loadaddr}\0" \
+	"netboot=tftp ${tftpdir}${image} && run addip; bootm ${loadaddr}\0" \
+	"mmc_update_uboot=tftp ${tftpdir}${uboot} &&" \
+		" setexpr tmp ${filesize} / 0x200 && setexpr tmp ${tmp} + 1 &&"\
+		" mmc write ${loadaddr} 2 ${tmp}\0" \
+	"mmc_update_kernel=tftp ${tftpdir}${image} &&" \
+		" fatwrite mmc 0 ${loadaddr} ${image} ${filesize}\0" \
+	"mmc_update_splash=tftp ${tftpdir}${splash} &&" \
+		" fatwrite mmc 0 ${loadaddr} ${splash} ${filesize}\0"
 
 /*
  * Command line configuration.
