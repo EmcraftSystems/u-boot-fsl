@@ -127,7 +127,8 @@
 	"run mmcboot"
 
 #define CONFIG_PREBOOT \
-	"fatload mmc 0 ${loadaddr} ${splash} && bmp display ${loadaddr}"
+	"fatload mmc 0 ${loadaddr} ${splash} && bmp display ${loadaddr};" \
+	"fatexec mmc 0 ${ini}"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"videomode=video=ctfb:x:480,y:272,depth:24,pclk:9300000,le:4,"	\
@@ -138,6 +139,7 @@
 	"serverip=172.17.0.1\0" \
 	"ipaddr=172.17.44.111\0" \
 	"netmask=255.255.0.0\0" \
+	"ini=mxrt105x-evk.ini\0" \
 	"image=rootfs.uImage\0" \
 	"splash=splash-rt1050-series_24.bmp\0" \
 	"uboot=u-boot-dtb.imx\0" \
