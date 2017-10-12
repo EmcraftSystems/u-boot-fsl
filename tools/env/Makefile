@@ -20,6 +20,8 @@ ifeq ($(MTD_VERSION),old)
 HOST_EXTRACFLAGS += -DMTD_OLD
 endif
 
+HOSTLDFLAGS += $(HOST_EXTRALDFLAGS)
+
 always := fw_printenv
 hostprogs-y := fw_printenv
 
