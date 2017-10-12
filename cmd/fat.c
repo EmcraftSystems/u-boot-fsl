@@ -18,6 +18,9 @@
 #include <part.h>
 #include <fat.h>
 #include <fs.h>
+#include <malloc.h>
+#include <cli_hush.h>
+#include <linux/ctype.h>
 
 int do_fat_size(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -95,6 +98,89 @@ U_BOOT_CMD(
 	"print information about filesystem",
 	"<interface> [<dev[:part]>]\n"
 	"    - print information about filesystem from 'dev' on 'interface'"
+);
+
+
+int do_fat_fsexec (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	unsigned long size;
+	char *p, *q, *str, *buf = NULL;
+	char cmd[128];
+	int skip, rv = CMD_RET_FAILURE;
+
+	if (argc != 4) {
+		rv = CMD_RET_USAGE;
+		goto out;
+	}
+
+	/*
+	 * Read file to the intermediate buffer
+	 */
+	p = (char *)simple_strtoul(getenv("loadaddr"), NULL, 16);
+	if (!p)
+		p = (char *)CONFIG_SYS_LOAD_ADDR;
+	setenv("filesize", "0");
+
+	sprintf(cmd, "fatload %s %s %p %s", argv[1], argv[2], p, argv[3]);
+	run_command(cmd, 0);
+
+	size = getenv_ulong("filesize", 16, 0);
+	if (!size) {
+		printf("%s not found or empty\n", argv[3]);
+		goto out;
+	}
+
+	buf = malloc(size + 1);
+	if (!buf) {
+		printf("failed malloc(%ld)\n", size + 1);
+		goto out;
+	}
+	memcpy(buf, p, size);
+	buf[size] = 0;
+
+	/*
+	 * Walk through the command list, and execute them
+	 */
+	p = buf;
+	while (p) {
+		str = strsep(&p, "\r\n");
+
+		for (q = str, skip = 1; *q; q++) {
+			if (isblank(*q))
+				continue;
+			if (isalnum(*q)) {
+				skip = 0;
+				break;
+			}
+			if (ispunct(*q))
+				break;
+		}
+		if (skip)
+			continue;
+
+		printf("%s: '%s'\n", argv[0], q);
+
+#ifdef CONFIG_HUSH_PARSER
+		parse_string_outer(q, FLAG_PARSE_SEMICOLON |
+				      FLAG_EXIT_FROM_LOOP);
+#else
+		run_command(q, 0);
+#endif
+	}
+	rv = CMD_RET_SUCCESS;
+out:
+	if (buf)
+		free(buf);
+	return rv;
+}
+
+
+U_BOOT_CMD(
+	fatexec,	4,	0,	do_fat_fsexec,
+	"execute U-Boot commands from the text file in a dos filesystem",
+	"<interface> <dev[:part]> <filename>\n"
+	"    - Load command file 'filename' from 'dev' on 'interface'\n"
+	"      from dos filesystem."
 );
 
 #ifdef CONFIG_FAT_WRITE
