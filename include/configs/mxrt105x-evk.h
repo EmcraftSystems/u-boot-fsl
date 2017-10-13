@@ -144,6 +144,7 @@
 	"splash=splash-rt1050-series_24.bmp\0" \
 	"uboot=u-boot-dtb.imx\0" \
 	"tftpdir=imxrt105x/\0" \
+	"gui=/crankdemo/gui.sh\0" \
 	"mmcboot=fatload mmc 0 ${loadaddr} ${image} && run addip &&"	\
 		" bootm ${loadaddr}\0" \
 	"netboot=tftp ${tftpdir}${image} && run addip; bootm ${loadaddr}\0" \
