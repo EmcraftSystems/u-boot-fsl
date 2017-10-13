@@ -125,10 +125,8 @@ int do_fat_fsexec (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	run_command(cmd, 0);
 
 	size = getenv_ulong("filesize", 16, 0);
-	if (!size) {
-		printf("%s not found or empty\n", argv[3]);
+	if (!size)
 		goto out;
-	}
 
 	buf = malloc(size + 1);
 	if (!buf) {
