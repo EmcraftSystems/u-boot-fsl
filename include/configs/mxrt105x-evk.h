@@ -145,6 +145,7 @@
 	"uboot=u-boot-dtb.imx\0" \
 	"tftpdir=imxrt105x/\0" \
 	"gui=/crankdemo/gui.sh\0" \
+	"ssh=yes\0" \
 	"mmcboot=fatload mmc 0 ${loadaddr} ${image} && run addip &&"	\
 		" bootm ${loadaddr}\0" \
 	"netboot=tftp ${tftpdir}${image} && run addip; bootm ${loadaddr}\0" \
