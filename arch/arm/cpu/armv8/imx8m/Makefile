@@ -5,6 +5,6 @@
 #
 
 obj-y	+= lowlevel_init.o
+
 obj-y	+= clock.o clock_slice.o soc.o
 obj-$(CONFIG_VIDEO_IMXDCSS) += video_common.o
-

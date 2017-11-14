@@ -9,4 +9,5 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "imx8m_som"
 
+source "board/emcraft/imx8m_som/ddr/Kconfig"
 endif

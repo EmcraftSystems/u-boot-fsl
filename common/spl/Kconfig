@@ -317,6 +317,12 @@ config SPL_I2C_SUPPORT
 	  Enable this option to build the drivers in drivers/i2c as part of
 	  an SPL build.
 
+config SPL_DDR_SUPPORT
+	bool "Support ddr initial"
+	depends on SPL
+	help
+	  Enable support for the DDRC in SPL.
+
 config SPL_LIBCOMMON_SUPPORT
 	bool "Support common libraries"
 	depends on SPL
