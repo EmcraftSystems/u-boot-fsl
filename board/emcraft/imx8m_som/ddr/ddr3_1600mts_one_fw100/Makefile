@@ -1,13 +1,11 @@
 #
 # Copyright 2016 Freescale Semiconductor
-# Copyright 2017 EmCraft Systems
 #
 # SPDX-License-Identifier:      GPL-2.0+
 #
 
-obj-y += imx8m_som.o
 
 ifdef CONFIG_SPL_BUILD
-obj-y += spl.o
-obj-$(CONFIG_SPL_DDR_SUPPORT) += ddr/
+obj-y += ddr3_pub_train_1600mts.o 
+obj-y += ddr3_phyinit_train_1600mts.o
 endif

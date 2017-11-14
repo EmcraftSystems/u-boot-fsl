@@ -22,15 +22,23 @@
 #include <asm/imx-common/mxc_i2c.h>
 #include <fsl_esdhc.h>
 #include <mmc.h>
-#include "ddr/lpddr4.h"
+
+void lpddr4_pub_train_3200mts(void);
+void ddr3_pub_train_1600mts(void);
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifdef CONFIG_SPL_DDR_SUPPORT
 void spl_dram_init(void)
 {
 	/* ddr train */
-	lpddr4_pub_train();
+#if defined(CONFIG_LPDDR4_3200MTS_TWO_FW_100)
+	lpddr4_pub_train_3200mts();
+#elif defined(CONFIG_DDR3_1600MTS_ONE_FW_100)
+	ddr3_pub_train_1600mts();
+#endif
 }
+#endif
 
 #define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE)
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
@@ -188,8 +196,10 @@ void spl_board_init(void)
 
 	power_init_board();
 
+#ifdef CONFIG_SPL_DDR_SUPPORT
 	/* DDR initialization */
 	spl_dram_init();
+#endif
 
 	/* Serial download mode */
 	if (is_usb_boot()) {

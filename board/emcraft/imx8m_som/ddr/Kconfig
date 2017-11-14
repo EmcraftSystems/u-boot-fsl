@@ -1,0 +1,28 @@
+if SPL_DDR_SUPPORT
+
+choice
+	prompt "ddr phy fw select"
+	default DDR3_FW_100
+
+config LPDDR4_FW_100
+	bool "lpddr4 phy fw100"
+
+config DDR3_FW_100
+	bool "ddr3 phy fw100"
+
+endchoice
+
+choice
+	prompt "ddr initial select"
+	default DDR3_1600MTS_ONE_FW_100
+
+config LPDDR4_3200MTS_TWO_FW_100
+	bool "lpddr4 3200mts two rank fw100"
+	depends on LPDDR4_FW_100
+
+config DDR3_1600MTS_ONE_FW_100
+	bool "ddr3 1600mts one rank fw100"
+	depends on DDR3_FW_100
+endchoice
+
+endif

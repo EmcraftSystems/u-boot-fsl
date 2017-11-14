@@ -18,6 +18,7 @@
 *.elf
 *.swp
 *.bin
+!*mem*.bin
 *.patch
 *.cfgtmp
 
