@@ -822,6 +822,7 @@ static int esdhc_set_voltage(struct mmc *mmc)
 	case MMC_SIGNAL_VOLTAGE_330:
 		if (priv->vs18_enable)
 			return -EIO;
+#if CONFIG_IS_ENABLED(DM_REGULATOR)
 		if (!IS_ERR_OR_NULL(priv->vqmmc_dev)) {
 			ret = regulator_set_value(priv->vqmmc_dev, 3300000);
 			if (ret) {
@@ -831,12 +832,14 @@ static int esdhc_set_voltage(struct mmc *mmc)
 			/* Wait for 5ms */
 			mdelay(5);
 		}
+#endif
 		esdhc_clrbits32(&regs->vendorspec, ESDHC_VENDORSPEC_VSELECT);
 		if (!(esdhc_read32(&regs->vendorspec) & ESDHC_VENDORSPEC_VSELECT))
 			return 0;
 
 		return -EAGAIN;
 	case MMC_SIGNAL_VOLTAGE_180:
+#if CONFIG_IS_ENABLED(DM_REGULATOR)
 		if (!IS_ERR_OR_NULL(priv->vqmmc_dev)) {
 			ret = regulator_set_value(priv->vqmmc_dev, 1800000);
 			if (ret) {
@@ -844,6 +847,7 @@ static int esdhc_set_voltage(struct mmc *mmc)
 				return -EIO;
 			}
 		}
+#endif
 		esdhc_setbits32(&regs->vendorspec, ESDHC_VENDORSPEC_VSELECT);
 		if (esdhc_read32(&regs->vendorspec) & ESDHC_VENDORSPEC_VSELECT)
 			return 0;

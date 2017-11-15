@@ -15,8 +15,7 @@
 #include <asm/arch/imx8mq_pins.h>
 #include <asm/arch/sys_proto.h>
 #include <power/pmic.h>
-#include <power/pfuze100_pmic.h>
-#include "../common/pfuze.h"
+#include <power/bd71837_pmic.h>
 #include <asm/arch/clock.h>
 #include <asm/imx-common/gpio.h>
 #include <asm/imx-common/mxc_i2c.h>
@@ -153,37 +152,47 @@ int board_mmc_init(bd_t *bis)
 }
 
 #ifdef CONFIG_POWER
-#define I2C_PMIC	0
 int power_init_board(void)
 {
 	struct pmic *p;
-	int ret;
-	unsigned int reg;
+	int rv;
 
-	ret = power_pfuze100_init(I2C_PMIC);
-	if (ret)
-		return -ENODEV;
-
-	p = pmic_get("PFUZE100");
-	ret = pmic_probe(p);
-	if (ret)
-		return -ENODEV;
-
-	pmic_reg_read(p, PFUZE100_DEVICEID, &reg);
-	printf("PMIC:  PFUZE100 ID=0x%02x\n", reg);
-
-	pmic_reg_read(p, PFUZE100_SW3AVOL, &reg);
-	if ((reg & 0x3f) != 0x18) {
-		reg &= ~0x3f;
-		reg |= 0x18;
-		pmic_reg_write(p, PFUZE100_SW3AVOL, reg);
+	/*
+	 * Init PMIC
+	 */
+	rv = power_bd71837_init(CONFIG_POWER_BD71837_I2C_BUS);
+	if (rv) {
+		printf("%s: power_bd71837_init(%d) error %d\n", __func__,
+			CONFIG_POWER_BD71837_I2C_BUS, rv);
+		goto out;
 	}
 
-	ret = pfuze_mode_init(p, APS_PFM);
-	if (ret < 0)
-		return ret;
+	p = pmic_get(BD71837_NAME);
+	if (!p) {
+		printf("%s: pmic_get(%s) failed\n", __func__, BD71837_NAME);
+		rv = -ENODEV;
+		goto out;
+	}
 
-	return 0;
+	rv = pmic_probe(p);
+	if (rv) {
+		printf("%s: pmic_probe() error %d\n", __func__, rv);
+		goto out;
+	}
+
+	/*
+	 * Reconfigure default voltages:
+	 * - BUCK8: VDD_DRAM_1V35 (1.10 -> 1.35)
+	 * - BUCK3: VDD_GPU_0V9 (1.00 -> 0.90)
+	 * - BUCK4: VDD_VPU_0V9 (1.00 -> 0.90)
+	 */
+	pmic_reg_write(p, BD71837_REG_BUCK8_VOLT, 0x37);
+	pmic_reg_write(p, BD71837_REG_BUCK3_VOLT_RUN, 0x14);
+	pmic_reg_write(p, BD71837_REG_BUCK4_VOLT_RUN, 0x14);
+
+	rv = 0;
+out:
+	return rv;
 }
 #endif
 
