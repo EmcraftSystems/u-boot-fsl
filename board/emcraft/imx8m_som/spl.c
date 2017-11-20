@@ -155,7 +155,10 @@ int board_mmc_init(bd_t *bis)
 int power_init_board(void)
 {
 	struct pmic *p;
-	int rv;
+	int ldo[] = {BD71837_REG_LDO5_VOLT, BD71837_REG_LDO6_VOLT,
+		     BD71837_REG_LDO7_VOLT};
+	u32 val;
+	int i, rv;
 
 	/*
 	 * Init PMIC
@@ -189,6 +192,20 @@ int power_init_board(void)
 	pmic_reg_write(p, BD71837_REG_BUCK8_VOLT, 0x37);
 	pmic_reg_write(p, BD71837_REG_BUCK3_VOLT_RUN, 0x14);
 	pmic_reg_write(p, BD71837_REG_BUCK4_VOLT_RUN, 0x14);
+
+	/*
+	 * Enable PHYs voltages: LDO5-7
+	 */
+	for (i = 0; i < ARRAY_SIZE(ldo); i++) {
+		rv = pmic_reg_read(p, ldo[i], &val);
+		if (rv) {
+			printf("%s: pmic_read(%x) error %d\n", __func__,
+				ldo[i], rv);
+			continue;
+		}
+
+		pmic_reg_write(p, ldo[i], val | LDO_VOLT_EN);
+	}
 
 	rv = 0;
 out:

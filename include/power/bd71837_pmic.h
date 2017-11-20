@@ -11,6 +11,11 @@
 #define BD71837_NAME			"BD71837"
 
 /*
+ * LDOx_VOLT fields
+ */
+#define LDO_VOLT_EN			(1 << 6)
+
+/*
  * BD71837 registers
  */
 enum {
