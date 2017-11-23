@@ -30,5 +30,6 @@ obj-$(CONFIG_$(SPL_TPL_)SATA_SUPPORT) += spl_sata.o
 obj-$(CONFIG_$(SPL_TPL_)DFU_SUPPORT) += spl_dfu.o
 obj-$(CONFIG_$(SPL_TPL_)SPI_LOAD) += spl_spi.o
 obj-$(CONFIG_$(SPL_TPL_)RAM_SUPPORT) += spl_ram.o
+obj-$(CONFIG_$(SPL_TPL_)SHELL_SUPPORT) += spl_shell.o
 obj-$(CONFIG_$(SPL_TPL_)USB_SDP_SUPPORT) += spl_sdp.o
 endif

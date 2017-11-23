@@ -434,6 +434,11 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	spl_board_init();
 #endif
 
+#ifdef CONFIG_SPL_SHELL_SUPPORT
+	if (spl_shell_init() == -12)
+		puts("spl shell exit\n");
+#endif
+
 	memset(&spl_image, '\0', sizeof(spl_image));
 #ifdef CONFIG_SYS_SPL_ARGS_ADDR
 	spl_image.arg = (void *)CONFIG_SYS_SPL_ARGS_ADDR;
