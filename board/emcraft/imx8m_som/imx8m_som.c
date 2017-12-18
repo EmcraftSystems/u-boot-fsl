@@ -62,8 +62,14 @@ int board_qspi_init(void)
 #endif
 
 static iomux_v3_cfg_t const uart_pads[] = {
+#if defined(CONFIG_MXC_UART_BASE)
 	IMX8MQ_PAD_UART1_RXD__UART1_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 	IMX8MQ_PAD_UART1_TXD__UART1_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+#if (CONFIG_MXC_UART_BASE == UART3_BASE_ADDR)
+	IMX8MQ_PAD_UART3_RXD__UART3_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+	IMX8MQ_PAD_UART3_TXD__UART3_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+#endif
+#endif
 };
 
 int board_early_init_f(void)
