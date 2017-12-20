@@ -132,6 +132,9 @@ static void shell_mmc_read(const char *args);
 static void shell_mmc_write(const char *args);
 static void shell_mmc_erase(const char *args);
 #endif
+#ifdef CONFIG_SPL_THERM_SUPPORT
+static void shell_therm(const char *args);
+#endif
 
 // ------------------------------------------------------------------ 
 // Desc: prototype of public functions
@@ -187,6 +190,9 @@ Shell_Status spl_shell_init(void)
 	shell_addCommand("mmc.read",	"read block (arg: [blk#])",		shell_mmc_read);
 	shell_addCommand("mmc.write",	"write block (arg: [blk#] [ival])",	shell_mmc_write);
 	shell_addCommand("mmc.erase",	"erase block (arg: [blk#])",		shell_mmc_erase);
+#endif
+#ifdef CONFIG_SPL_THERM_SUPPORT
+	shell_addCommand("therm",	"get temperature",			shell_therm);
 #endif
 
 	initialized = true;
@@ -2193,3 +2199,146 @@ static void shell_mmc_erase(const char *args)
 }
 
 #endif /* CONFIG_SPL_MMC_CMD_SUPPORT */
+
+#ifdef CONFIG_SPL_THERM_SUPPORT
+
+#define TMU_REGS_BASE	0x30260000
+#define TMU_SENSOR_ID	0
+
+#define __REG(x)	(*((volatile u32 *)(&(x))))
+
+/*
+ * QorIQ TMU Registers
+ */
+struct qoriq_tmu_site_regs {
+#define TRITSR_DATA	0xFF
+#define TRITSR_READY	(1 << 31)
+	u32 tritsr;		/* Immediate Temperature Site Register */
+	u32 tratsr;		/* Average Temperature Site Register */
+	u8 res0[0x8];
+};
+
+struct qoriq_tmu_regs {
+	u32 tmr;		/* Mode Register */
+#define TMR_DISABLE	0x0
+#define TMR_ME		0x80000000
+#define TMR_ALPF	0x0c000000
+	u32 tsr;		/* Status Register */
+	u32 tmtmir;		/* Temperature measurement interval Register */
+#define TMTMIR_DEFAULT	0x0000000f
+	u8 res0[0x14];
+	u32 tier;		/* Interrupt Enable Register */
+#define TIER_DISABLE	0x0
+	u32 tidr;		/* Interrupt Detect Register */
+	u32 tiscr;		/* Interrupt Site Capture Register */
+	u32 ticscr;		/* Interrupt Critical Site Capture Register */
+	u8 res1[0x10];
+	u32 tmhtcrh;		/* High Temperature Capture Register */
+	u32 tmhtcrl;		/* Low Temperature Capture Register */
+	u8 res2[0x8];
+	u32 tmhtitr;		/* High Temperature Immediate Threshold */
+	u32 tmhtatr;		/* High Temperature Average Threshold */
+	u32 tmhtactr;	/* High Temperature Average Crit Threshold */
+	u8 res3[0x24];
+	u32 ttcfgr;		/* Temperature Configuration Register */
+	u32 tscfgr;		/* Sensor Configuration Register */
+	u8 res4[0x78];
+	struct qoriq_tmu_site_regs site[16];
+	u8 res5[0x9f8];
+	u32 ipbrr0;		/* IP Block Revision Register 0 */
+	u32 ipbrr1;		/* IP Block Revision Register 1 */
+	u8 res6[0x310];
+	u32 ttrxcr[4];		/* Temperature Range 0-3 Control Registers */
+};
+
+static void shell_therm(const char *args)
+{
+	static int tmu_inited;
+
+	volatile struct qoriq_tmu_regs *regs = (void *)TMU_REGS_BASE;
+	uint32_t val;
+	int i;
+
+	/*
+	 * If cmd is running for the first time, then init and calibrate
+	 */
+	if (!tmu_inited) {
+		static uint32_t rng[] = {
+			0xb0000, 0xa0026, 0x80048, 0x70061
+		};
+		static uint32_t clb[] = {
+			0x00000000, 0x00000023,
+			0x00000001, 0x00000029,
+			0x00000002, 0x0000002f,
+			0x00000003, 0x00000035,
+			0x00000004, 0x0000003d,
+			0x00000005, 0x00000043,
+			0x00000006, 0x0000004b,
+			0x00000007, 0x00000051,
+			0x00000008, 0x00000057,
+			0x00000009, 0x0000005f,
+			0x0000000a, 0x00000067,
+			0x0000000b, 0x0000006f,
+
+			0x00010000, 0x0000001b,
+			0x00010001, 0x00000023,
+			0x00010002, 0x0000002b,
+			0x00010003, 0x00000033,
+			0x00010004, 0x0000003b,
+			0x00010005, 0x00000043,
+			0x00010006, 0x0000004b,
+			0x00010007, 0x00000055,
+			0x00010008, 0x0000005d,
+			0x00010009, 0x00000067,
+			0x0001000a, 0x00000070,
+
+			0x00020000, 0x00000017,
+			0x00020001, 0x00000023,
+			0x00020002, 0x0000002d,
+			0x00020003, 0x00000037,
+			0x00020004, 0x00000041,
+			0x00020005, 0x0000004b,
+			0x00020006, 0x00000057,
+			0x00020007, 0x00000063,
+			0x00020008, 0x0000006f,
+
+			0x00030000, 0x00000015,
+			0x00030001, 0x00000021,
+			0x00030002, 0x0000002d,
+			0x00030003, 0x00000039,
+			0x00030004, 0x00000045,
+			0x00030005, 0x00000053,
+			0x00030006, 0x0000005f,
+			0x00030007, 0x00000071
+		};
+
+		__REG(regs->tier) = TIER_DISABLE;
+		__REG(regs->tmtmir) = TMTMIR_DEFAULT;
+		__REG(regs->tmr) = TMR_DISABLE;
+
+		for (i = 0; i < ARRAY_SIZE(regs->ttrxcr); i++)
+			__REG(regs->ttrxcr[i]) = rng[i];
+
+		for (i = 0; i < ARRAY_SIZE(clb); ) {
+			__REG(regs->ttcfgr) = clb[i++];
+			__REG(regs->tscfgr) = clb[i++];
+		}
+
+		__REG(regs->tmr) = (0x1 << (15 - TMU_SENSOR_ID)) | TMR_ME |
+				   TMR_ALPF;
+		tmu_inited = 1;
+	}
+
+	/*
+	 * Get therm values
+	 */
+	i = 0;
+	do {
+		val = __REG(regs->site[TMU_SENSOR_ID].tritsr);
+	} while (!(val & TRITSR_READY) && (i++ < 1000000));
+
+	if (val & TRITSR_READY)
+		printf("T=%3d*C\n", val & TRITSR_DATA);
+}
+
+#endif /* CONFIG_SPL_THERM_SUPPORT */
