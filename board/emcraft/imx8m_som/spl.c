@@ -184,6 +184,11 @@ int power_init_board(void)
 	}
 
 	/*
+	 * Unlock all regs
+	 */
+	pmic_reg_write(p, BD71837_REG_REGLOCK, 0);
+
+	/*
 	 * Reconfigure default voltages:
 	 * - BUCK8: VDD_DRAM_1V35 (1.10 -> 1.35)
 	 * - BUCK3: VDD_GPU_0V9 (1.00 -> 0.90)
