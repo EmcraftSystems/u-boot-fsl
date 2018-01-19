@@ -1,24 +1,318 @@
 #include <common.h>
+#include <errno.h>
 #include <asm/io.h>
 #include <asm/arch/ddr_memory_map.h>
 #include <asm/arch/clock.h>
-#define reg32_write(a,v) writel(v,a)
-#define reg32_read(v) readl(v)
+#include "ddr3.h"
 
-#define DDR_ONE_RANK
-#define RUN_ON_SILICON 
+#define RUN_ON_SILICON
+#define DPRINTF_L0 printf
+#define DPRINTF_L2 printf
+#define printk printf
 
-#define  reg32setbit(addr,bitpos) \
-    reg32_write((addr),(reg32_read((addr)) | (1<<(bitpos))))
-#define  reg16setbit(addr,bitpos) \
-    reg16_write((addr),(reg16_read((addr)) | (1<<(bitpos))))
-#define  reg8setbit(addr,bitpos) \
-    reg8_write((addr),(reg16_read((addr)) | (1<<(bitpos))))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//for DDR3L
+//Note:DQ SI RON=40ohm, RTT=60ohm
+//     CA SI RON=40ohm, RTT=65ohm
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define DDR3_MR1_RTT120_RON40   ((0L<<9)|(1L<<6)|(0L<<2)|(0L<<5)|(0L<<1))//RTT(NOM):M[9,6,2]=010:120ohm;Ron:M[5,1]=00:40ohm
+#define DDR3_MR1_RTT120_RON34   ((0L<<9)|(1L<<6)|(0L<<2)|(0L<<5)|(1L<<1))//RTT(NOM):M[9,6,2]=010:120ohm;Ron:M[5,1]=01:34ohm
+#define DDR3_MR1_RTT60_RON40	((0L<<9)|(0L<<6)|(1L<<2)|(0L<<5)|(0L<<1))//RTT(NOM):M[9,6,2]=001:60ohm;Ron:M[5,1]=00:40ohm
+#define DDR3_MR1_RTT60_RON34    ((0L<<9)|(0L<<6)|(1L<<2)|(0L<<5)|(1L<<1))//RTT(NOM):M[9,6,2]=001:60ohm;Ron:M[5,1]=01:34ohm
+#define DDR3_MR1_RTT40_RON34    ((0L<<9)|(1L<<6)|(1L<<2)|(0L<<5)|(1L<<1))//RTT(NOM):M[9,6,2]=011:40ohm;Ron:M[5,1]=01:34ohm
+#define DDR3_MR1_RTT_DIS_RON40  ((0L<<9)|(0L<<6)|(0L<<2)|(0L<<5)|(0L<<1))//RTT(NOM):M[9,6,2]=000:disable;Ron:M[5,1]=00:40ohm
 
-typedef volatile unsigned int WORD;
-#define dwc_ddrphy_apb_wr(addr, data)  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(addr), data)
-#define dwc_ddrphy_apb_rd(addr)        (reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(addr)))
-void ddr3_phyinit_train_1600mts(WORD after_retention){
+#define DDR3_PHY_RON40    40//40ohm
+#define DDR3_PHY_RON34    34//34ohm
+
+#define DDR3_PHY_RTT120   120//120ohm
+#define DDR3_PHY_RTT60    60//60ohm
+#define DDR3_PHY_RTT40    40//40ohm
+#define DDR3_PHY_RTT48    48//48ohm??
+
+#define DDR3_RTT_WR_DIS   0UL
+#define DDR3_RTT_WR_60    1UL
+#define DDR3_RTT_WR_120   2UL
+
+#define DDR3_MR1_VAL            DDR3_MR1_RTT60_RON40//write/read
+#define DDR3_MR2_RTT_WR_VAL     DDR3_RTT_WR_DIS//DDR3_RTT_WR_60//write
+
+#define DDR3_PHY_RON            DDR3_PHY_RON40//write
+#define DDR3_PHY_RTT            DDR3_PHY_RTT60//read
+void DDR_PLL_CONFIG_266MHz(void) {
+WORD ddr_pll_lock;
+sscgpll_bypass_enable(HW_DRAM_PLL_CFG0_ADDR);
+
+//266.2MHz
+//reg32_write(HW_DRAM_PLL_CFG2_ADDR,0x01154604);
+//265.7MHz
+reg32_write(HW_DRAM_PLL_CFG2_ADDR,0x011d0684);
+
+sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
+while ( ddr_pll_lock != 0x1 ) {
+   ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
+  }
+printk("Congratulations, DDR PLL1 266MHz locked success!\n");
+}
+
+void DDR_PLL_CONFIG_600MHz(void) {
+WORD ddr_pll_lock;
+sscgpll_bypass_enable(HW_DRAM_PLL_CFG0_ADDR);
+//000 011111 100111 010000 000001 0
+//reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00fce802);
+//000 011101 100011 001001 000000 0
+reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00EC6480);
+sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
+while ( ddr_pll_lock != 0x1 ) {
+   ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
+  }
+printk("Congratulations, DDR PLL1 600MHz locked success!\n");
+}
+
+void DDR_PLL_CONFIG_400MHz(void) {
+WORD ddr_pll_lock;
+sscgpll_bypass_enable(HW_DRAM_PLL_CFG0_ADDR);
+//000 011111 100111 010000 000001 0
+//reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00fce802);
+//000 011101 100011 001001 000000 0
+reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00ec6984);
+sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
+while ( ddr_pll_lock != 0x1 ) {
+   ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
+  }
+printk("Congratulations, DDR PLL1 400MHz locked success!\n");
+}
+void DDR_PLL_CONFIG_395MHz(void) {
+WORD ddr_pll_lock;
+sscgpll_bypass_enable(HW_DRAM_PLL_CFG0_ADDR);
+reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00d3e984);
+sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
+while ( ddr_pll_lock != 0x1 ) {
+   ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
+  }
+printk("Congratulations, DDR PLL1 395MHz locked success!\n");
+}
+void DDR_PLL_CONFIG_200MHz(void) {
+WORD ddr_pll_lock;
+sscgpll_bypass_enable(HW_DRAM_PLL_CFG0_ADDR);
+//000 011111 100111 010000 000001 0
+//reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00fce802);
+//000 011101 100011 001001 000000 0
+reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00ece586);
+sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
+while ( ddr_pll_lock != 0x1 ) {
+   ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
+  }
+printk("Congratulations, DDR PLL1 200MHz locked success!\n");
+}
+
+void DDR_PLL_CONFIG_50MHz(void) {
+WORD ddr_pll_lock;
+sscgpll_bypass_enable(HW_DRAM_PLL_CFG0_ADDR);
+//000 011111 100111 010000 000001 0
+//reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00fce802);
+//000 011101 100011 001001 000000 0
+reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00ec09aa);
+sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
+while ( ddr_pll_lock != 0x1 ) {
+   ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
+  }
+printk("Congratulations, DDR PLL1 50MHz locked success!\n");
+}
+
+
+void DDR_PLL_CONFIG_667MHz(void) {
+WORD ddr_pll_lock;
+sscgpll_bypass_enable(HW_DRAM_PLL_CFG0_ADDR);
+//000 011111 100111 010000 000001 0
+//reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00fce802);
+//000 011101 100011 001001 000000 0
+reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00ece480);
+sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
+while ( ddr_pll_lock != 0x1 ) {
+   ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
+  }
+printk("Congratulations, DDR PLL1 400MHz locked success!\n");
+}
+
+
+void DDR_PLL_CONFIG_800MHz(void) {
+WORD ddr_pll_lock;
+sscgpll_bypass_enable(HW_DRAM_PLL_CFG0_ADDR);
+//000 011111 100111 010000 000001 0
+//reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00fce802);
+//000 011101 100011 001001 000000 0
+reg32_write(HW_DRAM_PLL_CFG2_ADDR, 0x00ece580);
+sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
+while ( ddr_pll_lock != 0x1 ) {
+   ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
+  }
+printk("Congratulations, DDR PLL1 800MHz locked success!\n");
+}
+
+void dwc_ddrphy_phyinit_userCustom_E_setDfiClk (unsigned int pstate) {
+  unsigned int tmp;
+//  if     (pstate==0) { printf("C: 1 ...\n");DDR_PLL_CONFIG_400MHz(); }
+  if     (pstate==0) { printf("C: 1 ...\n");DDR_PLL_CONFIG_395MHz(); }
+  else               { printf("C: no freq match\n");}
+
+  tmp=20;
+  while(tmp--);
+
+}
+
+void dwc_ddrphy_phyinit_userCustom_G_waitFwDone(void){
+    volatile unsigned int tmp, tmp_t;
+    volatile unsigned int train_ok;
+    volatile unsigned int train_fail;
+    volatile unsigned int stream_msg;
+    volatile unsigned int stream_nb_args;
+    volatile unsigned int stream_index;
+    volatile unsigned int stream_arg_pos;
+    volatile unsigned int message;
+    volatile unsigned int stream_arg_val;
+//    volatile unsigned int tmp_data;
+	train_ok = 0;
+	train_fail = 0;
+	stream_msg = 0;
+	while(train_ok==0 && train_fail==0)
+	{
+	  // read UctShadowRegs, bit[0] will be set to 0 (looking for 0) when PMU has a message
+	    tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
+	    tmp_t = tmp & 0x01;
+	    while(tmp_t){
+	      tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
+	      tmp_t = tmp & 0x01;
+	    }
+
+	  //read UctWriteOnlyShadow: 0x07 indicates success, 0xff indicates fail
+	  tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0032);
+	  printf("PMU major stream =0x%x\n",tmp);
+	  info_trigger(0xd0032,tmp,0x0);
+	  if(tmp==0x08){
+	  stream_msg = 1;
+	  //read UctDatWriteOnlyShadow(streaming message): 
+	  //tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
+	  //tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
+
+
+
+	  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x0);
+
+	  do {
+	  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
+	  }while((tmp_t & 0x1) == 0x0);
+	  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x1);
+
+	  do {
+	  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
+	  }while((tmp_t & 0x1) == 0x1);
+
+	  // read_mbox_mssg
+	  stream_nb_args = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0032);
+
+	  // read_mbox_msb
+	  stream_index = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
+	  stream_index = (stream_index << 16) | stream_nb_args;
+	  printf("PMU stream_index=0x%x nb_args=%d\n",stream_index, stream_nb_args);
+	  //info_trigger(0xd0034,stream_index,0xFFFFFFFF);
+
+	  stream_arg_pos = 0;
+	  while(stream_nb_args > 0) {
+	       // Need to complete previous handshake first...
+	       reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x0);
+	       //poll_mbox_from_uc(1);
+
+	  do {
+	  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
+	  }while((tmp_t & 0x1) == 0x0);
+	  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x1);
+
+	  // Read the next argument...
+	  do {
+	  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
+	  }while((tmp_t & 0x1) == 0x1);
+
+
+	  // read_mbox_mssg
+	  message  = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0032);
+	  // read_mbox_msb
+	  stream_arg_val = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
+	  stream_arg_val = (stream_arg_val << 16) | message;
+	  printf("PMU stream_arg[%d]=0x%x\n",stream_arg_pos, stream_arg_val);
+	  //info_trigger(0xd0034,stream_arg_val,0xFFFF0000);
+	      stream_nb_args--;
+	      stream_arg_pos++;
+	  }//while(stream_nb_args > 0)
+
+
+
+	  }
+	  else if(tmp==0x07){train_ok = 1;   printf("\nvt_pass\n");}
+	  else if(tmp==0xff){
+	  	train_fail = 1; 
+		printf("%c[31;40m",0x1b);
+		printf("\n------- vt_fail\n");
+		printf("%c[0m",0x1b);
+	  }
+	  else  {train_ok = 0; train_fail = 0; stream_msg = 0;}
+
+	  //Write the DctWriteProt to 0 to ack the receipt of the message.
+	  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x0);
+
+	  if(stream_msg == 1){
+	  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
+	  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
+	  }
+
+	  //Poll the UctWriteProtShadow, looking for 1
+	    tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
+	    tmp_t = tmp & 0x01;
+	    while(tmp_t==0){
+	    tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
+	    tmp_t = tmp & 0x01;
+	    }
+	  //When a  1 is seen, Write the DctWriteProt to 1 to complete the protocol.
+	  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x1);
+	}
+}
+
+void dwc_ddrphy_phyinit_userCustom_overrideUserInput (void){}
+
+void dwc_ddrphy_phyinit_userCustom_A_bringupPower (void){}
+void dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy (void){}
+
+void dwc_ddrphy_phyinit_userCustom_H_readMsgBlock(unsigned int Train2D){
+	unsigned long i;
+#ifndef DDR_DEBUG
+	printf("Jump printf\n");
+	//return 0;
+#endif
+	printf("data[0x90194] = 0x%08x\n",dwc_ddrphy_apb_rd(0x90194));
+	printf("data[0x90195] = 0x%08x\n",dwc_ddrphy_apb_rd(0x90195));
+	printf("PMU fw revision ID 0x%08x\n",dwc_ddrphy_apb_rd(0x54001));
+	printf("ranks (H) 0x%08x\n",(dwc_ddrphy_apb_rd(0x5400a))&0xff);
+	for(i=0;i<0x1d;i++){
+		printf("CCD 0x%08x: 0x%08x\n",i+0x54012,dwc_ddrphy_apb_rd(i+0x54012));
+	}
+	if(Train2D) {
+            printf("ERROR: DDR3 has no 2D training!!\n");
+	}
+}
+void dwc_ddrphy_phyinit_userCustom_customPostTrain (void){}
+void dwc_ddrphy_phyinit_userCustom_J_enterMissionMode (void){}
+
+
+
+
+#if 0//ndef RUN_ON_SILICON
+void ddr3_load_train_code(void){
+verilog_trigger(vt_event7);
+}
+#endif
+
+void ddr3_phyinit_train_1600mts_x16_ret(unsigned int after_retention){
+	u32 tmp32,tmp32_t;
 // [dwc_ddrphy_phyinit_main] Start of dwc_ddrphy_phyinit_main()
 // [dwc_ddrphy_phyinit_sequence] Start of dwc_ddrphy_phyinit_sequence()
 // [dwc_ddrphy_phyinit_initStruct] Start of dwc_ddrphy_phyinit_initStruct()
@@ -35,7 +329,7 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 //
 // //##############################################################
 
-//zhouwei  dwc_ddrphy_phyinit_userCustom_overrideUserInput ();
+dwc_ddrphy_phyinit_userCustom_overrideUserInput ();
 // 
 //  [dwc_ddrphy_phyinit_userCustom_overrideUserInput] End of dwc_ddrphy_phyinit_userCustom_overrideUserInput()
 //[dwc_ddrphy_phyinit_calcMb] Start of dwc_ddrphy_phyinit_calcMb()
@@ -44,32 +338,32 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].DRAMFreq to 0x640
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].PllBypassEn to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].DfiFreqRatio to 0x2
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].PhyOdtImpedance to 0x18
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].PhyDrvImpedance to 0x28
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].PhyOdtImpedance to 0x0
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].PhyDrvImpedance to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].BPZNResVal to 0x0
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].EnabledDQs to 0x20
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].EnabledDQs to 0x10
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].PhyCfg to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[0].DisabledDbyte to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].DramType to 0x1
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].Pstate to 0x1
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].DRAMFreq to 0x74a
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].DRAMFreq to 0x320
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].PllBypassEn to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].DfiFreqRatio to 0x2
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].PhyOdtImpedance to 0x18
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].PhyDrvImpedance to 0x28
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].PhyOdtImpedance to 0x0
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].PhyDrvImpedance to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].BPZNResVal to 0x0
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].EnabledDQs to 0x20
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].EnabledDQs to 0x10
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].PhyCfg to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[1].DisabledDbyte to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].DramType to 0x1
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].Pstate to 0x2
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].DRAMFreq to 0x74a
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].DRAMFreq to 0x320
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].PllBypassEn to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].DfiFreqRatio to 0x2
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].PhyOdtImpedance to 0x18
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].PhyDrvImpedance to 0x28
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].PhyOdtImpedance to 0x0
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].PhyDrvImpedance to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].BPZNResVal to 0x0
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].EnabledDQs to 0x20
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].EnabledDQs to 0x10
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].PhyCfg to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[2].DisabledDbyte to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].DramType to 0x1
@@ -77,23 +371,32 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].DRAMFreq to 0x74a
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].PllBypassEn to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].DfiFreqRatio to 0x2
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].PhyOdtImpedance to 0x18
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].PhyDrvImpedance to 0x28
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].PhyOdtImpedance to 0x0
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].PhyDrvImpedance to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].BPZNResVal to 0x0
-// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].EnabledDQs to 0x20
+// // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].EnabledDQs to 0x10
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].PhyCfg to 0x0
 // // [dwc_ddrphy_phyinit_softSetMb] Setting mb_DDR3U_1D[3].DisabledDbyte to 0x0
 //[dwc_ddrphy_phyinit_calcMb] End of dwc_ddrphy_phyinit_calcMb()
+// // [phyinit_print_dat] // ####################################################
+// // [phyinit_print_dat] // 
+// // [phyinit_print_dat] // Printing Runtime input values
+// // [phyinit_print_dat] // 
+// // [phyinit_print_dat] // ####################################################
+// // [phyinit_print_dat] runtimeConfig.skip_training = 0
+// // [phyinit_print_dat] runtimeConfig.Train2D       = 0
+// // [phyinit_print_dat] runtimeConfig.debug         = 1
+// // [phyinit_print_dat] runtimeConfig.RetEn         = 0
 // // [phyinit_print_dat] // ####################################################
 // // [phyinit_print_dat] // 
 // // [phyinit_print_dat] // Printing values in user input structure
 // // [phyinit_print_dat] // 
 // // [phyinit_print_dat] // ####################################################
 // // [phyinit_print_dat] userInputBasic.Frequency[0] = 800
-// // [phyinit_print_dat] userInputBasic.Frequency[1] = 933
-// // [phyinit_print_dat] userInputBasic.Frequency[2] = 933
+// // [phyinit_print_dat] userInputBasic.Frequency[1] = 400
+// // [phyinit_print_dat] userInputBasic.Frequency[2] = 400
 // // [phyinit_print_dat] userInputBasic.Frequency[3] = 933
-// // [phyinit_print_dat] userInputBasic.NumRank_dfi0 = 2
+// // [phyinit_print_dat] userInputBasic.NumRank_dfi0 = 1
 // // [phyinit_print_dat] userInputBasic.ReadDBIEnable[0] = 0
 // // [phyinit_print_dat] userInputBasic.ReadDBIEnable[1] = 0
 // // [phyinit_print_dat] userInputBasic.ReadDBIEnable[2] = 0
@@ -108,7 +411,7 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // // [phyinit_print_dat] userInputBasic.DfiFreqRatio[2] = 1
 // // [phyinit_print_dat] userInputBasic.DfiFreqRatio[3] = 1
 // // [phyinit_print_dat] userInputBasic.NumAnib = 10
-// // [phyinit_print_dat] userInputBasic.NumDbyte = 4
+// // [phyinit_print_dat] userInputBasic.NumDbyte = 2
 // // [phyinit_print_dat] userInputBasic.DramDataWidth = 16
 // // [phyinit_print_dat] userInputBasic.PllBypass[0] = 0
 // // [phyinit_print_dat] userInputBasic.PllBypass[1] = 0
@@ -117,7 +420,7 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // // [phyinit_print_dat] userInputBasic.Dfi1Exists = 1
 // // [phyinit_print_dat] userInputBasic.Train2D = 0
 // // [phyinit_print_dat] userInputBasic.NumRank_dfi1 = 0
-// // [phyinit_print_dat] userInputBasic.NumActiveDbyteDfi0 = 4
+// // [phyinit_print_dat] userInputBasic.NumActiveDbyteDfi0 = 2
 // // [phyinit_print_dat] userInputBasic.NumPStates = 1
 // // [phyinit_print_dat] userInputBasic.NumActiveDbyteDfi1 = 0
 // // [phyinit_print_dat] userInputAdvanced.DisDynAdrTri[0] = 1
@@ -128,7 +431,7 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // // [phyinit_print_dat] userInputAdvanced.SnpsUmctlF0RC5x[1] = 0
 // // [phyinit_print_dat] userInputAdvanced.SnpsUmctlF0RC5x[2] = 0
 // // [phyinit_print_dat] userInputAdvanced.SnpsUmctlF0RC5x[3] = 0
-// // [phyinit_print_dat] userInputAdvanced.MemAlertEn = 1
+// // [phyinit_print_dat] userInputAdvanced.MemAlertEn = 0
 // // [phyinit_print_dat] userInputAdvanced.DramByteSwap = 0
 // // [phyinit_print_dat] userInputAdvanced.ExtCalResVal = 0
 // // [phyinit_print_dat] userInputAdvanced.TxSlewRiseDQ[0] = 15
@@ -154,7 +457,7 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // // [phyinit_print_dat] userInputAdvanced.PhyMstrMaxReqToAck[2] = 0
 // // [phyinit_print_dat] userInputAdvanced.PhyMstrMaxReqToAck[3] = 0
 // // [phyinit_print_dat] userInputAdvanced.TxSlewFallAC = 15
-// // [phyinit_print_dat] userInputAdvanced.ATxImpedance = 20
+// // [phyinit_print_dat] userInputAdvanced.ATxImpedance = 40
 // // [phyinit_print_dat] userInputAdvanced.Is2Ttiming[0] = 0
 // // [phyinit_print_dat] userInputAdvanced.Is2Ttiming[1] = 0
 // // [phyinit_print_dat] userInputAdvanced.Is2Ttiming[2] = 0
@@ -165,13 +468,13 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // // [phyinit_print_dat] userInputAdvanced.PhyMstrTrainInterval[2] = 0
 // // [phyinit_print_dat] userInputAdvanced.PhyMstrTrainInterval[3] = 0
 // // [phyinit_print_dat] userInputAdvanced.SnpsUmctlOpt = 0
-// // [phyinit_print_dat] userInputAdvanced.WDQSExt = 0
 // // [phyinit_print_dat] userInputAdvanced.CalInterval = 9
+// // [phyinit_print_dat] userInputAdvanced.WDQSExt = 0
 // // [phyinit_print_dat] userInputAdvanced.MemAlertPUImp = 5
-// // [phyinit_print_dat] userInputAdvanced.ODTImpedance[0] = 24
-// // [phyinit_print_dat] userInputAdvanced.ODTImpedance[1] = 24
-// // [phyinit_print_dat] userInputAdvanced.ODTImpedance[2] = 24
-// // [phyinit_print_dat] userInputAdvanced.ODTImpedance[3] = 24
+// // [phyinit_print_dat] userInputAdvanced.ODTImpedance[0] = 30
+// // [phyinit_print_dat] userInputAdvanced.ODTImpedance[1] = 30
+// // [phyinit_print_dat] userInputAdvanced.ODTImpedance[2] = 30
+// // [phyinit_print_dat] userInputAdvanced.ODTImpedance[3] = 30
 // // [phyinit_print_dat] userInputAdvanced.TxSlewRiseAC = 15
 // // [phyinit_print_dat] userInputAdvanced.TrainSequenceCtrl = 0
 // // [phyinit_print_dat] userInputAdvanced.MemAlertSyncBypass = 0
@@ -190,63 +493,31 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // // [phyinit_print_dat] // Printing values of 1D message block input/inout fields, PState=0
 // // [phyinit_print_dat] // 
 // // [phyinit_print_dat] // ####################################################
-// // [phyinit_print_dat] mb_DDR3U_1D[0].Reserved00 = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].MsgMisc = 0x6
+// // [phyinit_print_dat] mb_DDR3U_1D[0].Reserved00 = 0x80
+// // [phyinit_print_dat] mb_DDR3U_1D[0].MsgMisc = 0x0
 // // [phyinit_print_dat] mb_DDR3U_1D[0].Pstate = 0x0
 // // [phyinit_print_dat] mb_DDR3U_1D[0].PllBypassEn = 0x0
 // // [phyinit_print_dat] mb_DDR3U_1D[0].DRAMFreq = 0x640
 // // [phyinit_print_dat] mb_DDR3U_1D[0].DfiFreqRatio = 0x2
 // // [phyinit_print_dat] mb_DDR3U_1D[0].BPZNResVal = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyOdtImpedance = 0x18
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyDrvImpedance = 0x28
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyVref = 0x3b
+// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyOdtImpedance = 0x0
+// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyDrvImpedance = 0x0
+// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyVref = 0x2c
 // // [phyinit_print_dat] mb_DDR3U_1D[0].DramType = 0x1
 // // [phyinit_print_dat] mb_DDR3U_1D[0].DisabledDbyte = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].EnabledDQs = 0x20
-// // [phyinit_print_dat] mb_DDR3U_1D[0].CsPresent = 0x3
-// // [phyinit_print_dat] mb_DDR3U_1D[0].CsPresentD0 = 0x3
+// // [phyinit_print_dat] mb_DDR3U_1D[0].EnabledDQs = 0x10
+// // [phyinit_print_dat] mb_DDR3U_1D[0].CsPresent = 0x1
+// // [phyinit_print_dat] mb_DDR3U_1D[0].CsPresentD0 = 0x1
 // // [phyinit_print_dat] mb_DDR3U_1D[0].CsPresentD1 = 0x0
 // // [phyinit_print_dat] mb_DDR3U_1D[0].AddrMirror = 0x0
 // // [phyinit_print_dat] mb_DDR3U_1D[0].PhyCfg = 0x0
 // // [phyinit_print_dat] mb_DDR3U_1D[0].SequenceCtrl = 0x31f
 // // [phyinit_print_dat] mb_DDR3U_1D[0].HdtCtrl = 0xc8
+// // [phyinit_print_dat] mb_DDR3U_1D[0].Reserved1E = 0x0
 // // [phyinit_print_dat] mb_DDR3U_1D[0].PhyConfigOverride = 0x0
 // // [phyinit_print_dat] mb_DDR3U_1D[0].DFIMRLMargin = 0x1
 // // [phyinit_print_dat] mb_DDR3U_1D[0].MR0 = 0xd70
-// // [phyinit_print_dat] mb_DDR3U_1D[0].MR1 = 0x44
-// // [phyinit_print_dat] mb_DDR3U_1D[0].MR2 = 0x18
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl0 = 0x21
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl1 = 0x12
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl2 = 0x84
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl3 = 0x48
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl4 = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl5 = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl6 = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl7 = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].Reserved00 = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].MsgMisc = 0x6
-// // [phyinit_print_dat] mb_DDR3U_1D[0].Pstate = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PllBypassEn = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].DRAMFreq = 0x640
-// // [phyinit_print_dat] mb_DDR3U_1D[0].DfiFreqRatio = 0x2
-// // [phyinit_print_dat] mb_DDR3U_1D[0].BPZNResVal = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyOdtImpedance = 0x18
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyDrvImpedance = 0x28
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyVref = 0x3b
-// // [phyinit_print_dat] mb_DDR3U_1D[0].DramType = 0x1
-// // [phyinit_print_dat] mb_DDR3U_1D[0].DisabledDbyte = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].EnabledDQs = 0x20
-// // [phyinit_print_dat] mb_DDR3U_1D[0].CsPresent = 0x3
-// // [phyinit_print_dat] mb_DDR3U_1D[0].CsPresentD0 = 0x3
-// // [phyinit_print_dat] mb_DDR3U_1D[0].CsPresentD1 = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].AddrMirror = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyCfg = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].SequenceCtrl = 0x31f
-// // [phyinit_print_dat] mb_DDR3U_1D[0].HdtCtrl = 0xc8
-// // [phyinit_print_dat] mb_DDR3U_1D[0].PhyConfigOverride = 0x0
-// // [phyinit_print_dat] mb_DDR3U_1D[0].DFIMRLMargin = 0x1
-// // [phyinit_print_dat] mb_DDR3U_1D[0].MR0 = 0xd70
-// // [phyinit_print_dat] mb_DDR3U_1D[0].MR1 = 0x44
+// // [phyinit_print_dat] mb_DDR3U_1D[0].MR1 = 0x4
 // // [phyinit_print_dat] mb_DDR3U_1D[0].MR2 = 0x18
 // // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl0 = 0x21
 // // [phyinit_print_dat] mb_DDR3U_1D[0].AcsmOdtCtrl1 = 0x12
@@ -267,9 +538,10 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // //############################################################## 
 
 
-//zhouwei dwc_ddrphy_phyinit_userCustom_A_bringupPower ();
+dwc_ddrphy_phyinit_userCustom_A_bringupPower ();
 
 // [dwc_ddrphy_phyinit_userCustom_A_bringupPower] End of dwc_ddrphy_phyinit_userCustom_A_bringupPower()
+// [dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy] Start of dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy()
 // 
 // 
 // //##############################################################
@@ -281,9 +553,9 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // //##############################################################
 // 
 // 
-//zhouwei dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy ();
+dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy ();
 
-// // [dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy] End of dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy()
+// [dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy] End of dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy()
 // 
 
 // //##############################################################
@@ -296,6 +568,10 @@ void ddr3_phyinit_train_1600mts(WORD after_retention){
 // 
 
 // // [phyinit_C_initPhyConfig] Start of dwc_ddrphy_phyinit_C_initPhyConfig()
+// 
+// //##############################################################
+// // TxPreDrvMode[2] = 0
+// //##############################################################
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxSlewRate::TxPreDrvMode to 0x3
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxSlewRate::TxPreP to 0xf
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxSlewRate::TxPreN to 0xf
@@ -306,10 +582,6 @@ dwc_ddrphy_apb_wr(0x1005f,0x3ff); // DWC_DDRPHYA_DBYTE0_TxSlewRate_b0_p0
 dwc_ddrphy_apb_wr(0x1015f,0x3ff); // DWC_DDRPHYA_DBYTE0_TxSlewRate_b1_p0
 dwc_ddrphy_apb_wr(0x1105f,0x3ff); // DWC_DDRPHYA_DBYTE1_TxSlewRate_b0_p0
 dwc_ddrphy_apb_wr(0x1115f,0x3ff); // DWC_DDRPHYA_DBYTE1_TxSlewRate_b1_p0
-dwc_ddrphy_apb_wr(0x1205f,0x3ff); // DWC_DDRPHYA_DBYTE2_TxSlewRate_b0_p0
-dwc_ddrphy_apb_wr(0x1215f,0x3ff); // DWC_DDRPHYA_DBYTE2_TxSlewRate_b1_p0
-dwc_ddrphy_apb_wr(0x1305f,0x3ff); // DWC_DDRPHYA_DBYTE3_TxSlewRate_b0_p0
-dwc_ddrphy_apb_wr(0x1315f,0x3ff); // DWC_DDRPHYA_DBYTE3_TxSlewRate_b1_p0
 // // [phyinit_C_initPhyConfig] Programming ATxSlewRate::ATxPreDrvMode to 0x3, ANIB=0
 // // [phyinit_C_initPhyConfig] Programming ATxSlewRate::ATxPreP to 0xf, ANIB=0
 // // [phyinit_C_initPhyConfig] Programming ATxSlewRate::ATxPreN to 0xf, ANIB=0
@@ -405,10 +677,6 @@ dwc_ddrphy_apb_wr(0x200c5,0xb); // DWC_DDRPHYA_MASTER0_PllCtrl2_p0
 // //##############################################################
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming ARdPtrInitVal to 0x1
 dwc_ddrphy_apb_wr(0x2002e,0x1); // DWC_DDRPHYA_MASTER0_ARdPtrInitVal_p0
-// 
-// //##############################################################
-// // TxPreDrvMode[2] = 0
-// //##############################################################
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming DqsPreambleControl::TwoTckRxDqsPre to 0x0
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming DqsPreambleControl::TwoTckTxDqsPre to 0x0
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming DqsPreambleControl::PositionDfeInit to 0x2
@@ -421,38 +689,30 @@ dwc_ddrphy_apb_wr(0x20024,0x8); // DWC_DDRPHYA_MASTER0_DqsPreambleControl_p0
 dwc_ddrphy_apb_wr(0x2003a,0x0); // DWC_DDRPHYA_MASTER0_DbyteDllModeCntrl
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming ProcOdtTimeCtl to 0xa
 dwc_ddrphy_apb_wr(0x20056,0xa); // DWC_DDRPHYA_MASTER0_ProcOdtTimeCtl_p0
-// // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxOdtDrvStren::ODTStrenP to 0x1a
-// // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxOdtDrvStren::ODTStrenN to 0x1a
-dwc_ddrphy_apb_wr(0x1004d,0x69a); // DWC_DDRPHYA_DBYTE0_TxOdtDrvStren_b0_p0
-dwc_ddrphy_apb_wr(0x1014d,0x69a); // DWC_DDRPHYA_DBYTE0_TxOdtDrvStren_b1_p0
-dwc_ddrphy_apb_wr(0x1104d,0x69a); // DWC_DDRPHYA_DBYTE1_TxOdtDrvStren_b0_p0
-dwc_ddrphy_apb_wr(0x1114d,0x69a); // DWC_DDRPHYA_DBYTE1_TxOdtDrvStren_b1_p0
-dwc_ddrphy_apb_wr(0x1204d,0x69a); // DWC_DDRPHYA_DBYTE2_TxOdtDrvStren_b0_p0
-dwc_ddrphy_apb_wr(0x1214d,0x69a); // DWC_DDRPHYA_DBYTE2_TxOdtDrvStren_b1_p0
-dwc_ddrphy_apb_wr(0x1304d,0x69a); // DWC_DDRPHYA_DBYTE3_TxOdtDrvStren_b0_p0
-dwc_ddrphy_apb_wr(0x1314d,0x69a); // DWC_DDRPHYA_DBYTE3_TxOdtDrvStren_b1_p0
+// // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxOdtDrvStren::ODTStrenP to 0x18
+// // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxOdtDrvStren::ODTStrenN to 0x18
+dwc_ddrphy_apb_wr(0x1004d,0x618); // DWC_DDRPHYA_DBYTE0_TxOdtDrvStren_b0_p0
+dwc_ddrphy_apb_wr(0x1014d,0x618); // DWC_DDRPHYA_DBYTE0_TxOdtDrvStren_b1_p0
+dwc_ddrphy_apb_wr(0x1104d,0x618); // DWC_DDRPHYA_DBYTE1_TxOdtDrvStren_b0_p0
+dwc_ddrphy_apb_wr(0x1114d,0x618); // DWC_DDRPHYA_DBYTE1_TxOdtDrvStren_b1_p0
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxImpedanceCtrl1::DrvStrenFSDqP to 0x38
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TxImpedanceCtrl1::DrvStrenFSDqN to 0x38
 dwc_ddrphy_apb_wr(0x10049,0xe38); // DWC_DDRPHYA_DBYTE0_TxImpedanceCtrl1_b0_p0
 dwc_ddrphy_apb_wr(0x10149,0xe38); // DWC_DDRPHYA_DBYTE0_TxImpedanceCtrl1_b1_p0
 dwc_ddrphy_apb_wr(0x11049,0xe38); // DWC_DDRPHYA_DBYTE1_TxImpedanceCtrl1_b0_p0
 dwc_ddrphy_apb_wr(0x11149,0xe38); // DWC_DDRPHYA_DBYTE1_TxImpedanceCtrl1_b1_p0
-dwc_ddrphy_apb_wr(0x12049,0xe38); // DWC_DDRPHYA_DBYTE2_TxImpedanceCtrl1_b0_p0
-dwc_ddrphy_apb_wr(0x12149,0xe38); // DWC_DDRPHYA_DBYTE2_TxImpedanceCtrl1_b1_p0
-dwc_ddrphy_apb_wr(0x13049,0xe38); // DWC_DDRPHYA_DBYTE3_TxImpedanceCtrl1_b0_p0
-dwc_ddrphy_apb_wr(0x13149,0xe38); // DWC_DDRPHYA_DBYTE3_TxImpedanceCtrl1_b1_p0
-// // [phyinit_C_initPhyConfig] Programming ATxImpedance::ADrvStrenP to 0x1f
-// // [phyinit_C_initPhyConfig] Programming ATxImpedance::ADrvStrenN to 0x1f
-dwc_ddrphy_apb_wr(0x43,0x3ff); // DWC_DDRPHYA_ANIB0_ATxImpedance
-dwc_ddrphy_apb_wr(0x1043,0x3ff); // DWC_DDRPHYA_ANIB1_ATxImpedance
-dwc_ddrphy_apb_wr(0x2043,0x3ff); // DWC_DDRPHYA_ANIB2_ATxImpedance
-dwc_ddrphy_apb_wr(0x3043,0x3ff); // DWC_DDRPHYA_ANIB3_ATxImpedance
-dwc_ddrphy_apb_wr(0x4043,0x3ff); // DWC_DDRPHYA_ANIB4_ATxImpedance
-dwc_ddrphy_apb_wr(0x5043,0x3ff); // DWC_DDRPHYA_ANIB5_ATxImpedance
-dwc_ddrphy_apb_wr(0x6043,0x3ff); // DWC_DDRPHYA_ANIB6_ATxImpedance
-dwc_ddrphy_apb_wr(0x7043,0x3ff); // DWC_DDRPHYA_ANIB7_ATxImpedance
-dwc_ddrphy_apb_wr(0x8043,0x3ff); // DWC_DDRPHYA_ANIB8_ATxImpedance
-dwc_ddrphy_apb_wr(0x9043,0x3ff); // DWC_DDRPHYA_ANIB9_ATxImpedance
+// // [phyinit_C_initPhyConfig] Programming ATxImpedance::ADrvStrenP to 0x3
+// // [phyinit_C_initPhyConfig] Programming ATxImpedance::ADrvStrenN to 0x3
+dwc_ddrphy_apb_wr(0x43,0x63); // DWC_DDRPHYA_ANIB0_ATxImpedance
+dwc_ddrphy_apb_wr(0x1043,0x63); // DWC_DDRPHYA_ANIB1_ATxImpedance
+dwc_ddrphy_apb_wr(0x2043,0x63); // DWC_DDRPHYA_ANIB2_ATxImpedance
+dwc_ddrphy_apb_wr(0x3043,0x63); // DWC_DDRPHYA_ANIB3_ATxImpedance
+dwc_ddrphy_apb_wr(0x4043,0x63); // DWC_DDRPHYA_ANIB4_ATxImpedance
+dwc_ddrphy_apb_wr(0x5043,0x63); // DWC_DDRPHYA_ANIB5_ATxImpedance
+dwc_ddrphy_apb_wr(0x6043,0x63); // DWC_DDRPHYA_ANIB6_ATxImpedance
+dwc_ddrphy_apb_wr(0x7043,0x63); // DWC_DDRPHYA_ANIB7_ATxImpedance
+dwc_ddrphy_apb_wr(0x8043,0x63); // DWC_DDRPHYA_ANIB8_ATxImpedance
+dwc_ddrphy_apb_wr(0x9043,0x63); // DWC_DDRPHYA_ANIB9_ATxImpedance
 // // [phyinit_C_initPhyConfig] Programming DfiMode to 0x5
 dwc_ddrphy_apb_wr(0x20018,0x5); // DWC_DDRPHYA_MASTER0_DfiMode
 // // [phyinit_C_initPhyConfig] Programming DfiCAMode to 0x0
@@ -466,19 +726,15 @@ dwc_ddrphy_apb_wr(0x20008,0x190); // DWC_DDRPHYA_MASTER0_CalUclkInfo_p0
 // // [phyinit_C_initPhyConfig] Programming CalRate::CalOnce to 0x0
 dwc_ddrphy_apb_wr(0x20088,0x9); // DWC_DDRPHYA_MASTER0_CalRate
 // // [phyinit_C_initPhyConfig] Pstate=0, Programming VrefInGlobal::GlobalVrefInSel to 0x0
-// // [phyinit_C_initPhyConfig] Pstate=0, Programming VrefInGlobal::GlobalVrefInDAC to 0x1f
-// // [phyinit_C_initPhyConfig] Pstate=0, Programming VrefInGlobal to 0xf8
-dwc_ddrphy_apb_wr(0x200b2,0xf8); // DWC_DDRPHYA_MASTER0_VrefInGlobal_p0
+// // [phyinit_C_initPhyConfig] Pstate=0, Programming VrefInGlobal::GlobalVrefInDAC to 0x0
+// // [phyinit_C_initPhyConfig] Pstate=0, Programming VrefInGlobal to 0x0
+dwc_ddrphy_apb_wr(0x200b2,0x0); // DWC_DDRPHYA_MASTER0_VrefInGlobal_p0
 // // [phyinit_C_initPhyConfig] Pstate=0, Programming DqDqsRcvCntrl::MajorModeDbyte to 0x0
 // // [phyinit_C_initPhyConfig] Pstate=0, Programming DqDqsRcvCntrl to 0x581
 dwc_ddrphy_apb_wr(0x10043,0x581); // DWC_DDRPHYA_DBYTE0_DqDqsRcvCntrl_b0_p0
 dwc_ddrphy_apb_wr(0x10143,0x581); // DWC_DDRPHYA_DBYTE0_DqDqsRcvCntrl_b1_p0
 dwc_ddrphy_apb_wr(0x11043,0x581); // DWC_DDRPHYA_DBYTE1_DqDqsRcvCntrl_b0_p0
 dwc_ddrphy_apb_wr(0x11143,0x581); // DWC_DDRPHYA_DBYTE1_DqDqsRcvCntrl_b1_p0
-dwc_ddrphy_apb_wr(0x12043,0x581); // DWC_DDRPHYA_DBYTE2_DqDqsRcvCntrl_b0_p0
-dwc_ddrphy_apb_wr(0x12143,0x581); // DWC_DDRPHYA_DBYTE2_DqDqsRcvCntrl_b1_p0
-dwc_ddrphy_apb_wr(0x13043,0x581); // DWC_DDRPHYA_DBYTE3_DqDqsRcvCntrl_b0_p0
-dwc_ddrphy_apb_wr(0x13143,0x581); // DWC_DDRPHYA_DBYTE3_DqDqsRcvCntrl_b1_p0
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming DfiFreqRatio_p0 to 0x1
 dwc_ddrphy_apb_wr(0x200fa,0x1); // DWC_DDRPHYA_MASTER0_DfiFreqRatio_p0
 // // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming TristateModeCA::DisDynAdrTri_p0 to 0x1
@@ -493,21 +749,10 @@ dwc_ddrphy_apb_wr(0x200f4,0x5555); // DWC_DDRPHYA_MASTER0_DfiFreqXlat4
 dwc_ddrphy_apb_wr(0x200f5,0x5555); // DWC_DDRPHYA_MASTER0_DfiFreqXlat5
 dwc_ddrphy_apb_wr(0x200f6,0x5555); // DWC_DDRPHYA_MASTER0_DfiFreqXlat6
 dwc_ddrphy_apb_wr(0x200f7,0xf000); // DWC_DDRPHYA_MASTER0_DfiFreqXlat7
-// // [phyinit_C_initPhyConfig] Pstate=0,  Memclk=800MHz, Programming Seq0BDLY0 to 0x33
-dwc_ddrphy_apb_wr(0x2000b,0x33); // DWC_DDRPHYA_MASTER0_Seq0BDLY0_p0
-// // [phyinit_C_initPhyConfig] Pstate=0,  Memclk=800MHz, Programming Seq0BDLY1 to 0x65
-dwc_ddrphy_apb_wr(0x2000c,0x65); // DWC_DDRPHYA_MASTER0_Seq0BDLY1_p0
-// // [phyinit_C_initPhyConfig] Pstate=0,  Memclk=800MHz, Programming Seq0BDLY2 to 0x3e9
-dwc_ddrphy_apb_wr(0x2000d,0x3e9); // DWC_DDRPHYA_MASTER0_Seq0BDLY2_p0
-// // [phyinit_C_initPhyConfig] Pstate=0,  Memclk=800MHz, Programming Seq0BDLY3 to 0x2c
-dwc_ddrphy_apb_wr(0x2000e,0x2c); // DWC_DDRPHYA_MASTER0_Seq0BDLY3_p0
 // // [phyinit_C_initPhyConfig] Programming MasterX4Config::X4TG to 0x0
 dwc_ddrphy_apb_wr(0x20025,0x0); // DWC_DDRPHYA_MASTER0_MasterX4Config
-// // [phyinit_C_initPhyConfig] Pstate=0, Memclk=800MHz, Programming DMIPinPresent::RdDbiEnabled to 0x0
-dwc_ddrphy_apb_wr(0x2002d,0x0); // DWC_DDRPHYA_MASTER0_DMIPinPresent_p0
 // // [phyinit_C_initPhyConfig] End of dwc_ddrphy_phyinit_C_initPhyConfig()
 // 
-if(!after_retention){
 // 
 // //##############################################################
 // //
@@ -533,16 +778,15 @@ if(!after_retention){
 // 
 // 
 // // [dwc_ddrphy_phyinit_D_loadIMEM, 1D] Programming MemResetL to 0x2
-dwc_ddrphy_apb_wr(0x20060,0x2); // DWC_DDRPHYA_MASTER0_MemResetL
-// [dwc_ddrphy_phyinit_storeIncvFile] Reading input file: /ux/m850D/weizhou/from_snps/snps_lpddr4mv2_fw_phyinit_a_2017_05_ctb_0_30b/firmware_lpddr4_mphy_v2_vA-2017.05/firmware/Latest/ddr3/ddr3_pmu_train_imem.incv
+if(!after_retention){
+dwc_ddrphy_apb_wr(0x20060,0x2);
+
+// [dwc_ddrphy_phyinit_storeIncvFile] Reading input file: ../../../../firmware/A-2017.09/ddr3/ddr3_pmu_train_imem.incv
 
 // // 1.	Enable access to the internal CSRs by setting the MicroContMuxSel CSR to 0.
 // //       This allows the memory controller unrestricted access to the configuration CSRs. 
 dwc_ddrphy_apb_wr(0xd0000,0x0); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
 // // [dwc_ddrphy_phyinit_WriteOutMem] STARTING. offset 0x50000 size 0x4000
-//dwc_ddrphy_apb_wr(0x50000,0xb0);
-//...
-//dwc_ddrphy_apb_wr(0x53fff,0x0);
 // // [dwc_ddrphy_phyinit_WriteOutMem] DONE.  Index 0x4000
 // // 2.	Isolate the APB access from the internal CSRs by setting the MicroContMuxSel CSR to 1. 
 // //      This allows the firmware unrestricted access to the configuration CSRs. 
@@ -558,52 +802,57 @@ dwc_ddrphy_apb_wr(0xd0000,0x1); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
 // // 
 // //##############################################################
 // 
-//zhouwei dwc_ddrphy_phyinit_userCustom_E_setDfiClk (0);
+dwc_ddrphy_phyinit_userCustom_E_setDfiClk (0);
 
 // 
 // // [dwc_ddrphy_phyinit_userCustom_E_setDfiClk] End of dwc_ddrphy_phyinit_userCustom_E_setDfiClk()
 // // [phyinit_F_loadDMEM, 1D] Start of dwc_ddrphy_phyinit_F_loadDMEM (pstate=0, Train2D=0)
+
+dwc_ddrphy_apb_wr(0xd0000,0x0); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
+// for test on silicon, load 1D dmem/imem here
+//ddr4_load_train_code();
+ddr_load_train_code(FW_1D_IMAGE);
+
+printf("start 1d train\n");
+
+
 // 
 // 
 // //##############################################################
 // //
-// // 4.3.5(F) Load the 1D DMEM image and write the 1D Message Block parameters for the training firmware 
+// // (F) Load the 1D DMEM image and write the 1D Message Block parameters for the training firmware 
 // // 
-// // The procedure is as follows: 
+// // See PhyInit App Note for detailed description and function usage
 // // 
 // //##############################################################
 // 
-// 
-// 
-// // 1.    Load the firmware DMEM segment to initialize the data structures.
-// 
-// // 2.    Write the Firmware Message Block with the required contents detailing the training parameters.
-// 
-// [dwc_ddrphy_phyinit_storeIncvFile] Reading input file: /ux/m850D/weizhou/from_snps/snps_lpddr4mv2_fw_phyinit_a_2017_05_ctb_0_30b/firmware_lpddr4_mphy_v2_vA-2017.05/firmware/Latest/ddr3/ddr3_pmu_train_dmem.incv
+// [dwc_ddrphy_phyinit_storeIncvFile] Reading input file: ../../../../firmware/A-2017.09/ddr3/ddr3_pmu_train_dmem.incv
 
 // // 1.	Enable access to the internal CSRs by setting the MicroContMuxSel CSR to 0.
 // //       This allows the memory controller unrestricted access to the configuration CSRs. 
 dwc_ddrphy_apb_wr(0xd0000,0x0); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
-// // [dwc_ddrphy_phyinit_WriteOutMem] STARTING. offset 0x54000 size 0x364
+// // [dwc_ddrphy_phyinit_WriteOutMem] STARTING. offset 0x54000 size 0x36a
 #ifdef RUN_ON_SILICON
-dwc_ddrphy_apb_wr(0x54000,0x0);
+dwc_ddrphy_apb_wr(0x54000,0x80);
 #else
-dwc_ddrphy_apb_wr(0x54000,0x600);
+dwc_ddrphy_apb_wr(0x54000,0x680);
 #endif
 dwc_ddrphy_apb_wr(0x54001,0x0);
 dwc_ddrphy_apb_wr(0x54002,0x0);
 dwc_ddrphy_apb_wr(0x54003,0x640);
 dwc_ddrphy_apb_wr(0x54004,0x2);
-dwc_ddrphy_apb_wr(0x54005,0x283c);
-dwc_ddrphy_apb_wr(0x54006,0x13b);
-dwc_ddrphy_apb_wr(0x54007,0x2000);
 
-#ifdef DDR_ONE_RANK
-dwc_ddrphy_apb_wr(0x54008,0x301);//rank0
+#if 0
+//org
+dwc_ddrphy_apb_wr(0x54005,0x0);
+dwc_ddrphy_apb_wr(0x54006,0x12c);
 #else
-dwc_ddrphy_apb_wr(0x54008,0x303);
+dwc_ddrphy_apb_wr(0x54005,((DDR3_PHY_RON<<8)|(DDR3_PHY_RTT<<0)));
+dwc_ddrphy_apb_wr(0x54006,0x12c);
 #endif
 
+dwc_ddrphy_apb_wr(0x54007,0x1000);
+dwc_ddrphy_apb_wr(0x54008,0x101);
 dwc_ddrphy_apb_wr(0x54009,0x0);
 dwc_ddrphy_apb_wr(0x5400a,0x0);
 #ifdef RUN_ON_SILICON
@@ -612,76 +861,25 @@ dwc_ddrphy_apb_wr(0x5400b,0x31f);
 dwc_ddrphy_apb_wr(0x5400b,0x1);
 #endif
 dwc_ddrphy_apb_wr(0x5400c,0xc8);
-//dwc_ddrphy_apb_wr(0x5400d,0x0);
-//dwc_ddrphy_apb_wr(0x5400e,0x0);
-//dwc_ddrphy_apb_wr(0x5400f,0x0);
-//dwc_ddrphy_apb_wr(0x54010,0x0);
-//dwc_ddrphy_apb_wr(0x54011,0x0);
+dwc_ddrphy_apb_wr(0x5400d,0x0);
+dwc_ddrphy_apb_wr(0x5400e,0x0);
+dwc_ddrphy_apb_wr(0x5400f,0x0);
+dwc_ddrphy_apb_wr(0x54010,0x0);
+dwc_ddrphy_apb_wr(0x54011,0x0);
 dwc_ddrphy_apb_wr(0x54012,0x1);
-//dwc_ddrphy_apb_wr(0x54013,0x0);
-//dwc_ddrphy_apb_wr(0x54014,0x0);
-//dwc_ddrphy_apb_wr(0x54015,0x0);
-//dwc_ddrphy_apb_wr(0x54016,0x0);
-//dwc_ddrphy_apb_wr(0x54017,0x0);
-//dwc_ddrphy_apb_wr(0x54018,0x0);
-//dwc_ddrphy_apb_wr(0x54019,0x0);
-//dwc_ddrphy_apb_wr(0x5401a,0x0);
-//dwc_ddrphy_apb_wr(0x5401b,0x0);
-//dwc_ddrphy_apb_wr(0x5401c,0x0);
-//dwc_ddrphy_apb_wr(0x5401d,0x0);
-//dwc_ddrphy_apb_wr(0x5401e,0x0);
-//dwc_ddrphy_apb_wr(0x5401f,0x0);
-//dwc_ddrphy_apb_wr(0x54020,0x0);
-//dwc_ddrphy_apb_wr(0x54021,0x0);
-//dwc_ddrphy_apb_wr(0x54022,0x0);
-//dwc_ddrphy_apb_wr(0x54023,0x0);
-//dwc_ddrphy_apb_wr(0x54024,0x0);
-//dwc_ddrphy_apb_wr(0x54025,0x0);
-//dwc_ddrphy_apb_wr(0x54026,0x0);
-//dwc_ddrphy_apb_wr(0x54027,0x0);
-//dwc_ddrphy_apb_wr(0x54028,0x0);
-//dwc_ddrphy_apb_wr(0x54029,0x0);
-//dwc_ddrphy_apb_wr(0x5402a,0x0);
-//dwc_ddrphy_apb_wr(0x5402b,0x0);
-//dwc_ddrphy_apb_wr(0x5402c,0x0);
-//dwc_ddrphy_apb_wr(0x5402d,0x0);
-//dwc_ddrphy_apb_wr(0x5402e,0x0);
+#if 0
+//org
 dwc_ddrphy_apb_wr(0x5402f,0xd70);
-dwc_ddrphy_apb_wr(0x54030,0x04);
+dwc_ddrphy_apb_wr(0x54030,0x4);
 dwc_ddrphy_apb_wr(0x54031,0x18);
-//dwc_ddrphy_apb_wr(0x54032,0x0);
-//dwc_ddrphy_apb_wr(0x54033,0x0);
-//dwc_ddrphy_apb_wr(0x54034,0x0);
-//dwc_ddrphy_apb_wr(0x54035,0x0);
-//dwc_ddrphy_apb_wr(0x54036,0x0);
-//dwc_ddrphy_apb_wr(0x54037,0x0);
-//dwc_ddrphy_apb_wr(0x54038,0x0);
-//dwc_ddrphy_apb_wr(0x54039,0x0);
+#else
+dwc_ddrphy_apb_wr(0x5402f,0xd70);//MR0
+dwc_ddrphy_apb_wr(0x54030,DDR3_MR1_VAL);//MR1=6:Ron=34ohm/Rtt(NOM)=60ohm
+dwc_ddrphy_apb_wr(0x54031,(0x18|(DDR3_MR2_RTT_WR_VAL<<9)));//MR2
+#endif
 dwc_ddrphy_apb_wr(0x5403a,0x1221);
 dwc_ddrphy_apb_wr(0x5403b,0x4884);
-//dwc_ddrphy_apb_wr(0x5403c,0x0);
-//dwc_ddrphy_apb_wr(0x5403d,0x0);
-//dwc_ddrphy_apb_wr(0x5403e,0x0);
-//dwc_ddrphy_apb_wr(0x5403f,0x0);
-//dwc_ddrphy_apb_wr(0x54040,0x0);
-//dwc_ddrphy_apb_wr(0x54041,0x0);
-//dwc_ddrphy_apb_wr(0x54042,0x0);
-//dwc_ddrphy_apb_wr(0x54043,0x0);
-//dwc_ddrphy_apb_wr(0x54044,0x0);
-//dwc_ddrphy_apb_wr(0x54045,0x0);
-//dwc_ddrphy_apb_wr(0x54046,0x0);
-//dwc_ddrphy_apb_wr(0x54047,0x0);
-//dwc_ddrphy_apb_wr(0x54048,0x0);
-//dwc_ddrphy_apb_wr(0x54049,0x0);
-//dwc_ddrphy_apb_wr(0x5404a,0x0);
-//dwc_ddrphy_apb_wr(0x5404b,0x0);
-//dwc_ddrphy_apb_wr(0x5404c,0x0);
-//dwc_ddrphy_apb_wr(0x5404d,0x0);
-//dwc_ddrphy_apb_wr(0x5404e,0x0);
-//dwc_ddrphy_apb_wr(0x5404f,0x0);
-//dwc_ddrphy_apb_wr(0x54050,0x0);
-//dwc_ddrphy_apb_wr(0x54051,0x0);
-// // [dwc_ddrphy_phyinit_WriteOutMem] DONE.  Index 0x364
+// // [dwc_ddrphy_phyinit_WriteOutMem] DONE.  Index 0x36a
 // // 2.	Isolate the APB access from the internal CSRs by setting the MicroContMuxSel CSR to 1. 
 // //      This allows the firmware unrestricted access to the configuration CSRs. 
 dwc_ddrphy_apb_wr(0xd0000,0x1); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
@@ -690,9 +888,9 @@ dwc_ddrphy_apb_wr(0xd0000,0x1); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
 // 
 // //##############################################################
 // //
-// // 4.3.7(G) Execute the Training Firmware 
+// // (G) Execute the Training Firmware 
 // // 
-// // The training firmware is executed with the following procedure: 
+// // See PhyInit App Note for detailed description and function usage
 // //
 // //##############################################################
 // 
@@ -708,7 +906,7 @@ dwc_ddrphy_apb_wr(0xd0099,0x1); // DWC_DDRPHYA_APBONLY0_MicroReset
 dwc_ddrphy_apb_wr(0xd0099,0x0); // DWC_DDRPHYA_APBONLY0_MicroReset
 // 
 // // 3.   Wait for the training firmware to complete by following the procedure in "uCtrl Initialization and Mailbox Messaging" 
-// // 4.3.7  3.   Wait for the training firmware to complete.  Implement timeout fucntion or follow the procedure in "3.4 Running the firmware" of the Training Firmware Application Note to poll the Mailbox message.
+// // [dwc_ddrphy_phyinit_userCustom_G_waitFwDone] Wait for the training firmware to complete.  Implement timeout fucntion or follow the procedure in "3.4 Running the firmware" of the Training Firmware Application Note to poll the Mailbox message.
 dwc_ddrphy_phyinit_userCustom_G_waitFwDone ();
 
 // // [dwc_ddrphy_phyinit_userCustom_G_waitFwDone] End of dwc_ddrphy_phyinit_userCustom_G_waitFwDone()
@@ -719,7 +917,7 @@ dwc_ddrphy_apb_wr(0xd0099,0x1); // DWC_DDRPHYA_APBONLY0_MicroReset
 // 
 // //##############################################################
 // //
-// // 4.3.8(H) Read the Message Block results
+// // (H) Read the Message Block results
 // // 
 // // The procedure is as follows:
 // // 
@@ -740,8 +938,7 @@ dwc_ddrphy_apb_wr(0xd0000,0x0); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
 // {
 //   _read_1d_message_block_outputs_
 // }
-// This can be accomplished by issuing APB read commands to the DMEM addresses.
-//zhouwei dwc_ddrphy_phyinit_userCustom_H_readMsgBlock (0);
+dwc_ddrphy_phyinit_userCustom_H_readMsgBlock (0);
 
 // [dwc_ddrphy_phyinit_userCustom_H_readMsgBlock] End of dwc_ddrphy_phyinit_userCustom_H_readMsgBlock ()
 // // 3.	Isolate the APB access from the internal CSRs by setting the MicroContMuxSel CSR to 1. 
@@ -749,21 +946,114 @@ dwc_ddrphy_apb_wr(0xd0000,0x1); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
 // // 4.	If training is required at another frequency, repeat the operations starting at step (E). 
 // // [dwc_ddrphy_phyinit_H_readMsgBlock] End of dwc_ddrphy_phyinit_H_readMsgBlock()
 // // [phyinit_I_loadPIEImage] Start of dwc_ddrphy_phyinit_I_loadPIEImage()
-// 
-// printf("\n\n\n1D training done!!!!\n\n\n");
+printf("1D training done!!!!\n");
 
-}
-else {
-//restore_1d2d_trained_csr(SAVE_DDRPHY_TRAIN_ADDR);
-}
+#if 1
+//##############################################################
+	dwc_ddrphy_apb_wr(0xd0000,0x0); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
+
+	if((reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54008))&0x0f) == 0x1 )
+		DPRINTF_L2("\nDDR3 one rank\n");
+	else if((reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54008))&0x0f) == 0x3 )
+		DPRINTF_L2("\nDDR3 two rank\n");
+
+//##############################################################
+	DPRINTF_L2("\nPHY Ron=%dohm\n",((reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54005))>>8)&0xff));
+
+	tmp32_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54030));//MR1
+	tmp32 = (tmp32_t>>2)&1;
+	tmp32 |=  ((tmp32_t>>5)&2);
+	tmp32 |=  ((tmp32_t>>7)&4);
+	switch(tmp32) {
+		case 0:
+			DPRINTF_L2("DDR3 RTT(NOM) disable\n");
+			break;
+		case 1:
+			DPRINTF_L2("DDR3 RTT(NOM) 60ohm\n");
+			break;
+		case 2:
+			DPRINTF_L2("DDR3 RTT(NOM) 120ohm\n");
+			break;
+		case 3:
+			DPRINTF_L2("DDR3 RTT(NOM) 40ohm\n");
+			break;
+		default :
+			DPRINTF_L2("DDR3 RTT(NOM) don't support\n");
+			break;
+	}
+
+	tmp32 = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54031));//MR2
+	tmp32 = ((tmp32>>9)&3);
+	switch(tmp32) {
+		case 0:
+			DPRINTF_L2("DDR3 RTT(WR) disable\n");
+			break;
+		case 1:
+			DPRINTF_L2("DDR3 RTT(WR) 60ohm\n");
+			break;
+		case 2:
+			DPRINTF_L2("DDR3 RTT(WR) 120ohm\n");
+			break;
+		case 3:
+			DPRINTF_L2("DDR3 RTT(WR) reserved\n");
+			break;
+	}
+
+//##############################################################
+	DPRINTF_L2("\n");
+	tmp32_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54030));//MR1
+	tmp32 = ((tmp32_t>>1)&1);
+	tmp32 |=  ((tmp32_t>>4)&2);
+	switch(tmp32) {
+		case 0:
+			DPRINTF_L2("DDR3 Ron 40ohm\n");
+			break;
+		case 1:
+			DPRINTF_L2("DDR3 Ron 34ohm\n");
+			break;
+		case 2:
+			DPRINTF_L2("DDR3 Ron reserved\n");
+			break;
+		case 3:
+			DPRINTF_L2("DDR3 Ron reserved\n");
+			break;
+	}
+	DPRINTF_L2("PHY Rtt=%dohm\n",(reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54005))&0xff));
+
+//##############################################################
+	DPRINTF_L2("\nMR0=0x%x(0x5402f)\n",reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x5402f)));
+	DPRINTF_L2("MR1=0x%x(0x54030)\n",reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54030)));
+	DPRINTF_L2("MR2=0x%x(0x54031)\n",reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54031)));
+	DPRINTF_L2("MR3=0x%x(0x54032)\n",reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(0x54032)));
+
+	DPRINTF_L2("\nDDRC_ODTMAP0=0x%x\n",reg32_read(DDRC_ODTMAP(0)));
+
+	#if 1
+		DPRINTF_L0("phy register addr(0x0200b2)=0x%x\n",dwc_ddrphy_apb_rd(0x0200b2));
+		DPRINTF_L0("phy register addr(0x020090)=0x%x\n",dwc_ddrphy_apb_rd(0x020090));
+		DPRINTF_L0("phy register addr(0x01f024)=0x%x\n",dwc_ddrphy_apb_rd(0x01f024));
+		DPRINTF_L0("phy register addr(0x01f043)=0x%x\n",dwc_ddrphy_apb_rd(0x01f043));
+		DPRINTF_L0("phy register addr(0x01f04a)=0x%x\n",dwc_ddrphy_apb_rd(0x01f04a));
+		DPRINTF_L0("phy register addr(0x01f040)=0x%x\n",dwc_ddrphy_apb_rd(0x01f040));
+		DPRINTF_L0("phy register addr(0x02005b)=0x%x\n",dwc_ddrphy_apb_rd(0x02005b));
+	#endif
+
+	dwc_ddrphy_apb_wr(0xd0000,0x1); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
+#endif
+}//!after_retention
+else {//after_retention
+//restore_1d2d_trained_csr_ddr3_p0(SAVE_DDRPHY_TRAIN_ADDR);
+//restore_1d2d_trained_csr_ddr3_p012(SAVE_DDRPHY_TRAIN_ADDR);
+}//after_retention
+// 
 // 
 // //##############################################################
 // //
-// // 4.3.9(I) Load PHY Init Engine Image 
+// // (I) Load PHY Init Engine Image 
 // // 
 // // Load the PHY Initialization Engine memory with the provided initialization sequence.
+// // See PhyInit App Note for detailed description and function usage
 // // 
-// // <Note: For LPDDR3/LPDDR4, this sequence will include the necessary retraining code.>
 // // 
 // //##############################################################
 // 
@@ -952,6 +1242,14 @@ dwc_ddrphy_apb_wr(0x9000b,0x0); // DWC_DDRPHYA_INITENG0_PostSequenceReg0b1s2
 dwc_ddrphy_apb_wr(0xd00e7,0x400); // DWC_DDRPHYA_APBONLY0_SequencerOverride
 dwc_ddrphy_apb_wr(0x90017,0x0); // DWC_DDRPHYA_INITENG0_StartVector0b0
 dwc_ddrphy_apb_wr(0x90026,0x2c); // DWC_DDRPHYA_INITENG0_StartVector0b15
+// // [phyinit_I_loadPIEImage] Pstate=0,  Memclk=800MHz, Programming Seq0BDLY0 to 0x32
+dwc_ddrphy_apb_wr(0x2000b,0x32); // DWC_DDRPHYA_MASTER0_Seq0BDLY0_p0
+// // [phyinit_I_loadPIEImage] Pstate=0,  Memclk=800MHz, Programming Seq0BDLY1 to 0x64
+dwc_ddrphy_apb_wr(0x2000c,0x64); // DWC_DDRPHYA_MASTER0_Seq0BDLY1_p0
+// // [phyinit_I_loadPIEImage] Pstate=0,  Memclk=800MHz, Programming Seq0BDLY2 to 0x3e8
+dwc_ddrphy_apb_wr(0x2000d,0x3e8); // DWC_DDRPHYA_MASTER0_Seq0BDLY2_p0
+// // [phyinit_I_loadPIEImage] Pstate=0,  Memclk=800MHz, Programming Seq0BDLY3 to 0x2c
+dwc_ddrphy_apb_wr(0x2000e,0x2c); // DWC_DDRPHYA_MASTER0_Seq0BDLY3_p0
 dwc_ddrphy_apb_wr(0x9000c,0x0); // DWC_DDRPHYA_INITENG0_Seq0BDisableFlag0
 dwc_ddrphy_apb_wr(0x9000d,0x173); // DWC_DDRPHYA_INITENG0_Seq0BDisableFlag1
 dwc_ddrphy_apb_wr(0x9000e,0x60); // DWC_DDRPHYA_INITENG0_Seq0BDisableFlag2
@@ -975,14 +1273,7 @@ dwc_ddrphy_apb_wr(0xd0000,0x1); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
 // 
 // //##############################################################
 // 
-//zhouwei dwc_ddrphy_phyinit_userCustom_customPostTrain ();
-
-//----------------------------------------------------------------------
-//  save 1d2d training CSR 
-//----------------------------------------------------------------------
-if(!after_retention){
-//save_1d2d_trained_csr(SAVE_DDRPHY_TRAIN_ADDR);
-}
+dwc_ddrphy_phyinit_userCustom_customPostTrain ();
 
 // // [dwc_ddrphy_phyinit_userCustom_customPostTrain] End of dwc_ddrphy_phyinit_userCustom_customPostTrain()
 // // [dwc_ddrphy_phyinit_userCustom_J_enterMissionMode] Start of dwc_ddrphy_phyinit_userCustom_J_enterMissionMode()
@@ -990,7 +1281,7 @@ if(!after_retention){
 // 
 // //##############################################################
 // //
-// // 4.3.10(J) Initialize the PHY to Mission Mode through DFI Initialization 
+// // (J) Initialize the PHY to Mission Mode through DFI Initialization 
 // //
 // // Initialize the PHY to mission mode as follows: 
 // //
@@ -1002,129 +1293,18 @@ if(!after_retention){
 // //
 // //##############################################################
 // 
-//zhouwei dwc_ddrphy_phyinit_userCustom_J_enterMissionMode ();
+dwc_ddrphy_phyinit_userCustom_J_enterMissionMode ();
 
 // 
 // // [dwc_ddrphy_phyinit_userCustom_J_enterMissionMode] End of dwc_ddrphy_phyinit_userCustom_J_enterMissionMode()
 // [dwc_ddrphy_phyinit_sequence] End of dwc_ddrphy_phyinit_sequence()
 // [dwc_ddrphy_phyinit_main] End of dwc_ddrphy_phyinit_main()
-}
-void dwc_ddrphy_phyinit_userCustom_G_waitFwDone(){
-    volatile unsigned int tmp, tmp_t, i;
-    volatile unsigned int train_ok;
-    volatile unsigned int train_fail;
-    volatile unsigned int stream_msg;
-    WORD stream_nb_args;
-    WORD stream_index;
-    WORD stream_arg_pos;
-    WORD message;
-    WORD stream_arg_val;
-    WORD tmp_data;
-train_ok = 0;
-train_fail = 0;
-stream_msg = 0;
-while(train_ok==0 && train_fail==0)
-{
-  // read UctShadowRegs, bit[0] will be set to 0 (looking for 0) when PMU has a message
-    tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
-    tmp_t = tmp & 0x01;
-    while(tmp_t){
-      tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
-      tmp_t = tmp & 0x01;
-    }
 
-  //read UctWriteOnlyShadow: 0x07 indicates success, 0xff indicates fail
-  tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0032);
-  //printk("PMU major stream =0x%x\n",tmp);
-  //info_trigger(0xd0032,tmp,0x0);
-  if(tmp==0x08){
-  stream_msg = 1;
-  //read UctDatWriteOnlyShadow(streaming message): 
-  //tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
-  //tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
-
-
-
-  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x0);
-
-  do {
-  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
-  }while((tmp_t & 0x1) == 0x0);
-  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x1);
-
-  do {
-  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
-  }while((tmp_t & 0x1) == 0x1);
-
-  // read_mbox_mssg
-  stream_nb_args = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0032);
-
-  // read_mbox_msb
-  stream_index = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
-  stream_index = (stream_index << 16) | stream_nb_args;
-  //printk("PMU stream_index=0x%x nb_args=%d\n",stream_index, stream_nb_args);
-  //info_trigger(0xd0034,stream_index,0xFFFFFFFF);
-
-  stream_arg_pos = 0;
-  while(stream_nb_args > 0) {
-       // Need to complete previous handshake first...
-       reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x0);
-       //poll_mbox_from_uc(1);
-
-  do {
-  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
-  }while((tmp_t & 0x1) == 0x0);
-  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x1);
-
-  // Read the next argument...
-  do {
-  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
-  }while((tmp_t & 0x1) == 0x1);
-
-
-  // read_mbox_mssg
-  message  = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0032);
-  // read_mbox_msb
-  stream_arg_val = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
-  stream_arg_val = (stream_arg_val << 16) | message;
-  //printk("PMU stream_arg[%d]=0x%x\n",stream_arg_pos, stream_arg_val);
-  //info_trigger(0xd0034,stream_arg_val,0xFFFF0000);
-      stream_nb_args--;
-      stream_arg_pos++;
-  }//while(stream_nb_args > 0)
-
-
-
-  }
-  else if(tmp==0x07)
-  {
-      train_ok = 1;   
-      printf("\r\nDDR3 FW100 1600MTS ONE RANK TRAINING PASS\r\n");
-  }
-  else if(tmp==0xff)
-  {
-      train_fail = 1; 
-      printf("\r\nDDR3 FW100 1600MTS ONE RANK TRAINING FAILED\r\n");
-  }
-  else  {train_ok = 0; train_fail = 0; stream_msg = 0;}
-
-  //Write the DctWriteProt to 0 to ack the receipt of the message.
-  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x0);
-
-  if(stream_msg == 1){
-  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
-  tmp_t = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
-  }
-
-  //Poll the UctWriteProtShadow, looking for 1
-    tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
-    tmp_t = tmp & 0x01;
-    while(tmp_t==0){
-    tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0004);
-    tmp_t = tmp & 0x01;
-    }
-  //When a  1 is seen, Write the DctWriteProt to 1 to complete the protocol.
-  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0031,0x1);
+//----------------------------------------------------------------------
+//  save 1d2d training CSR 
+//----------------------------------------------------------------------
+if(!after_retention) {
+//save_1d2d_trained_csr_ddr3_p0(SAVE_DDRPHY_TRAIN_ADDR);
+//save_1d2d_trained_csr_ddr3_p012(SAVE_DDRPHY_TRAIN_ADDR);
 }
 }
-

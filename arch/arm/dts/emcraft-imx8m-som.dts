@@ -1,21 +1,18 @@
 /*
  * Copyright (C) 2016 Freescale Semiconductor, Inc.
- * Copyright (C) 2017 NXP
- * Copyright (C) 2017 EmCraft Systems
+ * Copyright 2017 NXP
+ * Copyright (C) 2018 EmCraft Systems
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /dts-v1/;
 
-/* First 128KB is for PSCI ATF. */
-/memreserve/ 0x40000000 0x00020000;
-
 #include "fsl-imx8mq.dtsi"
 
 / {
-	model = "EmCraft i.MX8M SOM";
-	compatible = "emcraft,imx8m-som";
+	model = "EmCraft i.MX8M SOM DDR3L";
+	compatible = "emcraft,imx8m-som", "fsl,imx8mq";
 
 	bcmdhd_wlan_0: bcmdhd_wlan@0 {
 		compatible = "android,bcmdhd_wlan";
@@ -82,7 +79,7 @@
 &iomuxc {
 	pinctrl-names = "default";
 
-	imx8mq-som {
+	imx8m-som {
 		pinctrl_fec1: fec1grp {
 			fsl,pins = <
 				MX8MQ_IOMUXC_ENET_MDC_ENET1_MDC		0x3
@@ -295,9 +292,7 @@
 
 		ethphy0: ethernet-phy@0 {
 			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <0>;
-			at803x,led-act-blind-workaround;
-			at803x,eee-disabled;
+			reg = <1>;
 		};
 	};
 };
@@ -393,21 +388,6 @@
 			};
 		};
 	};
-
-	adv7535: adv7535@3d {
-		compatible = "adi,adv7535";
-		reg = <0x3d>;		/* PD pin is low */
-		/* TODO: pin config & irq */
-		video-mode = <34>;	/* 1920x1080@30HZ */
-		dsi-traffic-mode = <0>;
-		bpp = <24>;
-		status = "okay";
-		port {
-			dsi_to_hdmi: endpoint {
-				remote-endpoint = <&mipi_dsi_ep>;
-			};
-		};
-	};
 };
 
 &i2c2 {
@@ -495,17 +475,6 @@
 	};
 };
 
-&mipi_dsi {
-	reset = <&src>;
-	mux-sel = <&gpr>;	/* lcdif or dcss */
-	status = "okay";
-	port {
-		mipi_dsi_ep: endpoint {
-			remote-endpoint = <&dsi_to_hdmi>;
-		};
-	};
-};
-
 &uart3 { /* BT */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart3>;
@@ -561,26 +530,6 @@
 &usb_dwc3_1 {
 	status = "okay";
 	dr_mode = "host";
-};
-
-&sai2 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_sai2>;
-	assigned-clocks = <&clk IMX8MQ_CLK_SAI2_SRC>,
-			<&clk IMX8MQ_AUDIO_PLL1>,
-			<&clk IMX8MQ_CLK_SAI2_PRE_DIV>,
-			<&clk IMX8MQ_CLK_SAI2_DIV>;
-	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
-	assigned-clock-rates = <0>, <786432000>, <98306000>, <24576000>;
-	status = "okay";
-};
-
-&gpu {
-	status = "okay";
-};
-
-&vpu {
-	status = "okay";
 };
 
 &wdog1 {

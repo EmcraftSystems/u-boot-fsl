@@ -21,23 +21,48 @@
 #include <asm/imx-common/mxc_i2c.h>
 #include <fsl_esdhc.h>
 #include <mmc.h>
-
-void lpddr4_pub_train_3200mts(void);
-void ddr3_pub_train_1600mts(void);
+#include <nand.h>
+#include "ddr/ddr.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#ifdef CONFIG_SPL_DDR_SUPPORT
 void spl_dram_init(void)
 {
-	/* ddr train */
-#if defined(CONFIG_LPDDR4_3200MTS_TWO_FW_100)
-	lpddr4_pub_train_3200mts();
-#elif defined(CONFIG_DDR3_1600MTS_ONE_FW_100)
-	ddr3_pub_train_1600mts();
-#endif
+	/* ddr init */
+	//ddr_init();
+        ddr3_pub_train_1600mts_ret_16bit_1rank();
+        udelay(100000);
+        if(0)
+        {
+            volatile uint32_t  *addrA = 0x40000000;
+
+            volatile uint32_t  *addrB = 0x50000000;
+
+            volatile uint32_t  *addr;
+
+            for(addr = addrA; addr < addrB; addr++){
+                //*addr = addr;
+                writel((uint32_t)addr, (uint32_t)addr);
+            }
+
+
+            //writel((uint32_t)0, (uint32_t)0x40100000);
+
+            for(addr = addrA; addr < addrB; addr++){
+                //readl((uint32_t)addr):
+                //if(*addr != (uint32_t)addr)
+                if(readl((uint32_t)addr) != (uint32_t)addr)
+                {
+                    printf(".................. addr check fail at 0x%x \n", addr);
+                    while(1);
+                }
+            }
+
+            printf(".................. 256M addr check pass \n");
+        }
+
+
 }
-#endif
 
 #define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE)
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
@@ -77,6 +102,7 @@ int board_mmc_getcd(struct mmc *mmc)
 
 #define USDHC_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE | \
 			 PAD_CTL_FSEL2)
+#define USDHC_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
 
 static iomux_v3_cfg_t const usdhc1_pads[] = {
 	IMX8MQ_PAD_SD1_CLK__USDHC1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -89,7 +115,7 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	IMX8MQ_PAD_SD1_DATA5__USDHC1_DATA5 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	IMX8MQ_PAD_SD1_DATA6__USDHC1_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	IMX8MQ_PAD_SD1_DATA7__USDHC1_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	IMX8MQ_PAD_SD1_RESET_B__GPIO2_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	IMX8MQ_PAD_SD1_RESET_B__GPIO2_IO10 | MUX_PAD_CTRL(USDHC_GPIO_PAD_CTRL),
 };
 
 static iomux_v3_cfg_t const usdhc2_pads[] = {
@@ -99,8 +125,9 @@ static iomux_v3_cfg_t const usdhc2_pads[] = {
 	IMX8MQ_PAD_SD2_DATA1__USDHC2_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL), /* 0xd6 */
 	IMX8MQ_PAD_SD2_DATA2__USDHC2_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL), /* 0x16 */
 	IMX8MQ_PAD_SD2_DATA3__USDHC2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL), /* 0xd6 */
-	IMX8MQ_PAD_SD2_CD_B__GPIO2_IO12 | MUX_PAD_CTRL(NO_PAD_CTRL),
-	IMX8MQ_PAD_SD2_RESET_B__GPIO2_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	IMX8MQ_PAD_GPIO1_IO04__USDHC2_VSELECT | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MQ_PAD_SD2_CD_B__GPIO2_IO12 | MUX_PAD_CTRL(USDHC_GPIO_PAD_CTRL),
+	IMX8MQ_PAD_SD2_RESET_B__GPIO2_IO19 | MUX_PAD_CTRL(USDHC_GPIO_PAD_CTRL),
 };
 
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
@@ -152,6 +179,12 @@ int board_mmc_init(bd_t *bis)
 }
 
 #ifdef CONFIG_POWER
+#define PWR_EN IMX_GPIO_NR(1, 8)
+static iomux_v3_cfg_t const pwr_en_pads[] = {
+	IMX8MQ_PAD_GPIO1_IO08__GPIO1_IO8 | MUX_PAD_CTRL(PAD_CTL_DSE6 | PAD_CTL_FSEL1),
+};
+
+#define I2C_PMIC	0
 int power_init_board(void)
 {
 	struct pmic *p;
@@ -212,6 +245,12 @@ int power_init_board(void)
 		pmic_reg_write(p, ldo[i], val | LDO_VOLT_EN);
 	}
 
+	imx_iomux_v3_setup_multiple_pads(pwr_en_pads, ARRAY_SIZE(pwr_en_pads));
+
+	gpio_request(PWR_EN, "pwr_en");
+	gpio_direction_output(PWR_EN, 1);
+	udelay(500);
+
 	rv = 0;
 out:
 	return rv;
@@ -220,18 +259,6 @@ out:
 
 void spl_board_init(void)
 {
-	enable_tzc380();
-
-	/* Adjust pmic voltage to 1.0V for 800M */
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-
-	power_init_board();
-
-#ifdef CONFIG_SPL_DDR_SUPPORT
-	/* DDR initialization */
-	spl_dram_init();
-#endif
-
 	/* Serial download mode */
 	if (is_usb_boot()) {
 		puts("Back to ROM, SDP\n");
@@ -240,8 +267,20 @@ void spl_board_init(void)
 	puts("Normal Boot\n");
 }
 
+#ifdef CONFIG_SPL_LOAD_FIT
+int board_fit_config_name_match(const char *name)
+{
+	/* Just empty function now - can't decide what to choose */
+	debug("%s: %s\n", __func__, name);
+
+	return 0;
+}
+#endif
+
 void board_init_f(ulong dummy)
 {
+	int ret;
+
 	/* Clear global data */
 	memset((void *)gd, 0, sizeof(gd_t));
 
@@ -255,6 +294,22 @@ void board_init_f(ulong dummy)
 
 	/* Clear the BSS. */
 	memset(__bss_start, 0, __bss_end - __bss_start);
+
+	ret = spl_init();
+	if (ret) {
+		debug("spl_init() failed: %d\n", ret);
+		hang();
+	}
+
+	enable_tzc380();
+
+	/* Adjust pmic voltage VDD_DRAM to 1.0V for DRAM RUN >= 2400MHZ */
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+
+	power_init_board();
+
+	/* DDR initialization */
+	spl_dram_init();
 
 	board_init_r(NULL, 0);
 }
