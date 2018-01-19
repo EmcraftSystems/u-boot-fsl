@@ -1,6 +1,6 @@
 /*
  * Copyright 2017 NXP
- * Copyright 2017 EmCraft Systems
+ * Copyright 2018 Emcraft Systems
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -10,6 +10,10 @@
 
 #include <linux/sizes.h>
 #include <asm/arch/imx-regs.h>
+
+#ifdef CONFIG_SECURE_BOOT
+#define CONFIG_CSF_SIZE			0x2000 /* 8K region */
+#endif
 
 #define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_TEXT_BASE		0x7E1000
@@ -22,22 +26,26 @@
 #ifdef CONFIG_SPL_BUILD
 /*#define CONFIG_ENABLE_DDR_TRAINING_DEBUG*/
 #define CONFIG_SPL_THERM_SUPPORT
+#define CONFIG_SPL_WATCHDOG_SUPPORT
+#define CONFIG_SPL_DRIVERS_MISC_SUPPORT
 #define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_I2C_SUPPORT
 #define CONFIG_SPL_BOARD_INIT
 #define CONFIG_SPL_LDSCRIPT		"arch/arm/cpu/armv8/u-boot-spl.lds"
-#define CONFIG_SPL_STACK		0x91FFF0
+#define CONFIG_SPL_STACK		0x187FF0
 #define CONFIG_SPL_LIBCOMMON_SUPPORT
 #define CONFIG_SPL_LIBGENERIC_SUPPORT
 #define CONFIG_SPL_SERIAL_SUPPORT
 #define CONFIG_SPL_GPIO_SUPPORT
 #define CONFIG_SPL_MMC_SUPPORT
-#define CONFIG_SPL_BSS_START_ADDR      0x00912000
+#define CONFIG_SPL_BSS_START_ADDR      0x00180000
 #define CONFIG_SPL_BSS_MAX_SIZE        0x2000	/* 8 KB */
-#define CONFIG_SYS_SPL_MALLOC_START    0x00914000
-#define CONFIG_SYS_SPL_MALLOC_SIZE     0x2000	/* 8 KB */
+#define CONFIG_SYS_SPL_MALLOC_START    0x42200000
+#define CONFIG_SYS_SPL_MALLOC_SIZE     0x80000	/* 512 KB */
 #define CONFIG_SYS_ICACHE_OFF
 #define CONFIG_SYS_DCACHE_OFF
+
+#define CONFIG_MALLOC_F_ADDR		0x182000 /* malloc f used before GD_FLG_FULL_MALLOC_INIT set */
 
 #define CONFIG_SPL_ABORT_ON_RAW_IMAGE /* For RAW image gives a error info not panic */
 
@@ -50,12 +58,23 @@
 #define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
 #define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
 
+#define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+
 #define CONFIG_POWER
 #define CONFIG_POWER_I2C
 #define CONFIG_POWER_BD71837
 #define CONFIG_POWER_BD71837_I2C_BUS	0
 #define CONFIG_POWER_BD71837_I2C_ADDR	0x4B
+
+#if defined(CONFIG_NAND_BOOT)
+#define CONFIG_SPL_NAND_SUPPORT
+#define CONFIG_SPL_DMA_SUPPORT
+#define CONFIG_SPL_NAND_MXS
+#define CONFIG_SYS_NAND_U_BOOT_OFFS 	0x8000000 /* Put the FIT out of first 128MB boot area */
 #endif
+#define CONFIG_SPL_DMA_SUPPORT
+
+#endif /* CONFIG_SPL_BUILD*/
 
 #define CONFIG_REMAKE_ELF
 
@@ -83,15 +102,22 @@
 #define CONFIG_ETHPRIME                 "FEC"
 
 #define CONFIG_FEC_MXC
-#define CONFIG_FEC_XCV_TYPE             RGMII
-#define CONFIG_FEC_MXC_PHYADDR          0
 #define FEC_QUIRK_ENET_MAC
 
-#define CONFIG_PHY_GIGE
 #define IMX_FEC_BASE			0x30BE0000
 
 #define CONFIG_PHYLIB
-#define CONFIG_PHY_ATHEROS
+
+#define CONFIG_FEC_XCV_TYPE             RGMII
+#define CONFIG_PHY_REALTEK
+#define CONFIG_FEC_MXC_PHYADDR          1
+
+#endif
+
+#ifdef CONFIG_NAND_BOOT
+#define MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(boot),16m(fit),32m(kernel),16m(dtb),8m(misc),-(rootfs) "
+#else
+#define MFG_NAND_PARTITION ""
 #endif
 
 #define CONFIG_MFG_ENV_SETTINGS \
@@ -100,12 +126,29 @@
 		"g_mass_storage.stall=0 g_mass_storage.removable=1 " \
 		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
 		"g_mass_storage.iSerialNumber=\"\" "\
+		MFG_NAND_PARTITION \
 		"clk_ignore_unused "\
 		"\0" \
 	"initrd_addr=0x43800000\0" \
 	"initrd_high=0xffffffff\0" \
 	"bootcmd_mfg=run mfgtool_args;booti ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
+
 /* Initial environment variables */
+#if defined(CONFIG_NAND_BOOT)
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	CONFIG_MFG_ENV_SETTINGS \
+	"fdt_addr=0x43000000\0"			\
+	"fdt_high=0xffffffffffffffff\0" \
+	"console=ttymxc0,115200 earlycon=ec_imx6q,0x30860000,115200\0" \
+	"bootargs=console=${console} ubi.mtd=5 "  \
+		"root=ubi0:rootfs rootfstype=ubifs "		     \
+		MFG_NAND_PARTITION \
+		"\0" \
+	"bootcmd=nand read ${loadaddr} 0x5000000 0x1400000;"\
+		"nand read ${fdt_addr} 0x7000000 0x100000;"\
+		"booti ${loadaddr} - ${fdt_addr}"
+
+#else
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
 	"script=boot.scr\0" \
@@ -114,7 +157,7 @@
 	"fdt_addr=0x43000000\0"			\
 	"fdt_high=0xffffffffffffffff\0"		\
 	"boot_fdt=try\0" \
-	"fdt_file=emcraft-imx8m-som.dtb\0" \
+	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"initrd_addr=0x43800000\0"		\
 	"initrd_high=0xffffffffffffffff\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
@@ -170,22 +213,23 @@
 			   "fi; " \
 		   "fi; " \
 	   "else booti ${loadaddr} - ${fdt_addr}; fi"
+#endif
 
 /* Link Definitions */
-#define CONFIG_LOADADDR			0x40280000
-#define CONFIG_SYS_TEXT_BASE		0x40021000
+#define CONFIG_LOADADDR			0x40480000
+#define CONFIG_SYS_TEXT_BASE		0x40200000
 
 #define CONFIG_SYS_LOAD_ADDR           CONFIG_LOADADDR
 
-#define CONFIG_SYS_INIT_RAM_ADDR        0x912000
-#define CONFIG_SYS_INIT_RAM_SIZE        0xe000
+#define CONFIG_SYS_INIT_RAM_ADDR        0x40000000
+#define CONFIG_SYS_INIT_RAM_SIZE        0x80000
 #define CONFIG_SYS_INIT_SP_OFFSET \
         (CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_ADDR \
         (CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
 #define CONFIG_ENV_OVERWRITE
-#define CONFIG_ENV_OFFSET               (22 * SZ_64K)
+#define CONFIG_ENV_OFFSET               (64 * SZ_64K)
 #define CONFIG_ENV_SIZE			0x1000
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_DEV		1   /* USDHC2 */
@@ -196,7 +240,7 @@
 
 #define CONFIG_SYS_SDRAM_BASE           0x40000000
 #define PHYS_SDRAM                      0x40000000
-#define PHYS_SDRAM_SIZE			0xC0000000 /* 3GB DDR */
+#define PHYS_SDRAM_SIZE			0x20000000 /* 512M one Rank */
 #define CONFIG_NR_DRAM_BANKS		1
 
 #define CONFIG_BAUDRATE			115200
@@ -236,18 +280,18 @@
 #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
 
 #define CONFIG_FSL_QSPI    /* enable the QUADSPI driver */
+
 #ifdef CONFIG_FSL_QSPI
 #define CONFIG_CMD_SF
 #define	CONFIG_SPI_FLASH
-#define	CONFIG_SPI_FLASH_STMICRO
-#define	CONFIG_SPI_FLASH_BAR
+#define	CONFIG_SPI_FLASH_GIGADEVICE
 #define	CONFIG_SF_DEFAULT_BUS		0
-#define	CONFIG_SF_DEFAULT_CS		0
+#define	CONFIG_SF_DEFAULT_CS		1
 #define	CONFIG_SF_DEFAULT_SPEED		40000000
 #define	CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
 
-#define FSL_QSPI_FLASH_SIZE		(SZ_32M)
-#define FSL_QSPI_FLASH_NUM		1
+#define FSL_QSPI_FLASH_SIZE		(SZ_2M)
+#define FSL_QSPI_FLASH_NUM		2
 #endif
 
 #define CONFIG_MXC_GPIO
@@ -294,7 +338,4 @@
 
 #define CONFIG_OF_SYSTEM_SETUP
 
-#if defined(CONFIG_ANDROID_SUPPORT)
-#include "imx8mq_evk_android.h"
-#endif
 #endif
