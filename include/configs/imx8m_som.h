@@ -152,67 +152,54 @@
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
 	"script=boot.scr\0" \
-	"image=Image\0" \
-	"console=ttymxc0,115200 earlycon=ec_imx6q,0x30860000,115200\0" \
+	"image=rootfs.Image\0" \
+	"fdt_file=rootfs.dtb\0" \
+	"ethaddr=3C:FB:96:77:88:A0\0" \
+	"ip_dyn=no\0" \
+	"ipaddr=172.17.33.41\0" \
+	"serverip=172.17.0.1\0" \
 	"fdt_addr=0x43000000\0"			\
 	"fdt_high=0xffffffffffffffff\0"		\
 	"boot_fdt=try\0" \
-	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"initrd_addr=0x43800000\0"		\
 	"initrd_high=0xffffffffffffffff\0" \
-	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
-	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
-	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
-	"mmcautodetect=yes\0" \
-	"mmcargs=setenv bootargs console=${console} root=${mmcroot}\0 " \
-	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
-	"bootscript=echo Running bootscript from mmc ...; " \
+	"sddev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
+	"sdpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
+	"mmcroot=" CONFIG_MMCROOT "\0" \
+	"args_common=console=ttymxc0,115200 earlycon=ec_imx6q,0x30860000,115200\0" \
+	"args_quiet=setenv bootargs ${args_common} quiet=quiet\0" \
+	"args_verbose=setenv bootargs ${args_common} ignore_loglevel\0" \
+	"args=run args_quiet\0" \
+	"netargs=setenv bootargs ${bootargs} " \
+                "root=/dev/nfs nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
+	"sdargs=setenv bootargs ${bootargs} root=${mmcroot} rootwait rw\0 " \
+	"loadbootscript=fatload mmc ${sddev}:${sdpart} ${loadaddr} ${script};\0" \
+	"bootscript=echo Running bootscript from SD card...; " \
 		"source\0" \
-	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
-	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
-	"mmcboot=echo Booting from mmc ...; " \
-		"run mmcargs; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if run loadfdt; then " \
-				"booti ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"echo WARN: Cannot load the DT; " \
-			"fi; " \
-		"else " \
-			"echo wait for boot; " \
-		"fi;\0" \
-	"netargs=setenv bootargs console=${console} " \
-		"root=/dev/nfs " \
-		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
+	"loadimage=fatload mmc ${sddev}:${sdpart} ${loadaddr} ${image}\0" \
+	"loadfdt=fatload mmc ${sddev}:${sdpart} ${fdt_addr} ${fdt_file}\0" \
+	"sdboot=echo Booting from SD card ...; " \
+		"mmc dev ${sddev}; if mmc rescan; then "	\
+		"if run loadbootscript; then "			\
+			"run bootscript; "		       \
+		   "else " \
+			"run args sdargs addip loadfdt && run loadimage && " \
+			"booti ${loadaddr} - ${fdt_addr};" \
+		    "fi;" \
+		"fi\0" \
+	"addip=setenv bootargs ${bootargs} ip=${ipaddr}:${serverip}:${gatewayip}:" \
+		"${netmask}:${hostname}:eth0:off\0" \
 	"netboot=echo Booting from net ...; " \
-		"run netargs;  " \
+		"run args sdargs;  " \
 		"if test ${ip_dyn} = yes; then " \
 			"setenv get_cmd dhcp; " \
 		"else " \
 			"setenv get_cmd tftp; " \
 		"fi; " \
-		"${get_cmd} ${loadaddr} ${image}; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"booti ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"echo WARN: Cannot load the DT; " \
-			"fi; " \
-		"else " \
-			"booti; " \
-		"fi;\0"
-
-#define CONFIG_BOOTCOMMAND \
-	   "mmc dev ${mmcdev}; if mmc rescan; then " \
-		   "if run loadbootscript; then " \
-			   "run bootscript; " \
-		   "else " \
-			   "if run loadimage; then " \
-				   "run mmcboot; " \
-			   "else booti ${loadaddr} - ${fdt_addr}; " \
-			   "fi; " \
-		   "fi; " \
-	   "else booti ${loadaddr} - ${fdt_addr}; fi"
+		"${get_cmd} ${loadaddr} ${image} && " \
+		"${get_cmd} ${fdt_addr} ${fdt_file} && " \
+		"run addip && booti ${loadaddr} - ${fdt_addr};\0"
+#define CONFIG_BOOTCOMMAND "run sdboot"
 #endif
 
 /* Link Definitions */
@@ -237,7 +224,7 @@
 #define CONFIG_ENV_SIZE			0x1000
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_DEV		1   /* USDHC2 */
-#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
+#define CONFIG_MMCROOT			"/dev/mmcblk1p3"  /* USDHC2 */
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		((CONFIG_ENV_SIZE + (2*1024)) * 1024)
@@ -281,7 +268,7 @@
 #define CONFIG_CMD_FAT
 
 #define CONFIG_SUPPORT_EMMC_BOOT	/* eMMC specific */
-#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
+#define CONFIG_SYS_MMC_IMG_LOAD_PART	2
 
 #define CONFIG_FSL_QSPI    /* enable the QUADSPI driver */
 
