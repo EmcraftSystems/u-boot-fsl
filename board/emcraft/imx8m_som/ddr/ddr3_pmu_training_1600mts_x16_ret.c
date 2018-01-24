@@ -1,3 +1,9 @@
+/*
+ * Copyright 2018 NXP
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
 #include <common.h>
 #include <errno.h>
 #include <asm/io.h>
@@ -11,8 +17,6 @@
 #define SRC_DDRC_RCR_ADDR SRC_IPS_BASE_ADDR +0x1000
 #define DDR_CSD1_BASE_ADDR 0x40000000
 #define DDR_CSD2_BASE_ADDR 0x80000000
-#define DPRINTF_L0 printf 
-#define DPRINTF_L2 printf
 
 #define GPC_PU_PWRHSK 0x303A01FC
 #define dwc_ddrphy_apb_wr(addr, data)  reg32_write(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*(addr), data)
@@ -165,13 +169,13 @@ reg32_write(SRC_DDRC_RCR_ADDR, 0x8F000000); // release all reset
  reg32_write(DDRC_DFIMISC(0), 0x00000000); 
 
 
-    printf("vt_event5\n");
+    ddr_printf("vt_event5\n");
 ddr3_phyinit_train_1600mts_x16_ret(0);//before retention
 
 
 do {
   tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0x00020097); 
-  printf("C: Wait CalBusy = 0\n");
+  ddr_printf("C: Wait CalBusy = 0\n");
 }while(tmp != 0);
 
 reg32setbit(DDRC_DFIMISC(0),5);//dfi_init_start=1

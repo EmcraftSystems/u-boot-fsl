@@ -1,4 +1,11 @@
+/*
+ * Copyright 2018 NXP
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
 #include "config.h"
+
 #ifdef DDR3_1600MHZ_RET_16BIT_1RANK_FW09
 
 #include "soc_api.h"
@@ -18,7 +25,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 266MHz locked success!\n");
+printk("DDR PLL1 266MHz locked\n");
 }
 
 void DDR_PLL_CONFIG_600MHz(void) {
@@ -32,7 +39,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 600MHz locked success!\n");
+printk("DDR PLL1 600MHz locked\n");
 }
 
 void DDR_PLL_CONFIG_400MHz(void) {
@@ -46,7 +53,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 400MHz locked success!\n");
+printk("DDR PLL1 400MHz locked\n");
 }
 void DDR_PLL_CONFIG_395MHz(void) {
 WORD ddr_pll_lock;
@@ -56,7 +63,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 395MHz locked success!\n");
+printk("DDR PLL1 395MHz locked\n");
 }
 void DDR_PLL_CONFIG_200MHz(void) {
 WORD ddr_pll_lock;
@@ -69,7 +76,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 200MHz locked success!\n");
+printk("DDR PLL1 200MHz locked\n");
 }
 
 void DDR_PLL_CONFIG_50MHz(void) {
@@ -83,7 +90,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 50MHz locked success!\n");
+printk("DDR PLL1 50MHz locked\n");
 }
 
 
@@ -98,7 +105,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 400MHz locked success!\n");
+printk("DDR PLL1 400MHz locked\n");
 }
 
 
@@ -113,6 +120,6 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 800MHz locked success!\n");
+printk("DDR PLL1 800MHz locked\n");
 }
 #endif//end DDR3_1600MHZ_RET_16BIT_1RANK_FW09

@@ -1,3 +1,9 @@
+/*
+ * Copyright 2018 NXP
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
 #include <common.h>
 #include <errno.h>
 #include <asm/io.h>
@@ -6,10 +12,6 @@
 #include "ddr3.h"
 
 #define RUN_ON_SILICON
-#define DPRINTF_L0 printf
-#define DPRINTF_L2 printf
-#define printk printf
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //for DDR3L
 //Note:DQ SI RON=40ohm, RTT=60ohm
@@ -52,7 +54,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 266MHz locked success!\n");
+printk("DDR PLL1 266MHz locked\n");
 }
 
 void DDR_PLL_CONFIG_600MHz(void) {
@@ -66,7 +68,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 600MHz locked success!\n");
+printk("DDR PLL1 600MHz locked\n");
 }
 
 void DDR_PLL_CONFIG_400MHz(void) {
@@ -80,7 +82,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 400MHz locked success!\n");
+printk("DDR PLL1 400MHz locked\n");
 }
 void DDR_PLL_CONFIG_395MHz(void) {
 WORD ddr_pll_lock;
@@ -90,7 +92,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 395MHz locked success!\n");
+printk("DDR PLL1 395MHz locked\n");
 }
 void DDR_PLL_CONFIG_200MHz(void) {
 WORD ddr_pll_lock;
@@ -103,7 +105,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 200MHz locked success!\n");
+printk("DDR PLL1 200MHz locked\n");
 }
 
 void DDR_PLL_CONFIG_50MHz(void) {
@@ -117,7 +119,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 50MHz locked success!\n");
+printk("DDR PLL1 50MHz locked\n");
 }
 
 
@@ -132,7 +134,7 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 400MHz locked success!\n");
+printk("DDR PLL1 667MHz locked\n");
 }
 
 
@@ -147,14 +149,14 @@ sscgpll_bypass_disable(HW_DRAM_PLL_CFG0_ADDR);
 while ( ddr_pll_lock != 0x1 ) {
    ddr_pll_lock = wait_pll_lock(HW_DRAM_PLL_CFG0_ADDR);
   }
-printk("Congratulations, DDR PLL1 800MHz locked success!\n");
+printk("DDR PLL1 800MHz locked\n");
 }
 
 void dwc_ddrphy_phyinit_userCustom_E_setDfiClk (unsigned int pstate) {
   unsigned int tmp;
-//  if     (pstate==0) { printf("C: 1 ...\n");DDR_PLL_CONFIG_400MHz(); }
-  if     (pstate==0) { printf("C: 1 ...\n");DDR_PLL_CONFIG_395MHz(); }
-  else               { printf("C: no freq match\n");}
+
+  if     (pstate==0) { ddr_printf("C: 1 ...\n");DDR_PLL_CONFIG_395MHz(); }
+  else               { ddr_printf("C: no freq match\n");}
 
   tmp=20;
   while(tmp--);
@@ -187,7 +189,7 @@ void dwc_ddrphy_phyinit_userCustom_G_waitFwDone(void){
 
 	  //read UctWriteOnlyShadow: 0x07 indicates success, 0xff indicates fail
 	  tmp = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0032);
-	  printf("PMU major stream =0x%x\n",tmp);
+	  ddr_printf("PMU major stream =0x%x\n",tmp);
 	  info_trigger(0xd0032,tmp,0x0);
 	  if(tmp==0x08){
 	  stream_msg = 1;
@@ -214,7 +216,7 @@ void dwc_ddrphy_phyinit_userCustom_G_waitFwDone(void){
 	  // read_mbox_msb
 	  stream_index = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
 	  stream_index = (stream_index << 16) | stream_nb_args;
-	  printf("PMU stream_index=0x%x nb_args=%d\n",stream_index, stream_nb_args);
+	  ddr_printf("PMU stream_index=0x%x nb_args=%d\n",stream_index, stream_nb_args);
 	  //info_trigger(0xd0034,stream_index,0xFFFFFFFF);
 
 	  stream_arg_pos = 0;
@@ -239,7 +241,7 @@ void dwc_ddrphy_phyinit_userCustom_G_waitFwDone(void){
 	  // read_mbox_msb
 	  stream_arg_val = reg32_read(IP2APB_DDRPHY_IPS_BASE_ADDR(0)+4*0xd0034);
 	  stream_arg_val = (stream_arg_val << 16) | message;
-	  printf("PMU stream_arg[%d]=0x%x\n",stream_arg_pos, stream_arg_val);
+	  ddr_printf("PMU stream_arg[%d]=0x%x\n",stream_arg_pos, stream_arg_val);
 	  //info_trigger(0xd0034,stream_arg_val,0xFFFF0000);
 	      stream_nb_args--;
 	      stream_arg_pos++;
@@ -248,12 +250,12 @@ void dwc_ddrphy_phyinit_userCustom_G_waitFwDone(void){
 
 
 	  }
-	  else if(tmp==0x07){train_ok = 1;   printf("\nvt_pass\n");}
+	  else if(tmp==0x07){train_ok = 1;   ddr_printf("\nvt_pass\n");}
 	  else if(tmp==0xff){
 	  	train_fail = 1; 
-		printf("%c[31;40m",0x1b);
-		printf("\n------- vt_fail\n");
-		printf("%c[0m",0x1b);
+		ddr_printf("%c[31;40m",0x1b);
+		ddr_printf("\n------- vt_fail\n");
+		ddr_printf("%c[0m",0x1b);
 	  }
 	  else  {train_ok = 0; train_fail = 0; stream_msg = 0;}
 
@@ -285,18 +287,18 @@ void dwc_ddrphy_phyinit_userCustom_B_startClockResetPhy (void){}
 void dwc_ddrphy_phyinit_userCustom_H_readMsgBlock(unsigned int Train2D){
 	unsigned long i;
 #ifndef DDR_DEBUG
-	printf("Jump printf\n");
+	ddr_printf("Jump ddr_printf\n");
 	//return 0;
 #endif
-	printf("data[0x90194] = 0x%08x\n",dwc_ddrphy_apb_rd(0x90194));
-	printf("data[0x90195] = 0x%08x\n",dwc_ddrphy_apb_rd(0x90195));
-	printf("PMU fw revision ID 0x%08x\n",dwc_ddrphy_apb_rd(0x54001));
-	printf("ranks (H) 0x%08x\n",(dwc_ddrphy_apb_rd(0x5400a))&0xff);
+	ddr_printf("data[0x90194] = 0x%08x\n",dwc_ddrphy_apb_rd(0x90194));
+	ddr_printf("data[0x90195] = 0x%08x\n",dwc_ddrphy_apb_rd(0x90195));
+	ddr_printf("PMU fw revision ID 0x%08x\n",dwc_ddrphy_apb_rd(0x54001));
+	ddr_printf("ranks (H) 0x%08x\n",(dwc_ddrphy_apb_rd(0x5400a))&0xff);
 	for(i=0;i<0x1d;i++){
-		printf("CCD 0x%08x: 0x%08x\n",i+0x54012,dwc_ddrphy_apb_rd(i+0x54012));
+		ddr_printf("CCD 0x%08x: 0x%08x\n",i+0x54012,dwc_ddrphy_apb_rd(i+0x54012));
 	}
 	if(Train2D) {
-            printf("ERROR: DDR3 has no 2D training!!\n");
+            ddr_printf("ERROR: DDR3 has no 2D training!!\n");
 	}
 }
 void dwc_ddrphy_phyinit_userCustom_customPostTrain (void){}
@@ -813,7 +815,7 @@ dwc_ddrphy_apb_wr(0xd0000,0x0); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
 //ddr4_load_train_code();
 ddr_load_train_code(FW_1D_IMAGE);
 
-printf("start 1d train\n");
+ddr_printf("start 1d train\n");
 
 
 // 
@@ -946,7 +948,7 @@ dwc_ddrphy_apb_wr(0xd0000,0x1); // DWC_DDRPHYA_APBONLY0_MicroContMuxSel
 // // 4.	If training is required at another frequency, repeat the operations starting at step (E). 
 // // [dwc_ddrphy_phyinit_H_readMsgBlock] End of dwc_ddrphy_phyinit_H_readMsgBlock()
 // // [phyinit_I_loadPIEImage] Start of dwc_ddrphy_phyinit_I_loadPIEImage()
-printf("1D training done!!!!\n");
+ddr_printf("1D training done!!!!\n");
 
 #if 1
 //##############################################################
