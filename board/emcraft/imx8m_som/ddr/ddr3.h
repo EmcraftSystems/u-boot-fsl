@@ -1,5 +1,21 @@
+/*
+ * Copyright 2018 NXP
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
 #ifndef __ddr_h__ 
 #define __ddr_h__
+
+#ifdef CONFIG_ENABLE_DDR_TRAINING_DEBUG
+#define ddr_printf(args...) printf(args)
+#else
+#define ddr_printf(args...)
+#endif
+
+#define DPRINTF_L0 ddr_printf
+#define DPRINTF_L2 ddr_printf
+#define printk     ddr_printf
 
 typedef unsigned int WORD;
 
