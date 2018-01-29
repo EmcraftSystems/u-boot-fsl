@@ -105,6 +105,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 #define FEC_RST_PAD IMX_GPIO_NR(1, 9)
 static iomux_v3_cfg_t const fec1_rst_pads[] = {
 	IMX8MQ_PAD_GPIO1_IO09__GPIO1_IO9 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	IMX8MQ_PAD_GPIO1_IO15__CCM_CLKO2 | MUX_PAD_CTRL(0x1F),
 };
 
 static void setup_iomux_fec(void)

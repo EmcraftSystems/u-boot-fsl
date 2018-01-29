@@ -714,6 +714,11 @@ int set_clk_enet(enum enet_freq type)
 		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV4);
 	clock_set_target_val(ENET_TIMER_CLK_ROOT, target);
 
+	target = CLK_ROOT_ON | 0 |
+		 CLK_ROOT_PRE_DIV(CLK_ROOT_PRE_DIV1) |
+		 CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1);
+	clock_set_target_val(IPP_DO_CLKO2, target);
+
 #ifdef CONFIG_FEC_MXC_25M_REF_CLK
 	target = CLK_ROOT_ON |
 		 ENET_PHY_REF_CLK_ROOT_FROM_PLL_ENET_MAIN_25M_CLK |
