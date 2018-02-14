@@ -22,15 +22,23 @@
 #include <fsl_esdhc.h>
 #include <mmc.h>
 #include <nand.h>
-#include "ddr/ddr.h"
+
+#ifdef CONFIG_TARGET_EMCRAFT_IMX8M_SOM
+#include "ddr/ddr3l/ddr.h"
+#else
+#include "ddr/lpddr4/ddr.h"
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
 void spl_dram_init(void)
 {
 	/* ddr init */
-	//ddr_init();
-        ddr3_pub_train_1600mts_ret_16bit_1rank();
+#ifdef CONFIG_TARGET_EMCRAFT_IMX8M_SOM
+	ddr3_pub_train_1600mts_ret_16bit_1rank();
+#else
+	ddr_init();
+#endif
         udelay(100000);
         if(0)
         {
@@ -223,13 +231,18 @@ int power_init_board(void)
 
 	/*
 	 * Reconfigure default voltages:
-	 * - BUCK8: VDD_DRAM_1V35 (1.10 -> 1.35)
 	 * - BUCK3: VDD_GPU_0V9 (1.00 -> 0.90)
 	 * - BUCK4: VDD_VPU_0V9 (1.00 -> 0.90)
 	 */
-	pmic_reg_write(p, BD71837_REG_BUCK8_VOLT, 0x37);
 	pmic_reg_write(p, BD71837_REG_BUCK3_VOLT_RUN, 0x14);
 	pmic_reg_write(p, BD71837_REG_BUCK4_VOLT_RUN, 0x14);
+
+#ifdef CONFIG_TARGET_EMCRAFT_IMX8M_SOM
+	/*
+	 * - BUCK8: VDD_DRAM_1V35 (1.10 -> 1.35)
+	 */
+	pmic_reg_write(p, BD71837_REG_BUCK8_VOLT, 0x37);
+#endif
 
 	/*
 	 * Enable PHYs voltages: LDO5-7
