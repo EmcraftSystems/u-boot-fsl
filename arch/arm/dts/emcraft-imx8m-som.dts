@@ -11,7 +11,11 @@
 #include "fsl-imx8mq.dtsi"
 
 / {
-	model = "EmCraft i.MX8M SOM DDR3L";
+#if defined(CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_SOM)
+	model = "Emcraft i.MX8M SOM DDR4L";
+#else
+	model = "Emcraft i.MX8M SOM DDR3L";
+#endif
 	compatible = "emcraft,imx8m-som", "fsl,imx8mq";
 
 	bcmdhd_wlan_0: bcmdhd_wlan@0 {
