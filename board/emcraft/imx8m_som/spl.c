@@ -237,7 +237,7 @@ int power_init_board(void)
 	pmic_reg_write(p, BD71837_REG_BUCK3_VOLT_RUN, 0x14);
 	pmic_reg_write(p, BD71837_REG_BUCK4_VOLT_RUN, 0x14);
 
-#ifdef CONFIG_TARGET_EMCRAFT_IMX8M_SOM
+#if 0 /* defined(CONFIG_TARGET_EMCRAFT_IMX8M_SOM) */
 	/*
 	 * - BUCK8: VDD_DRAM_1V35 (1.10 -> 1.35)
 	 */
