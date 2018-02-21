@@ -12,7 +12,7 @@
 
 / {
 #if defined(CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_SOM)
-	model = "Emcraft i.MX8M SOM DDR4L";
+	model = "Emcraft i.MX8M SOM LPDDR4";
 #else
 	model = "Emcraft i.MX8M SOM DDR3L";
 #endif
