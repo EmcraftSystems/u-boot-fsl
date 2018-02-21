@@ -225,7 +225,7 @@
 #define CONFIG_ENV_SIZE			0x1000
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_DEV		1   /* USDHC2 */
-#define CONFIG_MMCROOT			"/dev/mmcblk1p3"  /* USDHC2 */
+#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		((CONFIG_ENV_SIZE + (2*1024)) * 1024)
@@ -269,7 +269,7 @@
 #define CONFIG_CMD_FAT
 
 #define CONFIG_SUPPORT_EMMC_BOOT	/* eMMC specific */
-#define CONFIG_SYS_MMC_IMG_LOAD_PART	2
+#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
 
 #define CONFIG_FSL_QSPI    /* enable the QUADSPI driver */
 
