@@ -86,7 +86,7 @@ void wait_ddrphy_training_complete(void)
 		if (mail == 0x08) {
 			decode_streaming_message();
 		} else if (mail == 0x07) {
-			printf("Training PASS\n");
+			/* Training PASS */
 			break;
 		} else if (mail == 0xff) {
 			printf("Training FAILED\n");
