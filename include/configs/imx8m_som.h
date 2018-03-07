@@ -152,8 +152,8 @@
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
 	"script=boot.scr\0" \
-	"image=rootfs.Image\0" \
-	"fdt_file=rootfs.dtb\0" \
+	"image=Image\0" \
+	"fdt_file=Image-imx8m-som.dtb\0" \
 	"ethaddr=3C:FB:96:77:88:A0\0" \
 	"ip_dyn=no\0" \
 	"ipaddr=172.17.33.41\0" \
