@@ -179,11 +179,19 @@
 		"source\0" \
 	"loadimage=fatload mmc ${sddev}:${sdpart} ${loadaddr} ${image}\0" \
 	"loadfdt=fatload mmc ${sddev}:${sdpart} ${fdt_addr} ${fdt_file}\0" \
+	"rtos_file=imx8mq_m4_TCM_rpmsg_lite_str_echo_rtos.bin\0"       \
+	"rtos_bootaddr=0x7e0000\0"				       \
+	"rtossdboot=fatload mmc ${sddev}:${sdpart} ${rtos_bootaddr} "  \
+		"${rtos_file} && bootaux ${rtos_bootaddr}\0"	       \
+	"rtosnetboot=tftp ${rtos_bootaddr} ${rtos_file} && "\
+		"bootaux ${rtos_bootaddr}\0"\
+	"rtosboot=run rtossdboot\0" \
 	"sdboot=echo Booting from SD card ...; " \
 		"mmc dev ${sddev}; if mmc rescan; then "	\
 		"if run loadbootscript; then "			\
 			"run bootscript; "		       \
 		   "else " \
+			"run rtosboot; "				      \
 			"run args sdargs addip loadfdt && run loadimage && " \
 			"booti ${loadaddr} - ${fdt_addr};" \
 		    "fi;" \
@@ -197,6 +205,7 @@
 		"else " \
 			"setenv get_cmd tftp; " \
 		"fi; " \
+		"run rtosboot; " \
 		"${get_cmd} ${loadaddr} ${image} && " \
 		"${get_cmd} ${fdt_addr} ${fdt_file} && " \
 		"run addip && booti ${loadaddr} - ${fdt_addr};\0"
