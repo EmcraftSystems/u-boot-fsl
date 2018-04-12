@@ -166,8 +166,7 @@
 	"sddev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"sdpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT "\0" \
-	"args_common=console=ttymxc0,115200 earlycon=ec_imx6q,0x30860000,115200 " \
-	"video=HDMI-A-1:1920x1080-32@60\0" \
+	"args_common=console=ttymxc0,115200 earlycon=ec_imx6q,0x30860000,115200\0" \
 	"args_quiet=setenv bootargs ${args_common} quiet=quiet\0" \
 	"args_verbose=setenv bootargs ${args_common} ignore_loglevel\0" \
 	"args=run args_quiet\0" \
