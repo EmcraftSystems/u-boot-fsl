@@ -43,7 +43,11 @@
 
 #define CONFIG_NR_DRAM_BANKS		1
 #define PHYS_NAND_SIZE			(512 * 1024 * 1024)
+#if defined(CONFIG_VF6_SOM_LC_1GB)
+#define PHYS_SDRAM_1_SIZE		(1024 * 1024 * 1024)
+#else
 #define PHYS_SDRAM_1_SIZE		(512 * 1024 * 1024)
+#endif
 
 #include "vybrid_som_common.h"
 

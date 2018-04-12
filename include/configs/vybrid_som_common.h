@@ -240,6 +240,9 @@
 # elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
 # define CONFIG_SYS_MEMTEST_END		0x9FC00000
 # define KERNEL_MEM_INFO			"512M"
+# elif  PHYS_SDRAM_1_SIZE == (1024 * 1024 * 1024)
+# define CONFIG_SYS_MEMTEST_END		0xBFC00000
+# define KERNEL_MEM_INFO			"1024M"
 # else
 # error "Unsupported memory size specified"
 # endif
