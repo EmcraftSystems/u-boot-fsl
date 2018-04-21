@@ -163,9 +163,10 @@
 	"boot_fdt=try\0" \
 	"initrd_addr=0x43800000\0"		\
 	"initrd_high=0xffffffffffffffff\0" \
-	"sddev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
-	"sdpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
-	"mmcroot=" CONFIG_MMCROOT "\0" \
+	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
+	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
+	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
+	"mmcautodetect=yes\0" \
 	"args_common=console=ttymxc0,115200 earlycon=ec_imx6q,0x30860000,115200 " \
 	"video=HDMI-A-1:1920x1080-32@60\0" \
 	"args_quiet=setenv bootargs ${args_common} quiet=quiet\0" \
@@ -173,25 +174,25 @@
 	"args=run args_quiet\0" \
 	"netargs=setenv bootargs ${bootargs} " \
                 "root=/dev/nfs nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
-	"sdargs=setenv bootargs ${bootargs} root=${mmcroot} rootwait rw\0 " \
-	"loadbootscript=fatload mmc ${sddev}:${sdpart} ${loadaddr} ${script};\0" \
-	"bootscript=echo Running bootscript from SD card...; " \
+	"mmcargs=setenv bootargs ${bootargs} root=${mmcroot}\0 " \
+	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
+	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
-	"loadimage=fatload mmc ${sddev}:${sdpart} ${loadaddr} ${image}\0" \
-	"loadfdt=fatload mmc ${sddev}:${sdpart} ${fdt_addr} ${fdt_file}\0" \
-	"sdboot=echo Booting from SD card ...; " \
-		"mmc dev ${sddev}; if mmc rescan; then "	\
+	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
+	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
+	"mmcboot=echo Booting from mmc ...; " \
+		"mmc dev ${mmcdev}; if mmc rescan; then "	\
 		"if run loadbootscript; then "			\
 			"run bootscript; "		       \
 		   "else " \
-			"run args sdargs addip loadfdt && run loadimage && " \
+			"run args mmcargs addip loadfdt && run loadimage && " \
 			"booti ${loadaddr} - ${fdt_addr};" \
 		    "fi;" \
 		"fi\0" \
 	"addip=setenv bootargs ${bootargs} ip=${ipaddr}:${serverip}:${gatewayip}:" \
 		"${netmask}:${hostname}:eth0:off\0" \
 	"netboot=echo Booting from net ...; " \
-		"run args sdargs;  " \
+		"run args mmcargs;  " \
 		"if test ${ip_dyn} = yes; then " \
 			"setenv get_cmd dhcp; " \
 		"else " \
@@ -200,7 +201,7 @@
 		"${get_cmd} ${loadaddr} ${image} && " \
 		"${get_cmd} ${fdt_addr} ${fdt_file} && " \
 		"run addip && booti ${loadaddr} - ${fdt_addr};\0"
-#define CONFIG_BOOTCOMMAND "run sdboot"
+#define CONFIG_BOOTCOMMAND "run mmcboot"
 #endif
 
 /* Link Definitions */
