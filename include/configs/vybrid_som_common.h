@@ -231,6 +231,9 @@
 # define CONFIG_SYS_INIT_RAM_SIZE	(IRAM_SIZE)
 
 # define CONFIG_SYS_MEMTEST_START	0x80000000
+# ifndef PHYS_SDRAM_1_SIZE
+#  define CONFIG_SYS_MEMTEST_END		0x87C00000
+# else
 # if PHYS_SDRAM_1_SIZE == (128 * 1024 * 1024)
 # define CONFIG_SYS_MEMTEST_END		0x87C00000
 # define KERNEL_MEM_INFO			"128M"
@@ -245,6 +248,7 @@
 # define KERNEL_MEM_INFO			"1024M"
 # else
 # error "Unsupported memory size specified"
+# endif
 # endif
 
 #endif /* CONFIG_NR_DRAM_BANKS */

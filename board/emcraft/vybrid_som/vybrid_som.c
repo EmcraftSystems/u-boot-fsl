@@ -208,17 +208,10 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x03000200, DDR_CR023);	// bstlen, tmrr - lpddr2, tdll
 	__raw_writel(0x00000006, DDR_CR024);	// addr_mirror, reg_dimm, trp_ab
 	__raw_writel(0x00010000, DDR_CR025);	// tref_enable, auto_refresh, arefresh
-#if PHYS_SDRAM_1_SIZE == (128 * 1024 * 1024)
-	__raw_writel(0x0c28002c, DDR_CR026);	// tref, trfc
-#elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
-	__raw_writel(0x0c280040, DDR_CR026);	// tref, trfc
-#elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
-	__raw_writel(0x0c280068, DDR_CR026);	// tref, trfc
-#elif  PHYS_SDRAM_1_SIZE == (1024 * 1024 * 1024)
-	__raw_writel(0x0c16008b, DDR_CR026);	// tref, trfc
-#else
-#error "Unsupported memory size specified"
-#endif
+
+	// proper self-refresh timings will be set after DDR size deteciton
+	__raw_writel(0x0c28008b, DDR_CR026);	// tref, trfc
+
 	__raw_writel(0x00000005, DDR_CR028);	// tref_interval fixed at 5
 	__raw_writel(0x00000003, DDR_CR029);	// tpdex_f0
 
@@ -319,22 +312,8 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x00000000, DDR_CR071);	// zqreset, ddr3 set to 0
 	__raw_writel(0x01000000, DDR_CR072);	// zqcs_rotate, no_zq_init, zqreset_f1
 
-	//
-	// DRAM controller misc
-	//
-//	__raw_writel(0x0a020301, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
-
-#if PHYS_SDRAM_1_SIZE == (128 * 1024 * 1024)
-	__raw_writel(0x0a010300, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
-#elif  PHYS_SDRAM_1_SIZE == (256 * 1024 * 1024)
-	__raw_writel(0x0a010200, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
-#elif  PHYS_SDRAM_1_SIZE == (512 * 1024 * 1024)
-	__raw_writel(0x0a010100, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
-#elif  PHYS_SDRAM_1_SIZE == (1024 * 1024 * 1024)
+	// configure max size (1GB) for DDR size detection later
 	__raw_writel(0x0a010000, DDR_CR073);	// arebit, col_diff, row_diff, bank_diff
-#else
-#error "Unsupported memory size specified"
-#endif
 
 	__raw_writel(0x0101ffff, DDR_CR074);	// bank_split, addr_cmp_en, cmd/age cnt
 	__raw_writel(0x01010101, DDR_CR075);	// rw same pg, rw same en, pri en, plen
@@ -424,6 +403,33 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x00000601, DDR_CR000);	// LPDDR2 or DDR3, start
 
 
+	i = 5000;
+	while (i--);
+
+	dram_size = get_ram_size((long *)0x80000000, 1024*1024*1024);
+
+	// re-configure and re-start DDR controller
+	__raw_writel(0x00000600, DDR_CR000);
+	i = 5000;
+	while (i--);
+
+	if (dram_size == (128 * 1024 * 1024)) {
+		__raw_writel(0x0c28002c, DDR_CR026);
+		__raw_writel(0x0a010300, DDR_CR073);
+	} else if (dram_size == (256 * 1024 * 1024)) {
+		__raw_writel(0x0c280040, DDR_CR026);
+		__raw_writel(0x0a010200, DDR_CR073);
+	} else if (dram_size == (512 * 1024 * 1024)) {
+		__raw_writel(0x0c280068, DDR_CR026);
+		__raw_writel(0x0a010100, DDR_CR073);
+	} else if (dram_size == (1024 * 1024 * 1024)) {
+		__raw_writel(0x0c16008b, DDR_CR026);
+		__raw_writel(0x0a010000, DDR_CR073);
+	} else
+		printf("Auto DDR size detection failed! Detected %i MiB\n",
+			dram_size / 1024 / 1024);
+
+	__raw_writel(0x00000601, DDR_CR000);
 	i = 5000;
 	while (i--);
 
