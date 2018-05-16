@@ -922,10 +922,22 @@ int do_set_boot_media(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 #error Boot media is not defined!
 #endif
 
-	if (argc < 2 || strcmp(argv[1], "-f") != 0) {
-		printf("This will program Vybrid eFUSES to boot from "
 #if defined(CONFIG_BOOT_MEDIA_NAND)
-				"NAND"
+	struct nand_chip *chip = (struct nand_chip *)nand_info[nand_curr_device].priv;
+
+	if (chip->options & NAND_BUSWIDTH_16)
+		fuse[1].value = 0x84;
+	else
+		fuse[1].value = 0x80;
+#endif
+
+	if (argc < 2 || strcmp(argv[1], "-f") != 0) {
+		printf("This will program Vybrid eFUSES to boot from %s"
+				". This cannot be undone."
+				"\nContinue? (Y/N): ",
+#if defined(CONFIG_BOOT_MEDIA_NAND)
+				chip->options & NAND_BUSWIDTH_16 ?
+					"NAND 16-bit" : "NAND 8-bit"
 #elif defined(CONFIG_BOOT_MEDIA_QSPI)
 				"QSPI"
 #elif 0
@@ -933,8 +945,7 @@ int do_set_boot_media(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 #else
 #error Boot media is not defined!
 #endif
-				". This cannot be undone."
-				"\nContinue? (Y/N): ");
+			);
                 c = getc(); putc('\n');
                 if ((c != 'y') && (c != 'Y')) {
                         return 0;
@@ -1306,6 +1317,14 @@ int do_validate_boot_images(void)
 #endif
 
 #endif /* KERNEL1_FLASH_BASE */
+
+	struct nand_chip *chip = (struct nand_chip *)nand_info[nand_curr_device].priv;
+
+	if (chip->options & NAND_BUSWIDTH_16)
+		setenv("nand_bus_width", "<0x10>");
+	else
+		setenv("nand_bus_width", "<0x8>");
+
 	return 0;
 }
 

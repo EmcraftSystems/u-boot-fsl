@@ -184,8 +184,12 @@ unsigned char spi_bitbang_read(void);
 	"dtbupdate=tftp ${dtbimage} && nand erase.spread "		\
 	"${dtb_offset} ${filesize} && nand write ${loadaddr} "		\
 	"${dtb_offset} ${filesize}\0"					\
-	"boot_dtb=nand read ${dtb_addr} ${dtb_offset} 0x7000 &&"	\
-	" bootm ${loadaddr} - ${dtb_addr}\0"				\
+	"adjust_dtb=fdt addr ${dtb_addr}"				\
+	" && fdt set /soc/aips-bus@40080000/nand@400e0000/nand@0"	\
+	" nand-bus-width ${nand_bus_width}\0"				\
+	"boot_dtb=nand read ${dtb_addr} ${dtb_offset} 0x7000"		\
+	" && run adjust_dtb"						\
+	" && bootm ${loadaddr} - ${dtb_addr}\0"				\
 	"splash_offset=" stringify(SPLASH_FLASH_BASE) "\0"		\
 	"dtb_offset=" stringify(DTB_FLASH_BASE) "\0"			\
 	"uImage_offset=" stringify(KERNEL_FLASH_BASE) "\0"		\

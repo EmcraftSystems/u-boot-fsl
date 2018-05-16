@@ -889,6 +889,34 @@ int board_nand_init(struct nand_chip *chip)
 			CONFIG_FAST_FLASH_MASK,
 			CONFIG_FAST_FLASH_SHIFT, 1);
 
+#if defined(CONFIG_VF6_SOM_LC)
+	u8 i, extid[8];
+
+	chip->select_chip(mtd, 0);
+	chip->cmdfunc(mtd, NAND_CMD_RESET, -1, -1);
+	chip->cmdfunc(mtd, NAND_CMD_READID, 0x00, -1);
+
+	/* Read extended ID */
+	for (i = 0; i < 8; i++)
+		extid[i] = chip->read_byte(mtd);
+
+#if 0
+	printf("maf_id %x dev_id %x extid %x\n", extid[0], extid[1], extid[3]);
+#endif
+
+	if (extid[3] & (1 << 6)) {
+		nfc_set_field(mtd, NFC_FLASH_CONFIG,
+			CONFIG_16BIT_MASK,
+			CONFIG_16BIT_SHIFT, 1);
+		chip->options |= NAND_BUSWIDTH_16;
+	} else {
+		nfc_set_field(mtd, NFC_FLASH_CONFIG,
+			CONFIG_16BIT_MASK,
+			CONFIG_16BIT_SHIFT, 0);
+		chip->options &= ~NAND_BUSWIDTH_16;
+	}
+#endif
+
 	return 0;
 }
 
