@@ -366,8 +366,8 @@ typedef enum _clock_ip_name
     kCLOCK_Aips_tz1            = (0U << 8U) | CCM_CCGR0_CG0_SHIFT,         /*!< CCGR0, CG0   */
     kCLOCK_Aips_tz2            = (0U << 8U) | CCM_CCGR0_CG1_SHIFT,         /*!< CCGR0, CG1   */
                                                                            /*!< CCGR0, CG2, Reserved  */
-                                                                           /*!< CCGR0, CG3, Reserved  */
-                                                                           /*!< CCGR0, CG4, Reserved  */
+    kCLOCK_FlexSpi_Exsc        = (0U << 8U) | CCM_CCGR0_CG3_SHIFT,         /*!< CCGR0, CG3 */
+    kCLOCK_SimM_or_SimMain_Reg = (0U << 8U) | CCM_CCGR0_CG4_SHIFT,         /*!< CCGR0, CG4   */
     kCLOCK_Dcp                 = (0U << 8U) | CCM_CCGR0_CG5_SHIFT,         /*!< CCGR0, CG5   */
     kCLOCK_Lpuart3             = (0U << 8U) | CCM_CCGR0_CG6_SHIFT,         /*!< CCGR0, CG6   */
     kCLOCK_Can1                = (0U << 8U) | CCM_CCGR0_CG7_SHIFT,         /*!< CCGR0, CG7   */
@@ -390,7 +390,7 @@ typedef enum _clock_ip_name
     kCLOCK_Pit                  = (1U << 8U) | CCM_CCGR1_CG6_SHIFT,        /*!< CCGR1, CG6   */
     kCLOCK_Aoi2                 = (1U << 8U) | CCM_CCGR1_CG7_SHIFT,        /*!< CCGR1, CG7   */
     kCLOCK_Adc1                 = (1U << 8U) | CCM_CCGR1_CG8_SHIFT,        /*!< CCGR1, CG8   */
-                                                                           /*!< CCGR1, CG9, Reserved  */
+    kCLOCK_Semc_Exsc            = (1U << 8U) | CCM_CCGR1_CG9_SHIFT,        /*!< CCGR1, CG9   */
     kCLOCK_Gpt1                 = (1U << 8U) | CCM_CCGR1_CG10_SHIFT,       /*!< CCGR1, CG10  */
     kCLOCK_Gpt1S                = (1U << 8U) | CCM_CCGR1_CG11_SHIFT,       /*!< CCGR1, CG11  */
     kCLOCK_Lpuart4              = (1U << 8U) | CCM_CCGR1_CG12_SHIFT,       /*!< CCGR1, CG12  */
@@ -399,7 +399,7 @@ typedef enum _clock_ip_name
     kCLOCK_Gpio5                = (1U << 8U) | CCM_CCGR1_CG15_SHIFT,       /*!< CCGR1, CG15  */
 
     /* CCM CCGR2 */
-                                                                           /*!< CCGR2, CG0, Reserved  */
+    kCLOCK_Ocram_Excs           = (2U << 8U) | CCM_CCGR2_CG0_SHIFT,        /*!< CCGR2, CG0   */
     kCLOCK_Csi                  = (2U << 8U) | CCM_CCGR2_CG1_SHIFT,        /*!< CCGR2, CG1   */
     kCLOCK_IomuxcSnvs           = (2U << 8U) | CCM_CCGR2_CG2_SHIFT,        /*!< CCGR2, CG2   */
     kCLOCK_Lpi2c1               = (2U << 8U) | CCM_CCGR2_CG3_SHIFT,        /*!< CCGR2, CG3   */
@@ -435,6 +435,7 @@ typedef enum _clock_ip_name
     kCLOCK_IomuxcSnvsGpr        = (3U << 8U) | CCM_CCGR3_CG15_SHIFT,       /*!< CCGR3, CG15  */
 
     /* CCM CCGR4 */
+    kCLOCK_SimM7_Reg            = (4U << 8U) | CCM_CCGR4_CG0_SHIFT,        /*!< CCGR4, CG0   */
     kCLOCK_Iomuxc               = (4U << 8U) | CCM_CCGR4_CG1_SHIFT,        /*!< CCGR4, CG1   */
     kCLOCK_IomuxcGpr            = (4U << 8U) | CCM_CCGR4_CG2_SHIFT,        /*!< CCGR4, CG2   */
     kCLOCK_Bee                  = (4U << 8U) | CCM_CCGR4_CG3_SHIFT,        /*!< CCGR4, CG3   */
