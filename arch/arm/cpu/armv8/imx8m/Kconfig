@@ -39,6 +39,16 @@ config TARGET_EMCRAFT_IMX8M_LPDDR4_SOM
 	select IMX8M
 	select SUPPORT_SPL
 
+config TARGET_EMCRAFT_IMX8M_LPDDR4_2GB_SOM
+	bool "emcraft_imx8m_lpddr4_2gb_som"
+	select IMX8M
+	select SUPPORT_SPL
+
+config TARGET_EMCRAFT_IMX8M_LPDDR4_3GB_SOM
+	bool "emcraft_imx8m_lpddr4_3gb_som"
+	select IMX8M
+	select SUPPORT_SPL
+
 endchoice
 
 config SYS_SOC
