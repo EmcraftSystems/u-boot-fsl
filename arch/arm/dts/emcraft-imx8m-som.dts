@@ -11,10 +11,10 @@
 #include "fsl-imx8mq.dtsi"
 
 / {
-#if defined(CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_SOM)
-	model = "Emcraft i.MX8M SOM LPDDR4";
-#else
+#if defined(CONFIG_TARGET_EMCRAFT_IMX8M_SOM)
 	model = "Emcraft i.MX8M SOM DDR3L";
+#else
+	model = "Emcraft i.MX8M SOM LPDDR4";
 #endif
 	compatible = "emcraft,imx8m-som", "fsl,imx8mq";
 

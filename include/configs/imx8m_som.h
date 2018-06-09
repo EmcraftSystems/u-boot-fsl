@@ -180,11 +180,19 @@
 		"source\0" \
 	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
 	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
+	"rtos_file=imx8mq_m4_TCM_rpmsg_lite_str_echo_rtos.bin\0"       \
+	"rtos_bootaddr=0x7e0000\0"				       \
+	"rtosmmcboot=fatload mmc ${mmcdev}:${mmcpart} ${rtos_bootaddr} "  \
+		"${rtos_file} && bootaux ${rtos_bootaddr}\0"	       \
+	"rtosnetboot=tftp ${rtos_bootaddr} ${rtos_file} && "\
+		"bootaux ${rtos_bootaddr}\0"\
+	"rtosboot=run rtosmmcboot\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"mmc dev ${mmcdev}; if mmc rescan; then "	\
 		"if run loadbootscript; then "			\
 			"run bootscript; "		       \
 		   "else " \
+			"run rtosboot; "				      \
 			"run args mmcargs addip loadfdt && run loadimage && " \
 			"booti ${loadaddr} - ${fdt_addr};" \
 		    "fi;" \
@@ -198,6 +206,7 @@
 		"else " \
 			"setenv get_cmd tftp; " \
 		"fi; " \
+		"run rtosboot; " \
 		"${get_cmd} ${loadaddr} ${image} && " \
 		"${get_cmd} ${fdt_addr} ${fdt_file} && " \
 		"run addip && booti ${loadaddr} - ${fdt_addr};\0"
@@ -217,10 +226,6 @@
 #define CONFIG_SYS_INIT_SP_ADDR \
         (CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
-#define CONFIG_SYS_MEMTEST_START	0x40000000
-#define CONFIG_SYS_MEMTEST_END		0x60000000
-#define CONFIG_SYS_ALT_MEMTEST
-
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_ENV_OFFSET               (64 * SZ_64K)
 #define CONFIG_ENV_SIZE			0x1000
@@ -233,8 +238,24 @@
 
 #define CONFIG_SYS_SDRAM_BASE           0x40000000
 #define PHYS_SDRAM                      0x40000000
-#define PHYS_SDRAM_SIZE			0x20000000 /* 512M one Rank */
+#if defined(CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_SOM)
+#define PHYS_SDRAM_SIZE			0x40000000 /* 1GB LPDDR4 one Rank */
+#elif defined(CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_2GB_SOM)
+#define PHYS_SDRAM_SIZE			0x80000000 /* 2GB LPDDR4 one Rank */
+#elif defined(CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_3GB_SOM)
+#define PHYS_SDRAM_SIZE			0xc0000000 /* 2GB LPDDR4 one Rank */
+#elif defined(CONFIG_TARGET_EMCRAFT_IMX8M_SOM)
+#define PHYS_SDRAM_SIZE			0x20000000 /* 512MB DDR3L one Rank */
+#else
+#error "i.MX8M-SOM installed DDR size is not defined"
+#endif
 #define CONFIG_NR_DRAM_BANKS		1
+
+#define CONFIG_SYS_MEMTEST_START	0x40000000
+/* Save upper 2MB for U-Boot code and data */
+#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + \
+			PHYS_SDRAM_SIZE - 2*1024*1024)
+#define CONFIG_SYS_ALT_MEMTEST
 
 #define CONFIG_BAUDRATE			115200
 
