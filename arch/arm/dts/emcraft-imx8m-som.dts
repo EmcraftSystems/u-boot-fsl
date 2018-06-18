@@ -13,8 +13,10 @@
 / {
 #if defined(CONFIG_TARGET_EMCRAFT_IMX8M_SOM)
 	model = "Emcraft i.MX8M SOM DDR3L";
+#elif defined(CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_800MHZ_2GB_SOM)
+	model = "Emcraft i.MX8M SOM LPDDR4-800";
 #else
-	model = "Emcraft i.MX8M SOM LPDDR4";
+	model = "Emcraft i.MX8M SOM LPDDR4-1600";
 #endif
 	compatible = "emcraft,imx8m-som", "fsl,imx8mq";
 

@@ -20,6 +20,9 @@ obj-y += ddr/lpddr4_2gb/ddr_init.o ddr/lpddr4_2gb/ddrphy_train.o \
 else ifdef CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_3GB_SOM
 obj-y += ddr/lpddr4_3gb/ddr_init.o ddr/lpddr4_3gb/ddrphy_train.o \
 	 ddr/lpddr4/helper.o
+else ifdef CONFIG_TARGET_EMCRAFT_IMX8M_LPDDR4_800MHZ_2GB_SOM
+obj-y += ddr/lpddr4_800mhz_2gb/ddr_init.o ddr/lpddr4_800mhz_2gb/ddrphy_train.o \
+	 ddr/lpddr4/helper.o
 else
 obj-y += ddr/lpddr4/ddr_init.o ddr/lpddr4/ddrphy_train.o \
 	 ddr/lpddr4/helper.o
