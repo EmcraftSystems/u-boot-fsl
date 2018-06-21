@@ -210,7 +210,7 @@ unsigned long ddr_ctrl_init(void)
 	__raw_writel(0x00010000, DDR_CR025);	// tref_enable, auto_refresh, arefresh
 
 	// proper self-refresh timings will be set after DDR size deteciton
-	__raw_writel(0x0c28008b, DDR_CR026);	// tref, trfc
+	__raw_writel(0x0c28008c, DDR_CR026);	// tref, trfc
 
 	__raw_writel(0x00000005, DDR_CR028);	// tref_interval fixed at 5
 	__raw_writel(0x00000003, DDR_CR029);	// tpdex_f0
@@ -423,7 +423,7 @@ unsigned long ddr_ctrl_init(void)
 		__raw_writel(0x0c280068, DDR_CR026);
 		__raw_writel(0x0a010100, DDR_CR073);
 	} else if (dram_size == (1024 * 1024 * 1024)) {
-		__raw_writel(0x0c16008b, DDR_CR026);
+		__raw_writel(0x0c16008c, DDR_CR026);
 		__raw_writel(0x0a010000, DDR_CR073);
 	} else
 		printf("Auto DDR size detection failed! Detected %i MiB\n",
