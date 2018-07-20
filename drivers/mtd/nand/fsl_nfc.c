@@ -39,7 +39,7 @@
 /* Timeouts */
 #define NFC_RESET_TIMEOUT	1000	/* 1 ms */
 #define NFC_TIMEOUT		5000	/* 1/10 s */
-#define ECC_SRAM_ADDR		(0x840 >> 3)
+#define ECC_SRAM_ADDR		(0x880 >> 3)
 #define ECC_STATUS_MASK	0x80
 #define ECC_ERR_COUNT	0x3F
 
@@ -309,6 +309,17 @@ nfc_select_chip(struct mtd_info *mtd, int chip)
 	    GPIO_PAR_BE_BE1_BE1 | GPIO_PAR_BE_BE0_BE0;
 	gpio->par_cs &= (GPIO_PAR_BE_BE3_MASK & GPIO_PAR_BE_BE2_MASK);
 	gpio->par_cs = GPIO_PAR_CS_CS1_NFC_CE;
+#else
+	u32 tmp = nfc_read(mtd, NFC_ROW_ADDR);
+
+	tmp &= ~(ROW_ADDR_CHIP_SEL_RB_MASK | ROW_ADDR_CHIP_SEL_MASK);
+
+	if (chip >= 0) {
+		tmp |= 1 << ROW_ADDR_CHIP_SEL_RB_SHIFT;
+		tmp |= (1 << chip) << ROW_ADDR_CHIP_SEL_SHIFT;
+	}
+
+	nfc_write(mtd, NFC_ROW_ADDR, tmp);
 #endif
 }
 
@@ -888,6 +899,10 @@ int board_nand_init(struct nand_chip *chip)
 	nfc_set_field(mtd, NFC_FLASH_CONFIG,
 			CONFIG_FAST_FLASH_MASK,
 			CONFIG_FAST_FLASH_SHIFT, 1);
+
+	nfc_set_field(mtd, NFC_ROW_ADDR,
+			ROW_ADDR_MASK,
+			ROW_ADDR_SHIFT, 0);
 
 #if defined(CONFIG_VF6_SOM_LC)
 	u8 i, extid[8];
