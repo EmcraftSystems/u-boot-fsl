@@ -94,9 +94,9 @@ static uint32_t decode_pll(enum pll_clocks pll, uint32_t pfd)
 						(1 << 6)))
 			return 0;
 		else
-			return (unsigned long long)freq * 18 /
+			return (unsigned long)freq / 1000 * 18 /
 				((__raw_readl(anadig_pfd[pll]) >>
-						((pfd - 1) * 8)) & 0x3F);
+						((pfd - 1) * 8)) & 0x3F) * 1000;
 		break;
 	case PLL4_CLOCK:
 		return CONFIG_SYS_VYBRID_HCLK * (__raw_readl(anadig_ctrl[pll]) & 0xFF);
