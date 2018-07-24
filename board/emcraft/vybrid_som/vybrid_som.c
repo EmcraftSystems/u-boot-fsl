@@ -178,7 +178,7 @@ unsigned long ddr_ctrl_init(void)
 {
 	int dram_size, rows, cols, banks, port;
 
-	int i;
+	volatile int i;
 
 	//Turn on clock gating
 	//CCM->CCGR6 |= 0x30000000;        
