@@ -751,6 +751,16 @@ struct nand_chip {
 	void *priv;
 };
 
+static inline void *nand_get_controller_data(struct nand_chip *chip)
+{
+	return chip->priv;
+}
+
+static inline void nand_set_controller_data(struct nand_chip *chip, void *priv)
+{
+	chip->priv = priv;
+}
+
 /*
  * NAND Flash Manufacturer ID Codes
  */

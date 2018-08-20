@@ -48,6 +48,7 @@ int arch_auxiliary_core_check_up(u32 core_id);
 
 #define is_mx6dqp() ((is_cpu_type(MXC_CPU_MX6Q) || is_cpu_type(MXC_CPU_MX6D)) \
 	&& (is_soc_rev(CHIP_REV_2_0) >= 0))
+#define is_mx6sx() (is_cpu_type(MXC_CPU_MX6SX))
 
 /*
  * Initializes on-chip ethernet controllers.
