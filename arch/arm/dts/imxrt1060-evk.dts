@@ -1,0 +1,16 @@
+/*
+ * Copyright 2016 Freescale Semiconductor, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+
+#include "imxrt1050-evk.dts"
+
+/ {
+	model = "NXP i.RT1060 EVK";
+	compatible = "nxp,imxrt1060-evk", "nxp,imxrt1050", "Generic DT based system";
+};
