@@ -188,5 +188,6 @@
 /* For SPL ends */
 
 #undef CONFIG_CMD_IMLS
+#define CONFIG_SYS_BOOTM_LEN		(16*1024*1024)
 
 #endif /* __CONFIG_H */
