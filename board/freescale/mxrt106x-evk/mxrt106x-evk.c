@@ -48,6 +48,9 @@ int board_early_init_f(void)
 
 	mxrt105x_evk_usb_init();
 
+	/* Increase NIC-301 bus priority of the LCDIF */
+	*(volatile long *)0x41044100 = 3;
+
 	return 0;
 }
 
