@@ -139,11 +139,11 @@
 	"serverip=172.17.0.1\0" \
 	"ipaddr=172.17.44.111\0" \
 	"netmask=255.255.0.0\0" \
-	"ini=mxrt105x-evk.ini\0" \
+	"ini=mxrt106x-evk.ini\0" \
 	"image=rootfs.uImage\0" \
-	"splash=splash-rt1050-series_24.bmp\0" \
+	"splash=splash-imxrt-series_24.bmp\0" \
 	"uboot=u-boot-dtb.imx\0" \
-	"tftpdir=imxrt105x/\0" \
+	"tftpdir=imxrt106x/\0" \
 	"gui=/crankdemo/gui.sh\0" \
 	"ssh=yes\0" \
 	"mmcboot=fatload mmc 0 ${loadaddr} ${image} && run addip &&"	\
