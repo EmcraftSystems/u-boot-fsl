@@ -210,6 +210,8 @@ void BOARD_BootClockRUN(void)
     CLOCK_InitUsb1Pfd(kCLOCK_Pfd3, 19);
     /* Disable Usb1 PLL output for USBPHY1. */
     CCM_ANALOG->PLL_USB1 &= ~CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK;
+    /* Init Usb2 PLL. */
+    CLOCK_InitUsb2Pll(&usb1PllConfig_BOARD_BootClockRUN);
 #endif
     /* DeInit Audio PLL. */
     CLOCK_DeinitAudioPll();
@@ -238,12 +240,6 @@ void BOARD_BootClockRUN(void)
     CCM_ANALOG->PLL_ENET |= CCM_ANALOG_PLL_ENET_ENABLE_MASK;
     /* Enable Enet25M output. */
     CCM_ANALOG->PLL_ENET |= CCM_ANALOG_PLL_ENET_ENET_25M_REF_EN_MASK;
-    /* DeInit Usb2 PLL. */
-    CLOCK_DeinitUsb2Pll();
-    /* Bypass Usb2 PLL. */
-    CLOCK_SetPllBypass(CCM_ANALOG, kCLOCK_PllUsb2, 1);
-    /* Enable Usb2 PLL output. */
-    CCM_ANALOG->PLL_USB2 |= CCM_ANALOG_PLL_USB2_ENABLE_MASK;
     /* Set AHB_PODF. */
     CLOCK_SetDiv(kCLOCK_AhbDiv, 0);
     /* Disable IPG clock gate. */
