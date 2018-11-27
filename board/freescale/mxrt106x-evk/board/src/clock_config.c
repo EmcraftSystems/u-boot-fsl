@@ -289,14 +289,24 @@ void BOARD_BootClockRUN(void)
      * With this macro SKIP_SYSCLK_INIT, system pll (selected to be SEMC source clock in SDK projects) will be left unchanged.
      * Note: If another clock source is selected for SEMC, user may want to avoid changing that clock as well.*/
 #ifndef SKIP_SYSCLK_INIT
-    /* Disable Semc clock gate. */
-    CLOCK_DisableClock(kCLOCK_Semc);
-    /* Set SEMC_PODF. */
-    CLOCK_SetDiv(kCLOCK_SemcDiv, 7);
-    /* Set Semc alt clock source. */
-    CLOCK_SetMux(kCLOCK_SemcAltMux, 0);
-    /* Set Semc clock source. */
-    CLOCK_SetMux(kCLOCK_SemcMux, 0);
+    CCM->CBCDR &= (~CCM_CBCDR_SEMC_ALT_CLK_SEL_MASK)
+                 ;
+    CCM->CBCDR |= CCM_CBCDR_SEMC_ALT_CLK_SEL(1) // select PLL3_PFD1
+                 ;
+    // select clock source for SEMC
+
+    CCM->CBCDR &= (~CCM_CBCDR_SEMC_CLK_SEL_MASK);
+    CCM->CBCDR |= CCM_CBCDR_SEMC_CLK_SEL(1)   // select PLL3_PFD1
+               ;
+
+    // config devider
+    while((CCM->CDHIPR&CCM_CDHIPR_SEMC_PODF_BUSY_MASK));
+
+    CCM->CBCDR &= (~CCM_CBCDR_SEMC_PODF_MASK);
+    while((CCM->CDHIPR&CCM_CDHIPR_SEMC_PODF_BUSY_MASK));
+    CCM->CBCDR |= CCM_CBCDR_SEMC_PODF(2)     // divider by (2 + 1), SEMC clock is about 166.67Mhz
+               ;
+    while((CCM->CDHIPR&CCM_CDHIPR_SEMC_PODF_BUSY_MASK));
 #endif
     /* In SDK projects, external flash (configured by FLEXSPI) will be initialized by dcd.
      * With this macro XIP_EXTERNAL_FLASH, usb1 pll (selected to be FLEXSPI clock source in SDK projects) will be left unchanged.

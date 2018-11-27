@@ -37,6 +37,10 @@ static void mxrt105x_evk_usb_init(void)
 
 int board_early_init_f(void)
 {
+	/* Enable I cache and D cache */
+	SCB_EnableDCache();
+	SCB_EnableICache();
+
 	/* Init board hardware. */
 	BOARD_InitPins();
 	BOARD_BootClockRUN();
@@ -47,9 +51,6 @@ int board_early_init_f(void)
 	CLOCK_EnableClock(kCLOCK_Dma);
 
 	mxrt105x_evk_usb_init();
-
-	/* Increase NIC-301 bus priority of the LCDIF */
-	*(volatile long *)0x41044100 = 3;
 
 	return 0;
 }
