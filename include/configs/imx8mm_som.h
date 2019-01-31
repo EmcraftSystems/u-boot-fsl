@@ -10,12 +10,13 @@
 #include <linux/sizes.h>
 #include <asm/arch/imx-regs.h>
 
+#include "imx_env.h"
+
 #ifdef CONFIG_SECURE_BOOT
 #define CONFIG_CSF_SIZE			0x2000 /* 8K region */
 #endif
 
-#define CONFIG_SPL_FRAMEWORK
-#define CONFIG_SPL_MAX_SIZE		(124 * 1024)
+#define CONFIG_SPL_MAX_SIZE		(148 * 1024)
 #define CONFIG_SYS_MONITOR_LEN		(512 * 1024)
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300
@@ -28,7 +29,6 @@
 #define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_DRIVERS_MISC_SUPPORT
 #define CONFIG_SPL_I2C_SUPPORT
-#define CONFIG_SPL_BOARD_INIT
 #define CONFIG_SPL_LDSCRIPT		"arch/arm/cpu/armv8/u-boot-spl.lds"
 #define CONFIG_SPL_STACK		0x91fff0
 #define CONFIG_SPL_LIBCOMMON_SUPPORT
@@ -36,11 +36,13 @@
 #define CONFIG_SPL_SERIAL_SUPPORT
 #define CONFIG_SPL_GPIO_SUPPORT
 #define CONFIG_SPL_BSS_START_ADDR      0x00910000
-#define CONFIG_SPL_BSS_MAX_SIZE        0x1000	/* 4 KB */
-#define CONFIG_SYS_SPL_MALLOC_START    0x00911000
-#define CONFIG_SYS_SPL_MALLOC_SIZE     0x3000	/* 12 KB */
+#define CONFIG_SPL_BSS_MAX_SIZE        0x2000	/* 8 KB */
+#define CONFIG_SYS_SPL_MALLOC_START    0x42200000
+#define CONFIG_SYS_SPL_MALLOC_SIZE     0x80000	/* 512 KB */
 #define CONFIG_SYS_ICACHE_OFF
 #define CONFIG_SYS_DCACHE_OFF
+
+#define CONFIG_MALLOC_F_ADDR		0x912000 /* malloc f used before GD_FLG_FULL_MALLOC_INIT set */
 
 #define CONFIG_SPL_ABORT_ON_RAW_IMAGE /* For RAW image gives a error info not panic */
 
@@ -101,38 +103,64 @@
 #define CONFIG_PHY_ATHEROS
 #endif
 
+/*
+ * Another approach is add the clocks for inmates into clks_init_on
+ * in clk-imx8mm.c, then clk_ingore_unused could be removed.
+ */
+#define JAILHOUSE_ENV \
+	"jh_clk= \0 " \
+	"jh_mmcboot=setenv fdt_file fsl-imx8mm-evk-root.dtb;" \
+		"setenv jh_clk clk_ignore_unused; " \
+			   "if run loadimage; then " \
+				   "run mmcboot; " \
+			   "else run jh_netboot; fi; \0" \
+	"jh_netboot=setenv fdt_file fsl-imx8mm-evk-root.dtb; setenv jh_clk clk_ignore_unused; run netboot; \0 "
+
+#ifdef CONFIG_NAND_BOOT
+#define MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(nandboot),16m(nandfit),32m(nandkernel),16m(nanddtb),8m(nandtee),-(nandrootfs) "
+#endif
+
 #define CONFIG_MFG_ENV_SETTINGS \
-	"mfgtool_args=setenv bootargs console=${console},${baudrate} " \
-		"rdinit=/linuxrc " \
-		"g_mass_storage.stall=0 g_mass_storage.removable=1 " \
-		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
-		"g_mass_storage.iSerialNumber=\"\" "\
-		"clk_ignore_unused "\
-		"\0" \
+	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
 	"initrd_addr=0x43800000\0" \
-	"initrd_high=0xffffffff\0" \
-	"emmc_dev=1\0" \
+	"initrd_high=0xffffffffffffffff\0" \
+	"emmc_dev=1\0"\
 	"sd_dev=0\0" \
-	"bootcmd_mfg=run mfgtool_args;  if iminfo ${initrd_addr}; then "\
-					   "booti ${loadaddr} ${initrd_addr} ${fdt_addr};"\
-					"else echo \"Run fastboot ...\"; fastboot 0; fi\0" \
+
 /* Initial environment variables */
+#if defined(CONFIG_NAND_BOOT)
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	CONFIG_MFG_ENV_SETTINGS \
+	"fdt_addr=0x43000000\0"			\
+	"fdt_high=0xffffffffffffffff\0" \
+	"mtdparts=" MFG_NAND_PARTITION "\0" \
+	"console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200\0" \
+	"bootargs=console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200 ubi.mtd=5 "  \
+		"root=ubi0:nandrootfs rootfstype=ubifs "		     \
+		MFG_NAND_PARTITION \
+		"\0" \
+	"bootcmd=nand read ${loadaddr} 0x5000000 0x2000000;"\
+		"nand read ${fdt_addr} 0x7000000 0x100000;"\
+		"booti ${loadaddr} - ${fdt_addr}"
+
+#else
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
+	JAILHOUSE_ENV \
 	"script=boot.scr\0" \
 	"image=Image\0" \
 	"console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200\0" \
 	"fdt_addr=0x43000000\0"			\
 	"fdt_high=0xffffffffffffffff\0"		\
 	"boot_fdt=try\0" \
-	"fdt_file=emcraft-imx8mm-som.dtb\0" \
+	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"initrd_addr=0x43800000\0"		\
 	"initrd_high=0xffffffffffffffff\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-	"mmcargs=setenv bootargs console=${console} root=${mmcroot}\0 " \
+	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
 	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
@@ -149,7 +177,7 @@
 		"else " \
 			"echo wait for boot; " \
 		"fi;\0" \
-	"netargs=setenv bootargs console=${console} " \
+	"netargs=setenv bootargs ${jh_clk} console=${console} " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
 	"netboot=echo Booting from net ...; " \
@@ -181,10 +209,10 @@
 			   "fi; " \
 		   "fi; " \
 	   "else booti ${loadaddr} - ${fdt_addr}; fi"
+#endif
 
 /* Link Definitions */
 #define CONFIG_LOADADDR			0x40480000
-#define CONFIG_SYS_TEXT_BASE		0x40200000
 
 #define CONFIG_SYS_LOAD_ADDR           CONFIG_LOADADDR
 
@@ -229,27 +257,12 @@
 /* Monitor Command Prompt */
 #undef CONFIG_SYS_PROMPT
 #define CONFIG_SYS_PROMPT		"u-boot=> "
-#define CONFIG_SYS_LONGHELP
 #define CONFIG_SYS_PROMPT_HUSH_PS2     "> "
-#define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_CBSIZE              2048
 #define CONFIG_SYS_MAXARGS             64
 #define CONFIG_SYS_BARGSIZE CONFIG_SYS_CBSIZE
 #define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
 					sizeof(CONFIG_SYS_PROMPT) + 16)
-#define CONFIG_CMDLINE_EDITING
-
-#define CONFIG_DOS_PARTITION
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_EXT4
-#define CONFIG_CMD_EXT4_WRITE
-#define CONFIG_CMD_FAT
-
-#define CONFIG_SUPPORT_EMMC_BOOT	/* eMMC specific */
-#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
-
-#define CONFIG_MXC_OCOTP
-#define CONFIG_CMD_FUSE
 
 #define CONFIG_IMX_BOOTAUX
 
@@ -258,14 +271,12 @@
 #define CONFIG_FSL_ESDHC
 #define CONFIG_FSL_USDHC
 
+#ifdef CONFIG_TARGET_IMX8MM_DDR4_EVK
+#define CONFIG_SYS_FSL_USDHC_NUM	1
+#else
 #define CONFIG_SYS_FSL_USDHC_NUM	2
+#endif
 #define CONFIG_SYS_FSL_ESDHC_ADDR       0
-
-#define CONFIG_DOS_PARTITION
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_EXT4
-#define CONFIG_CMD_EXT4_WRITE
-#define CONFIG_CMD_FAT
 
 #define CONFIG_SUPPORT_EMMC_BOOT	/* eMMC specific */
 #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
@@ -299,7 +310,8 @@
 #endif
 #endif
 
-#ifdef CONFIG_NAND_MXS
+#ifdef CONFIG_CMD_NAND
+#define CONFIG_NAND_MXS
 #define CONFIG_CMD_NAND_TRIMFFS
 
 /* NAND stuff */
@@ -312,7 +324,13 @@
 #define CONFIG_APBH_DMA
 #define CONFIG_APBH_DMA_BURST
 #define CONFIG_APBH_DMA_BURST8
+
+#ifdef CONFIG_CMD_UBI
+#define CONFIG_MTD_PARTITIONS
+#define CONFIG_MTD_DEVICE
 #endif
+#endif /* CONFIG_CMD_NAND */
+
 
 #define CONFIG_MXC_GPIO
 
@@ -331,21 +349,16 @@
 #ifndef CONFIG_SPL_BUILD
 #define CONFIG_CMD_USB
 #define CONFIG_USB_STORAGE
-#define CONFIG_CMD_EXT2
 #define CONFIG_USBD_HS
 
 #define CONFIG_CMD_USB_MASS_STORAGE
 #define CONFIG_USB_GADGET_MASS_STORAGE
-#define CONFIG_USB_GADGET_DOWNLOAD
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
 
 #endif
 
 #define CONFIG_USB_GADGET_DUALSPEED
 #define CONFIG_USB_GADGET_VBUS_DRAW 2
-#define CONFIG_G_DNL_VENDOR_NUM		0x0525
-#define CONFIG_G_DNL_PRODUCT_NUM	0xa4a5
-#define CONFIG_G_DNL_MANUFACTURER	"FSL"
 
 #define CONFIG_CI_UDC
 

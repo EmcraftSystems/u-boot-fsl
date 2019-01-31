@@ -9,14 +9,14 @@
 #include <asm/io.h>
 #include <errno.h>
 #include <asm/io.h>
-#include <asm/imx-common/iomux-v3.h>
+#include <asm/mach-imx/iomux-v3.h>
 #include <asm/arch/imx8mm_pins.h>
 #include <asm/arch/sys_proto.h>
 #include <power/pmic.h>
 #include <power/bd71837.h>
 #include <asm/arch/clock.h>
-#include <asm/imx-common/gpio.h>
-#include <asm/imx-common/mxc_i2c.h>
+#include <asm/mach-imx/gpio.h>
+#include <asm/mach-imx/mxc_i2c.h>
 #include <fsl_esdhc.h>
 #include <mmc.h>
 #include <asm/arch/imx8m_ddr.h>
@@ -25,11 +25,10 @@ DECLARE_GLOBAL_DATA_PTR;
 
 void spl_dram_init(void)
 {
-	/* ddr train */
-	ddr_init(&lpddr4_timing);
+	ddr_init(&dram_timing);
 }
 
-#define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE)
+#define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PE)
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
@@ -181,6 +180,11 @@ int power_init_board(void)
 	/* increase VDD_DRAM to 0.9v for 3Ghz DDR */
 	pmic_reg_write(p, BD71837_BUCK5_VOLT, 0x2);
 
+#ifndef CONFIG_IMX8M_LPDDR4
+	/* increase NVCC_DRAM_1V2 to 1.2v for DDR4 */
+	pmic_reg_write(p, BD71837_BUCK8_VOLT, 0x28);
+#endif
+
 	/* lock the PMIC regs */
 	pmic_reg_write(p, BD71837_REGLOCK, 0x11);
 
@@ -190,14 +194,6 @@ int power_init_board(void)
 
 void spl_board_init(void)
 {
-	enable_tzc380();
-
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-
-	power_init_board();
-	/* DDR initialization */
-	spl_dram_init();
-
 #ifndef CONFIG_SPL_USB_SDP_SUPPORT
 	/* Serial download mode */
 	if (is_usb_boot()) {
@@ -220,6 +216,8 @@ int board_fit_config_name_match(const char *name)
 
 void board_init_f(ulong dummy)
 {
+	int ret;
+
 	/* Clear global data */
 	memset((void *)gd, 0, sizeof(gd_t));
 
@@ -233,6 +231,22 @@ void board_init_f(ulong dummy)
 
 	/* Clear the BSS. */
 	memset(__bss_start, 0, __bss_end - __bss_start);
+
+	ret = spl_init();
+	if (ret) {
+		debug("spl_init() failed: %d\n", ret);
+		hang();
+	}
+
+	enable_tzc380();
+
+	/* Adjust pmic voltage to 1.0V for 800M */
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+
+	power_init_board();
+
+	/* DDR initialization */
+	spl_dram_init();
 
 	board_init_r(NULL, 0);
 }

@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: GPL-2.0+
  */
 #include <linux/kernel.h>
-#include <asm/arch/ddr_memory_map.h>
+#include <common.h>
+#include <asm/arch/ddr.h>
 #include <asm/arch/lpddr4_define.h>
 #include <asm/arch/imx8m_ddr.h>
 
@@ -32,11 +33,11 @@ struct dram_cfg_param lpddr4_ddrc_cfg[] = {
 	{ DDRC_DRAMTMG13(0), 0x0C100002 },
 	{ DDRC_DRAMTMG14(0), 0x000000E6 },
 	{ DDRC_DRAMTMG17(0), 0x00A00050 },
-  
+
 	{ DDRC_ZQCTL0(0), 0x03200018 },
 	{ DDRC_ZQCTL1(0), 0x028061A8 },
 	{ DDRC_ZQCTL2(0), 0x00000000 },
-  
+
 	{ DDRC_DFITMG0(0), 0x0497820A },
 	{ DDRC_DFITMG2(0), 0x0000170A },
 	{ DDRC_DRAMTMG2(0), 0x070E171a },
@@ -47,7 +48,7 @@ struct dram_cfg_param lpddr4_ddrc_cfg[] = {
 	{ DDRC_DFIUPD1(0), 0x00DF00E4 },
 	{ DDRC_DFIUPD2(0), 0x80000000 },
 	{ DDRC_DFIMISC(0), 0x00000011 },
-  
+
 	{ DDRC_DFIPHYMSTR(0), 0x00000000 },
 	{ DDRC_RANKCTL(0), 0x00000c99 },
 
@@ -1766,7 +1767,7 @@ struct dram_cfg_param lpddr4_phy_pie[] = {
 	{ 0x90159, 0x400 },
 	{ 0x9015a, 0x10e },
 	{ 0x9015b, 0x8 },
-	{ 0x9015c, 0xe8 }, 
+	{ 0x9015c, 0xe8 },
 	{ 0x9015d, 0x109 },
 	{ 0x9015e, 0x0 },
 	{ 0x9015f, 0x8140 },
@@ -1966,7 +1967,7 @@ struct dram_fsp_msg lpddr4_dram_fsp_msg[] = {
 };
 
 /* lpddr4 timing config params on EVK board */
-struct dram_timing_info lpddr4_timing = {
+struct dram_timing_info dram_timing = {
 	.ddrc_cfg = lpddr4_ddrc_cfg,
 	.ddrc_cfg_num = ARRAY_SIZE(lpddr4_ddrc_cfg),
 	.ddrphy_cfg = lpddr4_ddrphy_cfg,
