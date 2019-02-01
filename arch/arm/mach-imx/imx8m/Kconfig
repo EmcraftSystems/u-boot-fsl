@@ -61,7 +61,19 @@ config TARGET_IMX8MM_DDR4_EVK
 	select IMX8M_DDR4
 
 config TARGET_IMX8MM_SOM
-	bool "imx8mm som"
+	bool "i.MX8M Mini 2GB SOM"
+	select IMX8MM
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+
+config TARGET_IMX8MM_SOM_1GB
+	bool "i.MX8M Mini 1GB SOM"
+	select IMX8MM
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+
+config TARGET_IMX8MM_SOM_3GB
+	bool "i.MX8M Mini 3GB SOM"
 	select IMX8MM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4

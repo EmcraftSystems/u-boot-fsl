@@ -243,7 +243,15 @@
 
 #define CONFIG_SYS_SDRAM_BASE           0x40000000
 #define PHYS_SDRAM                      0x40000000
+#if defined(CONFIG_TARGET_IMX8MM_SOM)
 #define PHYS_SDRAM_SIZE			0x80000000 /* 2GB DDR */
+#elif defined(CONFIG_TARGET_IMX8MM_SOM_1GB)
+#define PHYS_SDRAM_SIZE			0x40000000 /* 1GB DDR */
+#elif defined(CONFIG_TARGET_IMX8MM_SOM_3GB)
+#define PHYS_SDRAM_SIZE			0xC0000000 /* 3GB DDR */
+#else
+#error Undefined SDRAM size!
+#endif
 #define CONFIG_NR_DRAM_BANKS		1
 
 #define CONFIG_SYS_MEMTEST_START    PHYS_SDRAM
