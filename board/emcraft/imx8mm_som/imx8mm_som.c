@@ -181,6 +181,17 @@ static void setup_iomux_fec(void)
 	imx_iomux_v3_setup_multiple_pads(fec1_rst_pads,
 					 ARRAY_SIZE(fec1_rst_pads));
 
+#if 0
+	/*
+	   Configure audio PLL1 for 25MHz and route it to CLKOUT2.
+	   This will enable Ethernet on early version of i.MX8M BSB
+	   that missed an external 25MHz oscillator.
+	 */
+	*(volatile unsigned long *)0x30360000 = 0xa0002a00;
+	*(volatile unsigned long *)0x30360004 = 0x00190033;
+	*(volatile unsigned long *)0x30360128 = 0x010f0000;
+#endif
+
 	gpio_request(FEC_RST_PAD, "fec1_rst");
 	gpio_direction_output(FEC_RST_PAD, 0);
 	udelay(500);
@@ -391,8 +402,20 @@ int board_ehci_usb_phy_mode(struct udevice *dev)
 
 #endif
 
+#define PWR_EN_PAD IMX_GPIO_NR(1, 8)
+static iomux_v3_cfg_t const pwr_en_pad[] = {
+	IMX8MM_PAD_GPIO1_IO08_GPIO1_IO8 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
 int board_init(void)
 {
+	imx_iomux_v3_setup_multiple_pads(pwr_en_pad,
+		ARRAY_SIZE(pwr_en_pad));
+
+	gpio_request(PWR_EN_PAD, "pwr_en");
+	gpio_direction_output(PWR_EN_PAD, 1);
+	udelay(500);
+
 #ifdef CONFIG_USB_TCPC
 	setup_typec();
 #endif
@@ -619,11 +642,12 @@ struct mipi_dsi_client_dev rm67191_dev = {
 #define FSL_SIP_CONFIG_GPC_PM_DOMAIN	0x3
 #define DISPMIX				9
 #define MIPI				10
+#define DSI_EN_GPIO			IMX_GPIO_NR(1, 5)
 
 void do_enable_mipi2hdmi(struct display_info_t const *dev)
 {
-	gpio_request(IMX_GPIO_NR(1, 8), "DSI EN");
-	gpio_direction_output(IMX_GPIO_NR(1, 8), 1);
+	gpio_request(DSI_EN_GPIO, "DSI EN");
+	gpio_direction_output(DSI_EN_GPIO, 1);
 
 	/* ADV7353 initialization */
 	adv7535_init();
@@ -643,10 +667,10 @@ void do_enable_mipi2hdmi(struct display_info_t const *dev)
 
 void do_enable_mipi_led(struct display_info_t const *dev)
 {
-	gpio_request(IMX_GPIO_NR(1, 8), "DSI EN");
-	gpio_direction_output(IMX_GPIO_NR(1, 8), 0);
+	gpio_request(DSI_EN_GPIO, "DSI EN");
+	gpio_direction_output(DSI_EN_GPIO, 0);
 	mdelay(100);
-	gpio_direction_output(IMX_GPIO_NR(1, 8), 1);
+	gpio_direction_output(DSI_EN_GPIO, 1);
 
 	/* enable the dispmix & mipi phy power domain */
 	call_imx_sip(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_PM_DOMAIN, DISPMIX, true, 0);
@@ -666,8 +690,8 @@ void do_enable_mipi_led(struct display_info_t const *dev)
 
 void board_quiesce_devices(void)
 {
-	gpio_request(IMX_GPIO_NR(1, 8), "DSI EN");
-	gpio_direction_output(IMX_GPIO_NR(1, 8), 0);
+	gpio_request(DSI_EN_GPIO, "DSI EN");
+	gpio_direction_output(DSI_EN_GPIO, 0);
 }
 
 struct display_info_t const displays[] = {{
