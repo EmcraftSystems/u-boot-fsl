@@ -4,6 +4,11 @@
 
 #define BD71837_REGULATOR_DRIVER "bd71837_regulator"
 
+/*
+ * LDOx_VOLT fields
+ */
+#define LDO_VOLT_EN			(1 << 6)
+
 enum {
     BD71837_REV 		= 0x00,
     BD71837_SWRESET 		= 0x01,

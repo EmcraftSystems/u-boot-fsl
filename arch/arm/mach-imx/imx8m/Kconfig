@@ -60,19 +60,45 @@ config TARGET_IMX8MM_DDR4_EVK
 	select SUPPORT_SPL
 	select IMX8M_DDR4
 
-config TARGET_IMX8MM_SOM
+endchoice
+
+choice
+	prompt  "EmCraft i.MX8M board select"
+	optional
+
+config TARGET_EMCRAFT_IMX8M_LPDDR4_SOM
+	bool "emcraft_imx8m_lpddr4_som"
+	select IMX8MQ
+	select SUPPORT_SPL
+
+config TARGET_EMCRAFT_IMX8M_LPDDR4_2GB_SOM
+	bool "emcraft_imx8m_lpddr4_2gb_som"
+	select IMX8MQ
+	select SUPPORT_SPL
+
+config TARGET_EMCRAFT_IMX8M_LPDDR4_3GB_SOM
+	bool "emcraft_imx8m_lpddr4_3gb_som"
+	select IMX8MQ
+	select SUPPORT_SPL
+
+config TARGET_EMCRAFT_IMX8M_LPDDR4_4GB_SOM
+	bool "emcraft_imx8m_lpddr4_4gb_som"
+	select IMX8MQ
+	select SUPPORT_SPL
+
+config TARGET_EMCRAFT_IMX8MM_SOM
 	bool "i.MX8M Mini 2GB SOM"
 	select IMX8MM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
 
-config TARGET_IMX8MM_SOM_1GB
+config TARGET_EMCRAFT_IMX8MM_SOM_1GB
 	bool "i.MX8M Mini 1GB SOM"
 	select IMX8MM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
 
-config TARGET_IMX8MM_SOM_3GB
+config TARGET_EMCRAFT_IMX8MM_SOM_3GB
 	bool "i.MX8M Mini 3GB SOM"
 	select IMX8MM
 	select SUPPORT_SPL
@@ -89,5 +115,6 @@ source "board/freescale/imx8mq_phanbell/Kconfig"
 source "board/freescale/imx8mm_evk/Kconfig"
 source "board/freescale/imx8mm_val/Kconfig"
 source "board/emcraft/imx8mm_som/Kconfig"
+source "board/emcraft/imx8m_som/Kconfig"
 
 endif
