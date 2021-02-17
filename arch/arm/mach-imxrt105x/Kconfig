@@ -13,9 +13,13 @@ config TARGET_MXRT105X_EVK
 config TARGET_MXRT106X_EVK
         bool "Support mxrt106x EVK board"
 
+config TARGET_MXRT117X_EVK
+        bool "Support mxrt117x EVK board"
+
 endchoice
 
 source "board/freescale/mxrt105x-evk/Kconfig"
 source "board/freescale/mxrt106x-evk/Kconfig"
+source "board/freescale/mxrt117x-evk/Kconfig"
 
 endif

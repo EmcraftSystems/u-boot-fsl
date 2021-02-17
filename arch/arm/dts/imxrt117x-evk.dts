@@ -1,0 +1,17 @@
+/*
+ * Copyright 2016 Freescale Semiconductor, Inc.
+ * Copyright 2021 Emcraft Systems
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+
+#include "imxrt1050-evk.dts"
+
+/ {
+	model = "NXP i.MXRT1174 EVK";
+	compatible = "nxp,imxrt117x-evk", "nxp,imxrt1050", "Generic DT based system";
+};
