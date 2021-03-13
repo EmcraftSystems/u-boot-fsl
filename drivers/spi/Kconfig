@@ -217,6 +217,12 @@ config FSL_QSPI
 	  used to access the SPI NOR flash on platforms embedding this
 	  Freescale IP core.
 
+config FSL_FLEXSPI
+	tristate "Freescale Flex SPI controller"
+	help
+	  This enables support for the FlexSPI controller in master mode.
+	  We only connect the NOR to this controller now.
+
 config TI_QSPI
 	bool "TI QSPI driver"
 	help
