@@ -20,7 +20,14 @@
 
 #define CONFIG_SYS_ARCH_TIMER
 
+#if defined CONFIG_SPI_BOOT
+#define CONFIG_SYS_TEXT_BASE		0x30002000
+#define IMX_FLEXSPI_CONFIG_BLOCK
+#else
 #define CONFIG_SYS_TEXT_BASE		0x20241000
+#endif
+
+#define CONFIG_SYS_CLK_FREQ		1000000000 /* 600 MHz */
 
 /*
  * To get Image data right at the 'Load Address' (0x80008000), and thus avoid
@@ -35,41 +42,35 @@
 #define CONFIG_LOADADDR			0x80007fc0
 
 #define PHYS_SDRAM			0x80000000
-#define PHYS_SDRAM_SIZE			(32 * 1024 * 1024)
+#define PHYS_SDRAM_SIZE			(64 * 1024 * 1024)
 
 #define DMAMEM_SZ_ALL			(1 * 1024 * 1024)
 #define DMAMEM_BASE			(PHYS_SDRAM + PHYS_SDRAM_SIZE - \
 					 DMAMEM_SZ_ALL)
 
-#define CONFIG_CMD_MEMTEST
+#if defined(CONFIG_CMD_MEMTEST)
 #define CONFIG_SYS_MEMTEST_START	PHYS_SDRAM
 #define CONFIG_SYS_MEMTEST_END      	(CONFIG_SYS_MEMTEST_START + PHYS_SDRAM_SIZE - (2 * 1024 * 1024))
+#endif
 
-#define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_TEXT_BASE + 384 * 1024)
+#define CONFIG_SYS_INIT_SP_ADDR		(0x20000)
 
 #define CONFIG_BOUNCE_BUFFER
 #define CONFIG_FSL_ESDHC
 #define CONFIG_FSL_USDHC
 #define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
 
-#define CONFIG_CMD_MMC
-
-#define CONFIG_SYS_FSL_ESDHC_ADDR	0x402c0000
 #define CONFIG_SYS_FSL_USDHC_NUM        1
 
 #define CONFIG_CMD_FAT			1
 #define CONFIG_SYS_FSL_ERRATUM_ESDHC135 1
 #define ESDHCI_QUIRK_BROKEN_TIMEOUT_VALUE
 
-/* UART */
-#define LPUART_BASE			LPUART1_RBASE
-
 /* Network */
 
-#define CONFIG_FEC_MXC
+#if defined (CONFIG_FEC_MXC)
 #define CONFIG_MII
 
-#define IMX_FEC_BASE			0x402D8000
 #define CONFIG_FEC_MXC_PHYADDR          0x2
 
 #define CONFIG_FEC_XCV_TYPE             RMII
@@ -77,17 +78,16 @@
 #define FEC_QUIRK_ENET_MAC
 
 #define CONFIG_CMD_MII
+#endif
 
-/* LCD */
-#ifdef CONFIG_VIDEO
-#define CONFIG_FB_ADDR			DMAMEM_BASE
-#define MXS_LCDIF_BASE			0x402B8000
-#define CONFIG_VIDEO_MXS
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
-#define CONFIG_SPLASH_SCREEN
-#define CONFIG_SPLASH_SCREEN_ALIGN
-#define CONFIG_CMD_BMP
-#define CONFIG_BMP_16BPP
+
+#if defined(CONFIG_FSL_FLEXSPI)
+#define CONFIG_FSL_FLEXSPI_IOBASE	0x400cc000
+#define CONFIG_FSL_FLEXSPI_IOSIZE	0x00000300
+#define CONFIG_FSL_FLEXSPI_FLASHBASE	0x30000000
+#define CONFIG_FSL_FLEXSPI_FLASHSIZE	0x01000000
+#define CONFIG_FSL_FLEXSPI_RXFIFO_SIZE	128
+#define CONFIG_FSL_FLEXSPI_TXFIFO_SIZE	128
 #endif
 
 /*
@@ -102,9 +102,16 @@
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
 
+#if defined(CONFIG_ENV_IS_IN_SPI_FLASH)
+/* Environemnt is in SPI flash */
+#define CONFIG_ENV_SIZE			(0x10000)
+#define CONFIG_SYS_REDUNDAND_ENVIRONMENT
+#define CONFIG_ENV_OFFSET		0x50000		/* 256K */
+#define CONFIG_ENV_OFFSET_REDUND	(CONFIG_ENV_OFFSET + CONFIG_ENV_SIZE)
+#define CONFIG_ENV_SECT_SIZE		0x10000
+#else
 #define CONFIG_ENV_SIZE			(8 << 10)
-
-#define CONFIG_SYS_CLK_FREQ		600000000 /* 600 MHz */
+#endif
 
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
@@ -121,42 +128,43 @@
 #define CONFIG_SYS_MALLOC_F
 #define CONFIG_SYS_MALLOC_F_LEN		(32 * 1024)
 
+
+#define CONFIG_BOOTCOMMAND						\
+	"run sfboot"
+
 #define CONFIG_BOOTARGS							\
 	"console=ttyLP0,115200 consoleblank=0 ignore_loglevel "
 
-#define CONFIG_BOOTCOMMAND						\
-	"run mmcboot"
 
-#define CONFIG_PREBOOT \
-	"fatload mmc 0 ${loadaddr} ${splash} && bmp display ${loadaddr};" \
-	"fatexec mmc 0 ${ini}"
-
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	"videomode=video=ctfb:x:480,y:272,depth:24,pclk:9300000,le:4,"	\
-		"ri:8,up:4,lo:8,hs:41,vs:10,sync:0,vmode:0\0"		\
+#define CONFIG_EXTRA_ENV_SETTINGS					\
 	"addip=setenv bootargs ${bootargs} ip=${ipaddr}:${serverip}:"	\
 		"${gatewayip}:${netmask}:${hostname}:eth0:off\0"	\
-	"ethaddr=aa:bb:cc:dd:ee:f0\0" \
-	"serverip=172.17.0.1\0" \
-	"ipaddr=172.17.44.111\0" \
-	"netmask=255.255.0.0\0" \
-	"ini=mxrt106x-evk.ini\0" \
-	"image=rootfs.uImage\0" \
-	"splash=splash-imxrt-series_24.bmp\0" \
-	"uboot=u-boot-dtb.imx\0" \
-	"tftpdir=imxrt106x/\0" \
-	"gui=/crankdemo/gui.sh\0" \
-	"ssh=yes\0" \
-	"mmcboot=fatload mmc 0 ${loadaddr} ${image} && run addip &&"	\
-		" bootm ${loadaddr}\0" \
-	"netboot=tftp ${tftpdir}${image} && run addip; bootm ${loadaddr}\0" \
-	"mmc_update_uboot=tftp ${tftpdir}${uboot} &&" \
-		" setexpr tmp ${filesize} / 0x200 && setexpr tmp ${tmp} + 1 &&"\
-		" mmc write ${loadaddr} 2 ${tmp}\0" \
-	"mmc_update_kernel=tftp ${tftpdir}${image} &&" \
-		" fatwrite mmc 0 ${loadaddr} ${image} ${filesize}\0" \
-	"mmc_update_splash=tftp ${tftpdir}${splash} &&" \
-		" fatwrite mmc 0 ${loadaddr} ${splash} ${filesize}\0"
+	"ethaddr=aa:bb:cc:dd:ee:f0\0"					\
+	"serverip=172.17.0.1\0"						\
+	"ipaddr=172.17.44.111\0"					\
+	"netmask=255.255.0.0\0"						\
+	"ini=mxrt106x-evk.ini\0"					\
+	"image=rootfs.uImage\0"						\
+	"splash=splash-imxrt-series_24.bmp\0"				\
+	"uboot=u-boot-dtb.imx\0"					\
+	"tftpdir=imxrt106x/\0"						\
+	"sfboot=sf probe 0 && sf read ${loadaddr}"			\
+		" ${kernel_sf_offset} ${kernel_sf_size} &&"		\
+		" bootm ${loadaddr}\0"					\
+	"fdt_addr_r=0x81000000\0"					\
+	"uboot_sf_offset=0x0\0"						\
+	"uboot_sf_size=0x50000\0"					\
+	"kernel_sf_offset=0x80000\0"					\
+	"kernel_sf_size=0x400000\0"					\
+	"netboot=tftp ${tftpdir}${image} &&"				\
+		" run addip; bootm ${loadaddr}\0"			\
+	"sf_kernel_update=tftp ${tftpdir}${image} &&"			\
+		" sf erase ${kernel_sf_offset} ${kernel_sf_size} &&"	\
+		" sf write ${loadaddr} ${kernel_sf_offset} ${filesize}\0"\
+	"uboot=u-boot.flexspi\0"					\
+	"sf_uboot_update=tftp ${tftpdir}${uboot} &&"			\
+		" sf erase ${uboot_sf_offset} ${uboot_sf_size} &&"	\
+		" sf write ${loadaddr} ${uboot_sf_offset} ${filesize}\0"
 
 /*
  * Command line configuration.
@@ -166,27 +174,6 @@
 #define CONFIG_CMDLINE_EDITING
 #define CONFIG_CMD_CACHE
 #define CONFIG_BOARD_LATE_INIT
-
-/*#define CONFIG_CMD_FUSE
-  #define CONFIG_MXC_OCOTP*/
-
-/* For SPL */
-#ifdef CONFIG_SUPPORT_SPL
-#define CONFIG_SPL_STACK		CONFIG_SYS_INIT_SP_ADDR
-#define CONFIG_SPL_FRAMEWORK
-#define CONFIG_SPL_BOARD_INIT
-#define CONFIG_SPL_TEXT_BASE		CONFIG_SYS_FLASH_BASE
-#define CONFIG_SYS_MONITOR_LEN		(512 * 1024)
-#define CONFIG_SYS_SPL_LEN		0x00008000
-#define CONFIG_SYS_UBOOT_START		0x080083FD
-#define CONFIG_SYS_UBOOT_BASE		(CONFIG_SYS_FLASH_BASE + \
-					 CONFIG_SYS_SPL_LEN)
-
-/* DT blob (fdt) address */
-#define CONFIG_SYS_FDT_BASE		(CONFIG_SYS_FLASH_BASE + \
-					0x1C0000)
-#endif
-/* For SPL ends */
 
 #undef CONFIG_CMD_IMLS
 #define CONFIG_SYS_BOOTM_LEN		(16*1024*1024)

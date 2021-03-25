@@ -125,7 +125,7 @@ config ETHOC
 
 config FEC_MXC
 	bool "FEC Ethernet controller"
-	depends on MX5 || MX6
+	depends on MX5 || MX6 || ARCH_IMXRT105X
 	help
 	  This driver supports the 10/100 Fast Ethernet controller for
 	  NXP i.MX processors.

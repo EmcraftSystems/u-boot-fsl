@@ -8,21 +8,21 @@
 
 ccflags-y := -I$(CONFIG_BOARDDIR)/CMSIS \
 	-I$(CONFIG_BOARDDIR)/drivers \
-	-I$(CONFIG_BOARDDIR)/utilities \
-	-DCPU_MIMXRT1062DVL6A -DPRINTF_FLOAT_ENABLE=0 -DSCANF_FLOAT_ENABLE=0 \
-	-DPRINTF_ADVANCED_ENABLE=0 -DSCANF_ADVANCED_ENABLE=0 -std=gnu99 \
-	-DDEBUG_CONSOLE_IO_LPUART=1
-#-DEVK_MCIMXRM
+	-I$(CONFIG_BOARDDIR)/device \
+	-DCPU_MIMXRT1176DVMAA_cm7 \
+	-std=gnu99
 
 obj-y	:= mxrt117x-evk.o	\
-	./CMSIS/system_MIMXRT1062.o	\
+	./device/system_MIMXRT1176_cm7.o	\
 	./drivers/fsl_gpio.o	\
-	./drivers/fsl_lpuart.o	\
 	./drivers/fsl_clock.o	\
+	./drivers/fsl_common.o \
+	./drivers/fsl_anatop_ai.o \
+	./drivers/fsl_pmu.o \
+	./drivers/fsl_semc.o \
 	./board/pin_mux.o	\
-	./board/peripherals.o	\
-	./board/src/board.o	\
-	./board/src/clock_config.o \
-	./board/src/fsl_sdram.o \
-	./drivers/fsl_usdhc.o	\
-	./drivers/fsl_enet.o
+	./board/board.o	\
+	./board/clock_config.o \
+
+flexspi_cb.bin: board/$(BOARDDIR)/flexspi_cb.o
+	$(OBJCOPY) -O binary board/$(BOARDDIR)/flexspi_cb.o $@

@@ -9,9 +9,87 @@
 
 /dts-v1/;
 
-#include "imxrt1050-evk.dts"
-
 / {
 	model = "NXP i.MXRT1174 EVK";
-	compatible = "nxp,imxrt117x-evk", "nxp,imxrt1050", "Generic DT based system";
+	compatible = "nxp,imxrt117x-evk", "nxp,imxrt117x", "Generic DT based system";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		bootargs = "console=ttyLP0,115200 earlycon=lpuart32,0x4007c010,115200";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &lpuart1;
+		mmc0 = &usdhc0;
+		ethernet0 = &fec1;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m7";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	ahbbridge1: ahb-bridge0@40000000 {
+		compatible = "fsl,aips-bus", "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x40000000 0x400000>;
+		ranges;
+
+		lpuart1: serial@4007c000 {
+			compatible = "fsl,imx7ulp-lpuart";
+			reg = <0x4007c010 0x1000>;
+			interrupts = <20>;
+			status = "disabled";
+		};
+	};
+
+	ahbbridge2: ahb-bridge0@40400000 {
+		compatible = "fsl,aips-bus", "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x40400000 0x400000>;
+		ranges;
+
+		usdhc0: usdhc@40418000 {
+			compatible = "fsl,imx7ulp-usdhc";
+			reg = <0x40418000 0x4000>;
+
+			bus-width = <4>;
+			fsl,tuning-start-tap = <20>;
+			fsl,tuning-step= <2>;
+			status = "disabled";
+		};
+
+		fec1: ethernet@40424000 {
+			compatible = "fsl,imx6sx-fec", "fsl,imx6q-fec";
+			reg = <0x40424000 0x4000>;
+
+			fsl,num-tx-queues=<3>;
+			fsl,num-rx-queues=<3>;
+			status = "disabled";
+                };
+	};
+};
+
+&usdhc0 {
+	status = "okay";
+};
+
+&fec1 {
+	status = "okay";
+	phy-mode = "rmii";
+};
+
+&lpuart1 {
+	status = "okay";
 };

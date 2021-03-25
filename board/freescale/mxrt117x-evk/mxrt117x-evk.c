@@ -10,31 +10,39 @@
 #include <serial.h>
 #include <phy.h>
 #include <linux/compiler.h>
-#include "drivers/fsl_lpuart.h"
 #include <asm/armv7m_mpu.h>
 #include <fsl_esdhc.h>
 #include <fsl_gpio.h>
-#include <fsl_enet.h>
+#include "board/board.h"
+#include "fsl_common.h"
+#include "fsl_iomuxc.h"
+#include "fsl_semc.h"
+#include "board/pin_mux.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
 void BOARD_BootClockRUN(void);
 void BOARD_InitPins(void);
-void BOARD_Ethernet_InitPins(void);
+void BOARD_InitPins_Enet(void);
+void BOARD_InitPins_SDcard(void);
 void SDRAM_Init(uint32_t bl,uint32_t cl);
-status_t PHY_Init(ENET_Type *base, uint32_t phyAddr, uint32_t srcClock_Hz);
 
-static void mxrt105x_evk_usb_init(void)
+#if defined(DEBUG)
+/* turn on the user led on the IMXRT1174-EVK board*/
+void board_early_dbg_led(void)
 {
-	/* Enable USB1/2 PLLs and USB clock gate */
-	*(volatile long *)0x400d8010 |= 0x3040;
-	*(volatile long *)0x400d8020 |= 0x3040;
-	*(volatile long *)0x400fc080 |= 3;
-	/* Configure IOMUX */
-	*(volatile long *)0x401f80c0 = 3;
-	*(volatile long *)0x401f80c4 = 3;
-	*(volatile long *)0x401f80c8 = 3;
+	gpio_pin_config_t gpio_config = {kGPIO_DigitalOutput, 0, kGPIO_NoIntmode};
+	CLOCK_EnableClock(kCLOCK_Iomuxc);           /* LPCG on: LPCG is ON. */
+
+	IOMUXC_SetPinMux(
+			 IOMUXC_GPIO_AD_04_GPIO9_IO03,           /* GPIO_AD_04 is configured as GPIO9_IO03 */
+			 0U);                                    /* Software Input On Field: Input Path is determined by functionality */
+
+	GPIO_PinInit(GPIO9, 3, &gpio_config);
+
+	GPIO_WritePinOutput(GPIO9, 3, 1);
 }
+#endif
 
 int board_early_init_f(void)
 {
@@ -42,16 +50,15 @@ int board_early_init_f(void)
 	SCB_EnableDCache();
 	SCB_EnableICache();
 
-	/* Init board hardware. */
+	BOARD_ConfigMPU();
 	BOARD_InitPins();
 	BOARD_BootClockRUN();
+	BOARD_InitPins_SDcard();
 
-//	CLOCK_SetMux(kCLOCK_UartMux,1);
 	CLOCK_EnableClock(kCLOCK_Lpuart1);
-	CLOCK_EnableClock(kCLOCK_Pit);
-	CLOCK_EnableClock(kCLOCK_Dma);
 
-	mxrt105x_evk_usb_init();
+	CLOCK_EnableClock(kCLOCK_Pit1);
+	CLOCK_EnableClock(kCLOCK_Edma);
 
 	return 0;
 }
@@ -64,39 +71,59 @@ int board_early_init_f(void)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	phy_write(phydev, MDIO_DEVAD_NONE, MII_PHY_CTRL2,
-		phy_read(phydev, MDIO_DEVAD_NONE, MII_PHY_CTRL2) |
-			MII_PHY_CTRL2_RMII_CLK_50MHZ |
-			MII_PHY_CTRL2_RMII_LED_MODE);
 	phy_write(phydev, MDIO_DEVAD_NONE, MII_BMCR,
-		phy_read(phydev, MDIO_DEVAD_NONE, MII_BMCR) & ~BMCR_ISOLATE);
+		  BMCR_RESET);
+
+	phy_write(phydev, MDIO_DEVAD_NONE, MII_PHY_CTRL2,
+		  phy_read(phydev, MDIO_DEVAD_NONE, MII_PHY_CTRL2) |
+		  MII_PHY_CTRL2_RMII_CLK_50MHZ |
+		  MII_PHY_CTRL2_RMII_LED_MODE);
+
+	phy_write(phydev, MDIO_DEVAD_NONE, MII_ADVERTISE,
+		  (ADVERTISE_100FULL | ADVERTISE_100HALF |
+		   ADVERTISE_10FULL | ADVERTISE_10HALF | ADVERTISE_CSMA));
+
+	phy_write(phydev, MDIO_DEVAD_NONE, MII_BMCR,
+		  (BMCR_ANRESTART | BMCR_ANENABLE));
+
+	return 0;
+}
+
+void IOMUXC_SelectENETClock(void)
+{
+	IOMUXC_GPR->GPR4 |= 0x3; /* 50M ENET_REF_CLOCK output to PHY and ENET module. */
 }
 
 int board_eth_init(bd_t *bis)
 {
-	const clock_enet_pll_config_t pll_config =
-	{
-		true,
-		false,
-		1,
+	const clock_sys_pll1_config_t sysPll1Config = {
+			.pllDiv2En = true,
 	};
 
-	BOARD_Ethernet_InitPins();
+	BOARD_InitPins_Enet();
 
-	CLOCK_InitEnetPll(&pll_config);
+	CLOCK_InitSysPll1(&sysPll1Config);
+	clock_root_config_t rootCfg = {.mux = 4, .div = 10}; /* Generate 50M root clock. */
+	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
+
+	/* Select syspll2pfd3, 528*18/24 = 396M */
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 24);
+	rootCfg.mux = 7;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg); /* Generate 198M bus clock. */
+
+	IOMUXC_SelectENETClock();
 
 	gpio_pin_config_t gpio_config = {kGPIO_DigitalOutput, 0, kGPIO_NoIntmode};
-	GPIO_PinInit(GPIO1, 9, &gpio_config);
-	GPIO_PinInit(GPIO1, 10, &gpio_config);
-	// pull up the ENET_INT before RESET
-	GPIO_WritePinOutput(GPIO1, 10, 1);
-	GPIO_WritePinOutput(GPIO1, 9, 0);
-	udelay(100);
-	GPIO_WritePinOutput(GPIO1, 9, 1);
 
-	/* Set SMI to get PHY link status. */
-	CLOCK_EnableClock(kCLOCK_Enet);
-	ENET_SetSMI(ENET, CLOCK_GetFreq(kCLOCK_IpgClk), false);
+	GPIO_PinInit(GPIO9, 11, &gpio_config);
+	GPIO_PinInit(GPIO12, 12, &gpio_config);
+	/* Pull up the ENET_INT before RESET. */
+	GPIO_WritePinOutput(GPIO9, 11, 1);
+	GPIO_WritePinOutput(GPIO12, 12, 0);
+	udelay(10000);
+	GPIO_WritePinOutput(GPIO12, 12, 1);
+	udelay(1000);
 
 	return 0;
 }
@@ -108,57 +135,15 @@ void imx_get_mac_from_fuse(int dev_id, unsigned char *mac)
 
 u32 imx_get_fecclk(void)
 {
-	return CLOCK_GetFreq(kCLOCK_IpgClk);
+	u32 ret = CLOCK_GetRootClockFreq(kCLOCK_Root_Bus);
+	return ret;
 }
 #endif
 
-#ifdef CONFIG_VIDEO_MXS
-static void setup_lcd(void)
-{
-	struct {
-		u32	mux_reg;
-		u32	conf_reg;
-		u32	mux_mode;
-		u32	conf_val;
-	} pin[] = {
-		{ 0x013c, 0x032c, 0x0, 0x1b0b0 }, /* PAD_B0_00_LCD_CLK */
-		{ 0x0140, 0x0330, 0x0, 0x1b0b0 }, /* PAD_B0_01_LCD_ENABLE */
-		{ 0x0144, 0x0334, 0x0, 0x1b0b0 }, /* PAD_B0_02_LCD_HSYNC */
-		{ 0x0148, 0x0338, 0x0, 0x1b0b0 }, /* PAD_B0_03_LCD_VSYNC */
-		{ 0x014c, 0x033c, 0x0, 0x1b0b0 }, /* PAD_B0_04_LCD_DATA00 */
-		{ 0x0150, 0x0340, 0x0, 0x1b0b0 }, /* PAD_B0_05_LCD_DATA01 */
-		{ 0x0154, 0x0344, 0x0, 0x1b0b0 }, /* PAD_B0_06_LCD_DATA02 */
-		{ 0x0158, 0x0348, 0x0, 0x1b0b0 }, /* PAD_B0_07_LCD_DATA03 */
-		{ 0x015c, 0x034c, 0x0, 0x1b0b0 }, /* PAD_B0_08_LCD_DATA04 */
-		{ 0x0160, 0x0350, 0x0, 0x1b0b0 }, /* PAD_B0_09_LCD_DATA05 */
-		{ 0x0164, 0x0354, 0x0, 0x1b0b0 }, /* PAD_B0_10_LCD_DATA06 */
-		{ 0x0168, 0x0358, 0x0, 0x1b0b0 }, /* PAD_B0_11_LCD_DATA07 */
-		{ 0x016c, 0x035c, 0x0, 0x1b0b0 }, /* PAD_B0_12_LCD_DATA08 */
-		{ 0x0170, 0x0360, 0x0, 0x1b0b0 }, /* PAD_B0_13_LCD_DATA09 */
-		{ 0x0174, 0x0364, 0x0, 0x1b0b0 }, /* PAD_B0_14_LCD_DATA10 */
-		{ 0x0178, 0x0368, 0x0, 0x1b0b0 }, /* PAD_B0_15_LCD_DATA11 */
-		{ 0x017c, 0x036c, 0x0, 0x1b0b0 }, /* PAD_B1_00_LCD_DATA12 */
-		{ 0x0180, 0x0370, 0x0, 0x1b0b0 }, /* PAD_B1_01_LCD_DATA13 */
-		{ 0x0184, 0x0374, 0x0, 0x1b0b0 }, /* PAD_B1_02_LCD_DATA14 */
-		{ 0x0188, 0x0378, 0x0, 0x1b0b0 }, /* PAD_B1_03_LCD_DATA15 */
-
-		{ 0x01b8, 0x03a8, 0x5, 0x0b069 }, /* PAD_B1_15_GPIO2_IO31 */
-		{ 0x00c4, 0x02b4, 0x5, 0x0b069 }, /* PAD_AD_B0_02_GPIO1_IO02 */
-	};
-
-	int i;
-
-	/* Configure IOMUX */
-	for (i = 0; i < ARRAY_SIZE(pin); i++) {
-		writel(pin[i].mux_mode, IOMUXC_BASE + pin[i].mux_reg);
-		writel(pin[i].conf_val, IOMUXC_BASE + pin[i].conf_reg);
-	}
-}
-#endif /* CONFIG_VIDEO_MXS */
 
 int get_board_rev(void)
 {
-	return 2;
+	return 0;
 }
 
 int print_cpuinfo(void)
@@ -168,10 +153,53 @@ int print_cpuinfo(void)
 	return 0;
 }
 
+status_t BOARD_InitSEMC(void)
+{
+	semc_config_t config;
+	semc_sdram_config_t sdramconfig;
+	uint32_t clockFrq = CLOCK_GetRootClockFreq(kCLOCK_Root_Semc);
+
+	/* Initializes the MAC configure structure to zero. */
+	memset(&config, 0, sizeof(semc_config_t));
+	memset(&sdramconfig, 0, sizeof(semc_sdram_config_t));
+
+	/* Initialize SEMC. */
+	SEMC_GetDefaultConfig(&config);
+	config.dqsMode = kSEMC_Loopbackdqspad; /* For more accurate timing. */
+	SEMC_Init(SEMC, &config);
+
+	/* Configure SDRAM. */
+	sdramconfig.csxPinMux           = kSEMC_MUXCSX0;
+	sdramconfig.address             = 0x80000000;
+	sdramconfig.memsize_kbytes      = 2 * 32 * 1024;       /* 64MB = 2*32*1024*1KBytes*/
+	sdramconfig.portSize            = kSEMC_PortSize32Bit; /*two 16-bit SDRAMs make up 32-bit portsize*/
+	sdramconfig.burstLen            = kSEMC_Sdram_BurstLen8;
+	sdramconfig.columnAddrBitNum    = kSEMC_SdramColunm_9bit;
+	sdramconfig.casLatency          = kSEMC_LatencyThree;
+	sdramconfig.tPrecharge2Act_Ns   = 15; /* tRP 15ns */
+	sdramconfig.tAct2ReadWrite_Ns   = 15; /* tRCD 15ns */
+	sdramconfig.tRefreshRecovery_Ns = 70; /* Use the maximum of the (Trfc , Txsr). */
+	sdramconfig.tWriteRecovery_Ns   = 2;  /* tWR 2ns */
+	sdramconfig.tCkeOff_Ns =
+		42; /* The minimum cycle of SDRAM CLK off state. CKE is off in self refresh at a minimum period tRAS.*/
+	sdramconfig.tAct2Prechage_Ns       = 40; /* tRAS 40ns */
+	sdramconfig.tSelfRefRecovery_Ns    = 70;
+	sdramconfig.tRefresh2Refresh_Ns    = 60;
+	sdramconfig.tAct2Act_Ns            = 2; /* tRC/tRDD 2ns */
+	sdramconfig.tPrescalePeriod_Ns     = 160 * (1000000000 / clockFrq);
+	sdramconfig.refreshPeriod_nsPerRow = 64 * 1000000 / 8192; /* 64ms/8192 */
+	sdramconfig.refreshUrgThreshold    = sdramconfig.refreshPeriod_nsPerRow;
+	sdramconfig.refreshBurstLen        = 1;
+	sdramconfig.delayChain             = 2;
+
+	return SEMC_ConfigureSDRAM(SEMC, kSEMC_SDRAM_CS0, &sdramconfig, clockFrq);
+}
+
 int dram_init(void)
 {
-	arch_cpu_init();
-	SDRAM_Init(3, 3);
+	if (BOARD_InitSEMC() != 0) {
+		return -1;
+	}
 	gd->ram_top = PHYS_SDRAM;
 	gd->ram_size = PHYS_SDRAM_SIZE;
 	return 0;
@@ -194,12 +222,12 @@ int board_late_init(void)
 
 u32 get_lpuart_clk(void)
 {
-	return 80000000;
+	return 24000000;
 }
 
 #ifdef CONFIG_FSL_ESDHC
 static struct fsl_esdhc_cfg usdhc_cfg[] = {
-	{0x402c0000, 0, 4},
+	{0x40418000, 0, 4},
 };
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -212,11 +240,28 @@ int board_mmc_init(bd_t *bis)
 	return fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
 }
 
+uint32_t BOARD_USDHC1ClockConfiguration(void)
+{
+    clock_root_config_t rootCfg = {0};
+    /* SYS PLL2 528MHz. */
+    const clock_sys_pll2_config_t sysPll2Config = {
+	.ssEnable = false,
+    };
+
+    CLOCK_InitSysPll2(&sysPll2Config);
+    CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
+
+    rootCfg.mux = 4;
+    rootCfg.div = 2;
+    CLOCK_SetRootClock(kCLOCK_Root_Usdhc1, &rootCfg);
+
+    return CLOCK_GetRootClockFreq(kCLOCK_Root_Usdhc1);
+}
+
 void init_clk_usdhc(u32 index)
 {
-	*(volatile unsigned long*)0x400FC080 |= (3 << 2);
-	*(volatile unsigned long*)0x400FC024 &= ~(7 << 11);
-	*(volatile unsigned long*)0x400FC024 |= (7 << 11);
+	BOARD_USDHC1ClockConfiguration();
+	CLOCK_EnableClock(kCLOCK_Usdhc1);
 }
 #endif
 
@@ -229,4 +274,3 @@ int board_fit_config_name_match(const char *name)
 	return -1;
 }
 #endif
-
