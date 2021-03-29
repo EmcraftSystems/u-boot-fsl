@@ -25,4 +25,7 @@ obj-y	:= mxrt117x-evk.o	\
 	./board/clock_config.o \
 
 flexspi_cb.bin: board/$(BOARDDIR)/flexspi_cb.o
-	$(OBJCOPY) -O binary board/$(BOARDDIR)/flexspi_cb.o $@
+	$(OBJCOPY) -O binary board/$(BOARDDIR)/flexspi_cb.o flexspi_cb_nopad.o
+	dd if=/dev/zero ibs=1k count=1 | tr "\000" "\377" > $@
+	cat flexspi_cb_nopad.o >> $@
+	rm flexspi_cb_nopad.o

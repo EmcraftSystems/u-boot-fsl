@@ -53,7 +53,7 @@
 #define CONFIG_SYS_MEMTEST_END      	(CONFIG_SYS_MEMTEST_START + PHYS_SDRAM_SIZE - (2 * 1024 * 1024))
 #endif
 
-#define CONFIG_SYS_INIT_SP_ADDR		(0x20000)
+#define CONFIG_SYS_INIT_SP_ADDR		(0x20040000)
 
 #define CONFIG_BOUNCE_BUFFER
 #define CONFIG_FSL_ESDHC
@@ -143,19 +143,16 @@
 	"serverip=172.17.0.1\0"						\
 	"ipaddr=172.17.44.111\0"					\
 	"netmask=255.255.0.0\0"						\
-	"ini=mxrt106x-evk.ini\0"					\
+	"ini=mxrt117x-evk.ini\0"					\
 	"image=rootfs.uImage\0"						\
-	"splash=splash-imxrt-series_24.bmp\0"				\
-	"uboot=u-boot-dtb.imx\0"					\
-	"tftpdir=imxrt106x/\0"						\
-	"sfboot=sf probe 0 && sf read ${loadaddr}"			\
-		" ${kernel_sf_offset} ${kernel_sf_size} &&"		\
-		" bootm ${loadaddr}\0"					\
+	"tftpdir=imxrt117x/\0"						\
+	"sfboot=run addip && bootm ${image_sf_addr}\0"			\
 	"fdt_addr_r=0x81000000\0"					\
 	"uboot_sf_offset=0x0\0"						\
 	"uboot_sf_size=0x50000\0"					\
 	"kernel_sf_offset=0x80000\0"					\
-	"kernel_sf_size=0x400000\0"					\
+	"kernel_sf_size=0xa00000\0"					\
+	"image_sf_addr=0x30080000\0"					\
 	"netboot=tftp ${tftpdir}${image} &&"				\
 		" run addip; bootm ${loadaddr}\0"			\
 	"sf_kernel_update=tftp ${tftpdir}${image} &&"			\

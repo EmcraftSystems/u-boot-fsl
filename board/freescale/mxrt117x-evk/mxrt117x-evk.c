@@ -25,7 +25,8 @@ void BOARD_BootClockRUN(void);
 void BOARD_InitPins(void);
 void BOARD_InitPins_Enet(void);
 void BOARD_InitPins_SDcard(void);
-void SDRAM_Init(uint32_t bl,uint32_t cl);
+void BOARD_InitPins_SEMC(void);
+
 
 #if defined(DEBUG)
 /* turn on the user led on the IMXRT1174-EVK board*/
@@ -197,6 +198,9 @@ status_t BOARD_InitSEMC(void)
 
 int dram_init(void)
 {
+	arch_cpu_init();
+	BOARD_InitPins_SEMC();
+
 	if (BOARD_InitSEMC() != 0) {
 		return -1;
 	}
@@ -242,20 +246,20 @@ int board_mmc_init(bd_t *bis)
 
 uint32_t BOARD_USDHC1ClockConfiguration(void)
 {
-    clock_root_config_t rootCfg = {0};
-    /* SYS PLL2 528MHz. */
-    const clock_sys_pll2_config_t sysPll2Config = {
-	.ssEnable = false,
-    };
+	clock_root_config_t rootCfg = {0};
+	/* SYS PLL2 528MHz. */
+	const clock_sys_pll2_config_t sysPll2Config = {
+		.ssEnable = false,
+	};
 
-    CLOCK_InitSysPll2(&sysPll2Config);
-    CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
+	CLOCK_InitSysPll2(&sysPll2Config);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
 
-    rootCfg.mux = 4;
-    rootCfg.div = 2;
-    CLOCK_SetRootClock(kCLOCK_Root_Usdhc1, &rootCfg);
+	rootCfg.mux = 4;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Usdhc1, &rootCfg);
 
-    return CLOCK_GetRootClockFreq(kCLOCK_Root_Usdhc1);
+	return CLOCK_GetRootClockFreq(kCLOCK_Root_Usdhc1);
 }
 
 void init_clk_usdhc(u32 index)

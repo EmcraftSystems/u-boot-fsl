@@ -80,6 +80,9 @@ u-boot.imx: u-boot.bin $(IMX_CONFIG) $(PLUGIN).bin FORCE
 ifeq ($(CONFIG_OF_SEPARATE),y)
 MKIMAGEFLAGS_u-boot-dtb.imx = -n $(filter-out $(PLUGIN).bin $< $(PHONY),$^) -T imximage \
 	-e $(CONFIG_SYS_TEXT_BASE)
+ifeq ($(CONFIG_SPI_BOOT), y)
+MKIMAGEFLAGS_u-boot-dtb.imx += -a $(CONFIG_FSL_FLEXSPI_FLASHBASE)
+endif
 u-boot-dtb.imx: MKIMAGEOUTPUT = u-boot-dtb.imx.log
 
 u-boot-dtb.imx: u-boot-dtb.bin $(IMX_CONFIG) $(PLUGIN).bin FORCE

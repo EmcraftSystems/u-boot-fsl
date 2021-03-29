@@ -903,6 +903,13 @@ endif
 
 %.imx: %.bin
 	$(Q)$(MAKE) $(build)=arch/arm/mach-imx $@
+ifeq ($(CONFIG_SPI_BOOT), y)
+	$(Q)$(MAKE) $(build)=board/$(BOARDDIR) flexspi_cb.bin
+	mv flexspi_cb.bin u-boot.flexspi
+	dd if=$@ of=u-boot.flexspi bs=512 seek=8 conv=sync
+
+CLEAN_FILES += u-boot.flexspi
+endif
 
 %.vyb: %.imx
 	$(Q)$(MAKE) $(build)=arch/arm/cpu/armv7/vf610 $@

@@ -854,6 +854,15 @@ static void imximage_set_header(void *ptr, struct stat *sbuf, int ifd,
 			header_size += MAX_PLUGIN_CODE_SIZE;
 	}
 
+	if (params->addr) {
+		if (header_size > params->ep - params->addr - imximage_ivt_offset) {
+			fprintf(stderr, "%s: entry point (%x) is too close "
+				"to the flash base (%x) to place the imx header\n",
+				params->cmdname, params->ep, params->addr);
+			exit(EXIT_FAILURE);
+		}
+		header_size = params->ep - params->addr - imximage_ivt_offset;
+	}
 	if (imximage_init_loadsize < imximage_ivt_offset + header_size)
 			imximage_init_loadsize = imximage_ivt_offset + header_size;
 
@@ -933,6 +942,16 @@ static int imximage_generate(struct image_tool_params *params,
 			header_size += sizeof(dcd_v2_t);
 		else
 			header_size += MAX_PLUGIN_CODE_SIZE;
+	}
+
+	if (params->addr) {
+		if (header_size > params->ep - params->addr - imximage_ivt_offset) {
+			fprintf(stderr, "%s: entry point (%x) is too close "
+				"to the flash base (%x) to place the imx header\n",
+				params->cmdname, params->ep, params->addr);
+			exit(EXIT_FAILURE);
+		}
+		header_size = params->ep - params->addr - imximage_ivt_offset;
 	}
 
 	if (imximage_init_loadsize < imximage_ivt_offset + header_size)
